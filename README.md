@@ -1,8 +1,47 @@
-# Welcome to your Expo app 👋
+## Wayfind Front end app.
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
 
-## Get started
+## Design
+
+design of this app comes from opensource figma design, 
+
+https://www.figma.com/design/CPtQiQwniN46WdT4bexH9V/Location-tracking%2C-SOS%2C-Safety-app-UI---parent-and-child-(Community)?node-id=504-1858
+https://www.figma.com/design/GLSc6Lyt3yDreilAcfdPdF/Tracking-Map-Application-(Community)?node-id=1-3&p=f&t=gNYFJBMWpi5O9999-0
+
+Both will be used as reference,
+I dont intend any copy right infriegement, I searched for free design and few came up. and i selected these too.
+
+
+
+
+
+## Tasks
+
+- [] Splash Screen
+- [] Login Screen
+- [] OTP verify screen
+- [] Update profile, with name and email
+- [] Create Group
+- [] Share Group join link
+- [] Join group via link
+- [] Show all user's groups
+- [] Show map, and render group members location as marker on map.
+- [] display tab on bottom, l -> r : back, location, Speak, members, voice notes.
+- [] members list would be displayed on scrollable overlay. with Their Name: and phone number and call button
+- [] On top there would be gather around button, when clicked all user would get notification to gather at meeting point.(only available to admin).
+- [] SOS button, will send notification to all admins.
+- [] Make any user admin of the group.
+- [] Speak button when clicked, will record your voice for 45 seconds. and then auto send to all members of the group, and when user receives the message, it would be auto played loud. in ur BT device if conneccted else on speaker.
+- [] Setting to auto play incoming messages or not option for members.
+- [] Admin can create a ride. select start and end location, a path would be drawn.
+- [] Every person would follow on the same path.
+- [] When clicked on any marker, we can get the direction to the person open in google map app.
+- [] Location update will happen every minute.
+
+
+
+
+
 
 1. Install dependencies
 
@@ -15,36 +54,3 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    ```bash
     npx expo start
    ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
