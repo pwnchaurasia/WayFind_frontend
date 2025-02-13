@@ -1,21 +1,58 @@
-## Wayfind Front end app.
+# Wayfind Front end app.
 
 
-## Design
+## Project Requirements
 
-design of this app comes from opensource figma design, 
+### Overview
 
-https://www.figma.com/design/CPtQiQwniN46WdT4bexH9V/Location-tracking%2C-SOS%2C-Safety-app-UI---parent-and-child-(Community)?node-id=504-1858
-https://www.figma.com/design/GLSc6Lyt3yDreilAcfdPdF/Tracking-Map-Application-(Community)?node-id=1-3&p=f&t=gNYFJBMWpi5O9999-0
+The Wayfind Front end app is designed to provide location tracking, SOS, and safety features for riders and admins. The design references are sourced from open-source Figma designs.
 
-Both will be used as reference,
-I dont intend any copy right infriegement, I searched for free design and few came up. and i selected these too.
+### Design References
+
+- [Location tracking, SOS, Safety app UI - parent and child (Community)](https://www.figma.com/design/CPtQiQwniN46WdT4bexH9V/Location-tracking%2C-SOS%2C-Safety-app-UI---parent-and-child-(Community)?node-id=504-1858)
+- [Tracking Map Application (Community)](https://www.figma.com/design/GLSc6Lyt3yDreilAcfdPdF/Tracking-Map-Application-(Community)?node-id=1-3&p=f&t=gNYFJBMWpi5O9999-0)
+
+### Features
+
+1. **Splash Screen**: Initial screen displayed when the app is launched.
+2. **Login Screen**: Screen for user authentication.
+3. **OTP Verify Screen**: Screen for OTP verification.
+4. **Update Profile**: Screen to update user profile with name and email.
+5. **Create Group**: Feature to create a new group.
+6. **Share Group Join Link**: Feature to share a link to join a group.
+7. **Join Group via Link**: Feature to join a group using a link.
+8. **Show All User's Groups**: Display all groups the user is part of.
+9. **Show Map with Group Members' Locations**: Render group members' locations as markers on the map.
+10. **Bottom Tab Navigation**: Tabs for navigation - back, location, speak, members, voice notes.
+11. **Members List Overlay**: Scrollable overlay displaying members' names, phone numbers, and call buttons.
+12. **Gather Around Button**: Button for admins to notify all users to gather at a meeting point.
+13. **SOS Button**: Button to send an SOS notification to all admins.
+14. **Make User Admin**: Feature to promote any user to admin.
+15. **Speak Button**: Record and send voice messages to group members.
+16. **Auto Play Incoming Messages**: Setting to auto-play incoming messages.
+17. **Create a Ride**: Admin feature to create a ride with start and end locations.
+18. **Follow Path**: Feature for users to follow a designated path.
+19. **Get Directions to Member**: Feature to get directions to a member via Google Maps.
+20. **Location Update**: Update location every minute.
 
 
 
 
+### Installation
 
-## Tasks
+1. Install dependencies
+
+   ```bash
+   npm install
+   ```
+
+2. Start the app
+
+   ```bash
+   npx expo start
+   ```
+
+### Tasks
 
 - [] Splash Screen
 - [] Login Screen
@@ -37,20 +74,3 @@ I dont intend any copy right infriegement, I searched for free design and few ca
 - [] Every person would follow on the same path.
 - [] When clicked on any marker, we can get the direction to the person open in google map app.
 - [] Location update will happen every minute.
-
-
-
-
-
-
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-    npx expo start
-   ```

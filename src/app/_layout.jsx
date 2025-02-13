@@ -13,7 +13,7 @@ import {
 
 // SplashScreen.preventAutoHideAsync();
 
-const RootLayout = () => {
+const RootNavigation = () => {
   const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
     Poppins_600SemiBold,
@@ -32,6 +32,6 @@ const RootLayout = () => {
   )
 }
 
-export default RootLayout 
+export default RootNavigation 
 
 const styles = StyleSheet.create({})
