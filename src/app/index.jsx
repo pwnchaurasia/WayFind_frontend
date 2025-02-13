@@ -4,8 +4,8 @@ import imagePath from '@/src/constants/imagePath';
 export default function HomeScreen() {
   return (
     <View style={styles.container}>
-      <Text>Home</Text>
-      <Image source={imagePath.react_logo}/>
+      <Text style={{'fontFamily': 'Poppins_700Bold'}}>Home</Text>
+      <Image source={imagePath.icon}/>
     </View>
   );
 }

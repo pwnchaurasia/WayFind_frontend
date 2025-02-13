@@ -74,3 +74,10 @@ The Wayfind Front end app is designed to provide location tracking, SOS, and saf
 - [] Every person would follow on the same path.
 - [] When clicked on any marker, we can get the direction to the person open in google map app.
 - [] Location update will happen every minute.
+
+
+
+
+## Notes
+
+1. Icon color green code: 0C7937

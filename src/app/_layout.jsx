@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native'
-import React from 'react'
-import { SplashScreen, Stack } from 'expo-router'
+import React, { useEffect } from 'react'
+import { Stack } from 'expo-router'
+import * as SplashScreen from 'expo-splash-screen';
 import {
   Poppins_600SemiBold,
   Poppins_300Light,
@@ -11,10 +12,10 @@ import {
 } from "@expo-google-fonts/poppins";
 
 
-// SplashScreen.preventAutoHideAsync();
+SplashScreen.preventAutoHideAsync();
 
 const RootNavigation = () => {
-  const [loaded] = useFonts({
+  const [loaded, error] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
     Poppins_600SemiBold,
     Poppins_300Light,
@@ -22,6 +23,18 @@ const RootNavigation = () => {
     Poppins_400Regular,
     Poppins_500Medium,
   });
+
+  useEffect (() => {
+
+    if (loaded || error) {
+      SplashScreen.hideAsync();
+    }
+
+  },[loaded, error])
+
+  if (!loaded && !error) {
+    return null;
+  }
 
   return (
     
