@@ -23,6 +23,7 @@ const RootNavigation = () => {
     Poppins_400Regular,
     Poppins_500Medium,
   });
+  console.log(loaded)
 
   useEffect (() => {
 
@@ -31,10 +32,13 @@ const RootNavigation = () => {
     }
 
   },[loaded, error])
-
+console.log(loaded)
+console.log(error)
   if (!loaded && !error) {
+    console.log("here")
     return null;
   }
+  console.log("I am here")
 
   return (
     
