@@ -1,7 +1,8 @@
 import { StyleSheet, Text, View } from 'react-native'
-import React, { useEffect } from 'react'
-import { Stack } from 'expo-router'
+import React, { useEffect, useState } from 'react'
+import { Redirect, Stack } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import {
   Poppins_600SemiBold,
   Poppins_300Light,
@@ -15,6 +16,11 @@ import {
 SplashScreen.preventAutoHideAsync();
 
 const RootNavigation = () => {
+
+  const [isAuthenticated, setIsAuthenticated] = useState(true);
+
+
+
   const [loaded, error] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
     Poppins_600SemiBold,
@@ -26,26 +32,27 @@ const RootNavigation = () => {
   console.log(loaded)
 
   useEffect (() => {
-
-    if (loaded || error) {
-      SplashScreen.hideAsync();
+    async function hideSplash() {
+      if (loaded || error) {
+        await SplashScreen.hideAsync();
+      }
+      
     }
-
+    hideSplash();
   },[loaded, error])
-console.log(loaded)
-console.log(error)
+
   if (!loaded && !error) {
     console.log("here")
     return null;
   }
-  console.log("I am here")
 
   return (
-    
-      <Stack screenOptions={{headerShown: false}}>
-        <Stack.Screen name="index"/>
-        {/* <Stack.Screen name="(routes)/onboarding/index"/> */}
-      </Stack>
+    <>
+    <Stack screenOptions={{headerShown: false}}/>
+    {
+      isAuthenticated ? <Redirect href={"/(main)"}/> : <Redirect href={"/(auth)"}/>
+    }
+    </>
   )
 }
 
