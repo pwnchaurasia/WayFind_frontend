@@ -18,5 +18,5 @@ import { StyleSheet } from 'react-native';
     caption: {
       fontSize: 12,
       letterSpacing: 0.4,
-    }
+    },
   });

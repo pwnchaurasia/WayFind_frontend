@@ -17,7 +17,7 @@ SplashScreen.preventAutoHideAsync();
 
 const RootNavigation = () => {
 
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
 
 
@@ -29,7 +29,7 @@ const RootNavigation = () => {
     Poppins_400Regular,
     Poppins_500Medium,
   });
-  console.log(loaded)
+  
 
   useEffect (() => {
     async function hideSplash() {
@@ -42,7 +42,6 @@ const RootNavigation = () => {
   },[loaded, error])
 
   if (!loaded && !error) {
-    console.log("here")
     return null;
   }
 

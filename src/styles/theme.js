@@ -1,13 +1,18 @@
 export const theme = {
     colors: {
-      primary: '#4A90E2',
-      secondary: '#F2994A',
-      background: '#FFFFFF',
-      text: '#333333',
-      inputBg: '#F5F5F5',
+      background: '#1c1c23',
+      text: '#ffffff',
+      icon_highlight_start: '#47ED73',
+      icon_highlight_end: '#10A62B',
+      mic_color_start:'#F02037',
+      mic_color_end: '#D30B21',
+      icon_shade: '#4A4E51',
+      input_box: '#17171C',
       error: '#EB5757',
       success: '#27AE60',
-      divider: '#E0E0E0'
+      divider: '#E0E0E0',
+      input_text: '#c3c3c3',
+
     },
     spacing: {
       xs: 4,
