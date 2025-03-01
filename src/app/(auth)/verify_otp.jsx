@@ -14,6 +14,9 @@ import {
 import { theme } from '@/src/styles/theme';
 import LogoSection from '@/src/components/LogoSection';
 import imagePath from '../../constants/imagePath';
+import { Link } from 'expo-router';
+
+
 
 const { width, height } = Dimensions.get('window');
 
@@ -111,7 +114,8 @@ const VerifyOtp = () => {
       {/* Button */}
       <View style={styles.buttonContainer}>
         <TouchableOpacity style={styles.button}>
-          <Text style={styles.buttonText}>Verify Code</Text>
+          {/* <Text style={styles.buttonText}>Verify Code</Text> */}
+          <Link href="/update_profile" style={styles.buttonText}> Verify Code</Link>
         </TouchableOpacity>
       </View>
       

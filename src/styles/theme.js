@@ -11,7 +11,7 @@ export const theme = {
       error: '#EB5757',
       success: '#27AE60',
       divider: '#E0E0E0',
-      input_text: '#c3c3c3',
+      input_text: '#ffffff',
 
     },
     spacing: {
