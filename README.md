@@ -81,3 +81,7 @@ The Wayfind Front end app is designed to provide location tracking, SOS, and saf
 ## Notes
 
 1. Icon color green code: 0C7937
+
+
+
+## For otp entry use this install react-native-otp-entry
