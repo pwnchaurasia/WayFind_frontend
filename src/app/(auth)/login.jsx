@@ -14,12 +14,13 @@ import {
   Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context'
-import imagePath from '../../constants/imagePath'
-import { theme } from '../../styles/theme';
+import imagePath from '@/src/constants/imagePath'
+import { theme } from '@/src/styles/theme';
 import { Poppins_600SemiBold } from '@expo-google-fonts/poppins';
 import PhoneInput from "react-native-phone-number-input";
-
+import { Link } from 'expo-router';
 import * as Localization from 'expo-localization';
+import LogoSection from '@/src/components/LogoSection';
 
 const { width, height } = Dimensions.get('window');
 const scale = PixelRatio.get();
@@ -40,14 +41,8 @@ const LoginPage = () => {
         <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
         <SafeAreaView style={styles.container}> 
         <StatusBar barStyle="light-content" />
-            <View style={styles.logoContainer}>
-                <Image 
-                  source={imagePath.icon} 
-                  style={styles.logo}
-                  resizeMode='contain'
-                />
-                <Text style={styles.appName}>Wayfind</Text>
-              </View>
+            {/* Logo Section */}
+            <LogoSection />
             
             {/* Middle Content */}
           <View style={styles.contentContainer}>
@@ -101,7 +96,8 @@ const LoginPage = () => {
             {/* Button */}
           <View style={styles.buttonContainer}>
             <TouchableOpacity style={styles.button}>
-              <Text style={styles.buttonText}>Next Step</Text>
+              {/* <Text style={styles.buttonText}>Next Step</Text> */}
+              <Link style={styles.buttonText} href="/verify_otp">Next Step</Link>
             </TouchableOpacity>
           </View>
           
@@ -132,14 +128,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'center',
-    alignItems: 'center'
+    alignItems: 'center',
+
   },
   textInputStyle:{
     color: theme.colors.input_text,
     fontSize: 16,
     width: '100%',
     backgroundColor: theme.colors.input_box,
-    textAlign: 'left'
+    textAlign: 'left',
   },
   textContainerStyle:{
     backgroundColor: theme.colors.input_box,
@@ -154,7 +151,7 @@ const styles = StyleSheet.create({
     marginBottom: 0,  
     paddingTop: 0,    
     paddingBottom: 0, 
-    textAlignVertical: 'center',
+    textAlignVertical: 'center'
   },
   container: {
       flex: 1,
@@ -222,9 +219,14 @@ const styles = StyleSheet.create({
   },
 
   buttonContainer: {
-    marginBottom: height * 0.05,
+    flex: 1,
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center'
+
   },
   button: {
+    width: '80%',
     backgroundColor: 'transparent',
     borderWidth: 1,
     borderColor: '#00C853',

@@ -6,7 +6,7 @@ import { Link } from 'expo-router';
 const AuthIndex = () => {
   return (
     <SafeAreaView style={styles.container}> 
-       <Link href="/login">Go to Login screen</Link>
+       <Link href="/login" style={styles.link}>Go to Login screen</Link>
     </SafeAreaView>
   )
 }
@@ -19,5 +19,11 @@ const styles = StyleSheet.create({
         flex: 1,
         width: '100%',
         height: '100%',
+    },
+    link: {
+        color: 'blue',
+        fontSize: 18,
+        textAlign: 'center',
+        marginTop: 190
     }
 })
