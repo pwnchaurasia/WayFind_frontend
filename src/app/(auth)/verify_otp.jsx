@@ -130,7 +130,7 @@ export default VerifyOtp
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
+    backgroundColor: theme.colors.background,
     paddingHorizontal: width * 0.05,
   },
   logoContainer: {

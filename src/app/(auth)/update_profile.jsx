@@ -13,6 +13,7 @@ import {
 import { Feather } from '@expo/vector-icons';
 import imagePath from '@/src/constants/imagePath';
 import LogoSection from '@/src/components/LogoSection';
+import {Link} from 'expo-router';
 
 
 
@@ -101,7 +102,8 @@ const UpdateProfile = () => {
       {/* Button */}
       <View style={styles.buttonContainer}>
         <TouchableOpacity style={styles.button}>
-          <Text style={styles.buttonText}>Done</Text>
+          {/* <Text style={styles.buttonText}>Done</Text> */}
+          <Link href="(group)" style={styles.buttonText}>Done</Link>
         </TouchableOpacity>
       </View>
       
