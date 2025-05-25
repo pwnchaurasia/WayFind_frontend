@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -28,12 +28,16 @@ const scale = PixelRatio.get();
 const LoginPage = () => {
 
   const locales = Localization.getLocales()[0]['regionCode'];
-  const [countryCode, setCountryCode] = useState( locales || 'IN');
+  const [countryCode, setCountryCode] = useState();
 
   const [phoneNumber, setPhoneNumber] = useState('');
   const [formattedValue, setFormattedValue] = useState('');
 
   const phoneInput = useRef(null);
+
+  // useEffect(() => {
+  //   setPhoneNumber("9876543")
+  // });
   
 
   return (
@@ -63,7 +67,7 @@ const LoginPage = () => {
               <PhoneInput
                 ref={phoneInput}
                 defaultValue={phoneNumber}
-                defaultCode={countryCode}
+                defaultCode='IN'
                 layout="second"
                 onChangeText={(text) => {
                   setPhoneNumber(text);
