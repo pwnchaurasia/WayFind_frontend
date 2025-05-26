@@ -12,6 +12,9 @@ export const theme = {
       success: '#27AE60',
       divider: '#E0E0E0',
       input_text: '#ffffff',
+      muated_text: '#A1A1A1',
+      notification_dot: '#FF0000',
+      border_color: '#353540',
 
     },
     spacing: {

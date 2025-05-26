@@ -23,9 +23,10 @@ const GroupPageListScreen = () => {
     const groups = [
         {
           id: '1',
-          name: 'Duxica Gruop',
-          members: 22,
+          name: 'Duxica Group',
+          members: 21,
           hasNotification: true,
+          group_image: imagePath.group_image,
           users: [
             imagePath.members_avatar,
             imagePath.members_avatar,
@@ -35,8 +36,9 @@ const GroupPageListScreen = () => {
         {
           id: '2',
           name: 'Probo Team',
-          members: 22,
+          members: 29,
           hasNotification: false,
+          group_image: imagePath.group_image,
           users: [
             imagePath.members_avatar,
             imagePath.members_avatar,
@@ -46,8 +48,9 @@ const GroupPageListScreen = () => {
         {
           id: '3',
           name: 'DOTX Team',
-          members: 22,
+          members: 55,
           hasNotification: false,
+          group_image: imagePath.group_image,
           users: [
             imagePath.members_avatar,
             imagePath.members_avatar,
@@ -66,7 +69,7 @@ const GroupPageListScreen = () => {
       
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Group Page List</Text>
+        <Text style={styles.headerTitle}>WAYFIND</Text>
         <TouchableOpacity style={styles.menuButton}>
           <Feather name="more-vertical" size={24} color="white" />
         </TouchableOpacity>
@@ -87,7 +90,7 @@ const GroupPageListScreen = () => {
         <View style={styles.hashtagContainer}>
           <Feather name="hash" size={18} color="#C8C8C8" />
         </View>
-        <Text style={styles.sectionTitle}>GROUPS & CHANNELS</Text>
+        <Text style={styles.sectionTitle}>GROUPS</Text>
       </View>
       
       {/* Groups List */}
