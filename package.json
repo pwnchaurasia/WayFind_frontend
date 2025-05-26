@@ -1,5 +1,5 @@
 {
-  "name": "wayfind_frontend",
+  "name": "wayfind",
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
@@ -36,6 +36,7 @@
     "react-dom": "19.0.0",
     "react-native": "0.79.2",
     "react-native-gesture-handler": "~2.24.0",
+    "react-native-keyboard-controller": "^1.17.2",
     "react-native-otp-entry": "^1.8.3",
     "react-native-phone-number-input": "^2.1.0",
     "react-native-safe-area-context": "5.4.0",
@@ -53,7 +54,8 @@
     "jest-expo": "~53.0.5",
     "react-native-reanimated": "~3.17.4",
     "react-test-renderer": "18.3.1",
-    "typescript": "~5.8.3"
+    "typescript": "~5.8.3",
+    "@react-native-community/cli": "latest"
   },
   "private": true
 }

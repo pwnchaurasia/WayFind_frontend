@@ -9,6 +9,7 @@ import {
   StyleSheet, 
   Dimensions,
   PixelRatio,
+  Keyboard,
   KeyboardAvoidingView,
   ScrollView,
   Platform
@@ -21,30 +22,55 @@ import PhoneInput from "react-native-phone-number-input";
 import { Link } from 'expo-router';
 import * as Localization from 'expo-localization';
 import LogoSection from '@/src/components/LogoSection';
+import { useAnimatedStyle } from 'react-native-reanimated';
+// import { useGradualAnimation } from '@/src/hooks/useGradualAnimation';
 
 const { width, height } = Dimensions.get('window');
 const scale = PixelRatio.get();
 
 const LoginPage = () => {
 
+  // const  height = useGradualAnimation();
   const locales = Localization.getLocales()[0]['regionCode'];
   const [countryCode, setCountryCode] = useState();
-
+   
   const [phoneNumber, setPhoneNumber] = useState('');
   const [formattedValue, setFormattedValue] = useState('');
 
   const phoneInput = useRef(null);
 
-  // useEffect(() => {
-  //   setPhoneNumber("9876543")
-  // });
-  
+  // const keyboard = useAnimatedStyle(() => {
+  //   return {
+  //     height: height.value
+  //   }
 
+  // }, []);
+
+  // const toggleKeyboard = () => {
+  //   if (Keyboard.isVisible()) {
+  //     Keyboard.dismiss();
+  //   } else {
+  //     phoneInput.current?.focus();
+  //   }
+  // };
+
+ 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
-        <SafeAreaView style={styles.container}> 
-        <StatusBar barStyle="light-content" />
+    <SafeAreaView style={styles.container} edges={['top']}> 
+    <StatusBar barStyle="light-content" backgroundColor={theme.colors.background}/>
+    <KeyboardAvoidingView 
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      keyboardVerticalOffset={100}
+      style={{ flex: 1 }}>
+        <ScrollView 
+          contentContainerStyle={{ flexGrow: 1 }} 
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          showsHorizontalScrollIndicator={false}
+          bounces={false}
+          style={{ backgroundColor: theme.colors.background }}
+          >
+        
             {/* Logo Section */}
             <LogoSection />
             
@@ -89,7 +115,10 @@ const LoginPage = () => {
                 }}
                 placeholder="98 765 43221"
                 textInputProps={{
-                  style: {},
+                  style: {
+                    color: theme.colors.input_text || '#FFFFFF', 
+                    fontSize: 16,
+                  },
                   placeholderTextColor: '#666',
                   keyboardType: "phone-pad",
                   maxLength: 15,
@@ -97,6 +126,7 @@ const LoginPage = () => {
               />
               </View>
           </View>
+          {/* <Animated.View style={keyboardPadding} /> */}
             {/* Button */}
           <View style={styles.buttonContainer}>
             <TouchableOpacity style={styles.button}>
@@ -107,10 +137,11 @@ const LoginPage = () => {
           
           {/* Footer */}
           <Text style={styles.footer}>Made in India by rjsnh1522</Text>
-        </SafeAreaView>
+        
     </ScrollView>
 
     </KeyboardAvoidingView>
+    </SafeAreaView>
   )
 }
 
@@ -136,7 +167,7 @@ const styles = StyleSheet.create({
 
   },
   textInputStyle:{
-    color: theme.colors.input_text,
+    color: "#ffffff",
     fontSize: 16,
     width: '100%',
     backgroundColor: theme.colors.input_box,
@@ -146,7 +177,8 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.input_box,
     height: 50,
     borderTopRightRadius: 3,
-    borderBottomRightRadius: 3
+    borderBottomRightRadius: 3,
+    color: "ffffff"
   },
   codeTextStyle:{
     color: theme.colors.input_text,

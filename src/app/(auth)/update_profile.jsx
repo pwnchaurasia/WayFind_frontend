@@ -8,8 +8,11 @@ import {
   TouchableOpacity, 
   StyleSheet, 
   Dimensions,
-  TextInput
+  TextInput,
+  KeyboardAvoidingView,
+  Platform
 } from 'react-native';
+import { theme } from '@/src/styles/theme';
 import { Feather } from '@expo/vector-icons';
 import imagePath from '@/src/constants/imagePath';
 import LogoSection from '@/src/components/LogoSection';
@@ -20,95 +23,115 @@ import {Link} from 'expo-router';
 const { width, height } = Dimensions.get('window');
 
 const UpdateProfile = () => {
-  const [name, setName] = useState("I'm UI designer!");
-  const [email, setEmail] = useState("Sho-designer@gmail.com");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [nameCount, setNameCount] = useState(0);
 
+  const handleSubmit = async () => {
+    console.log("Name:", name);
+    console.log("Email:", email);
 
+    await new Promise((resolve) => setTimeout(resolve, 2000)); // 2-second delay
+    console.log("Success! Navigating now...");
+    router.push("/(group)"); // 👈 navigate to groups page
+
+  }
 
 
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === "ios" ? "padding" : undefined} 
+        style={{ flex: 1 }} 
+        keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+        >
       
-      {/* Logo Section */}
-      <LogoSection />
-      
-      {/* Middle Content */}
-      <View style={styles.contentContainer}>
-        <Image 
-          source={imagePath.avatar_pixel} 
-          style={styles.illustration}
-          resizeMode="contain"
-        />
+        {/* Logo Section */}
+        <LogoSection />
         
-        <Text style={styles.title}>Profile Look</Text>
-        <Text style={styles.subtitle}>
-          You can change profile Avatar,{'\n'}Set some bio and choose a username
-        </Text>
-        
-        {/* Profile Avatar */}
-        <View style={styles.avatarContainer}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>M</Text>
-          </View>
-          <TouchableOpacity style={styles.editIcon}>
-            <Feather name="edit-2" size={18} color="white" />
-          </TouchableOpacity>
-        </View>
-        
-        {/* Profile Fields */}
-        <View style={styles.fieldsContainer}>
-          {/* Name Field */}
-          <View style={styles.fieldWrapper}>
-            <View style={styles.iconContainer}>
-              <Feather name="more-horizontal" size={24} color="#00C853" />
+        {/* Middle Content */}
+        <View style={styles.contentContainer}>
+          <Image 
+            source={imagePath.avatar_pixel} 
+            style={styles.illustration}
+            resizeMode="contain"
+          />
+          
+          <Text style={styles.title}>Profile Look</Text>
+          <Text style={styles.subtitle}>
+            You can change profile Avatar,{'\n'}Set some bio and choose a username
+          </Text>
+          
+          {/* Profile Avatar */}
+          <View style={styles.avatarContainer}>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>M</Text>
             </View>
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.input}
-                value={name}
-                onChangeText={setName}
-                placeholderTextColor="#666"
-              />
-              <Text style={styles.fieldLabel}>Name</Text>
-              <View style={styles.counterContainer}>
-                <Text style={styles.counter}>18 <Text style={styles.maxCount}>/ 40</Text></Text>
+            <TouchableOpacity style={styles.editIcon}>
+              <Feather name="edit-2" size={18} color="white" />
+            </TouchableOpacity>
+          </View>
+          
+          {/* Profile Fields */}
+          <View style={styles.fieldsContainer}>
+            {/* Name Field */}
+            <View style={styles.fieldWrapper}>
+              <View style={styles.iconContainer}>
+                <Feather name="more-horizontal" size={24} color="#00C853" />
+              </View>
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.input}
+                  value={name}
+                  onChangeText={setName}
+                  placeholderTextColor="#666"
+                  placeholder="You'r Good Name"
+                  maxLength={20}
+                  onChange={(event) => {
+                    setNameCount(event.nativeEvent.text.length); }}
+                />
+                <Text style={styles.fieldLabel}>Name</Text>
+                <View style={styles.counterContainer}>
+                  <Text style={styles.counter}> {nameCount} <Text style={styles.maxCount}>/ 20</Text></Text>
+                </View>
+              </View>
+            </View>
+            
+            <View style={styles.separator} />
+            
+            {/* Email Field */}
+            <View style={styles.fieldWrapper}>
+              <View style={styles.iconContainer}>
+                <Feather name="at-sign" size={24} color="#00C853" />
+              </View>
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.input}
+                  value={email}
+                  onChangeText={setEmail}
+                  placeholderTextColor="#666"
+                  keyboardType="email-address"
+                  placeholder="youremail@example.com"
+                />
+                <Text style={styles.fieldLabel}>Email</Text>
               </View>
             </View>
           </View>
-          
-          <View style={styles.separator} />
-          
-          {/* Email Field */}
-          <View style={styles.fieldWrapper}>
-            <View style={styles.iconContainer}>
-              <Feather name="at-sign" size={24} color="#00C853" />
-            </View>
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.input}
-                value={email}
-                onChangeText={setEmail}
-                placeholderTextColor="#666"
-                keyboardType="email-address"
-              />
-              <Text style={styles.fieldLabel}>Email</Text>
-            </View>
-          </View>
         </View>
-      </View>
-      
-      {/* Button */}
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.button}>
-          {/* <Text style={styles.buttonText}>Done</Text> */}
-          <Link href="(group)" style={styles.buttonText}>Done</Link>
-        </TouchableOpacity>
-      </View>
-      
+        
+        {/* Button */}
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity style={styles.button} onPress={handleSubmit}>
+            <Text style={styles.buttonText}>Done</Text>
+            {/* <Link href="(group)" style={styles.buttonText}>Done</Link> */}
+          </TouchableOpacity>
+        </View>
+        
+      </KeyboardAvoidingView>
       {/* Footer */}
-      <Text style={styles.footer}>Made in India by rjsnh1522</Text>
+        <Text style={styles.footer}>Made in India by rjsnh1522</Text>
     </SafeAreaView>
   );
 }
@@ -121,6 +144,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#121212',
     paddingHorizontal: width * 0.05,
+    backgroundColor: theme.colors.input_box,
+    borderTopLeftRadius: 3,
+    borderBottomLeftRadius: 3,
+    height: '100%',
+    // alignItems: 'center',
+    // flexDirection: 'row',
+    // justifyContent: 'center',
+    // alignItems: 'center',
   },
   logoContainer: {
     flexDirection: 'row',
@@ -241,6 +272,11 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     marginBottom: height * 0.05,
+    // flex: 1,
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center'
+
   },
   button: {
     backgroundColor: 'transparent',
@@ -249,6 +285,7 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     paddingVertical: 15,
     alignItems: 'center',
+    width: '80%',
   },
   buttonText: {
     color: '#00C853',

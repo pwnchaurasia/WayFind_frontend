@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { Redirect, Stack } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+
 import {
   Poppins_600SemiBold,
   Poppins_300Light,
@@ -47,10 +48,11 @@ const RootNavigation = () => {
 
   return (
     <>
-    <Stack screenOptions={{headerShown: false}}/>
-    {
-      isAuthenticated ? <Redirect href={"/(main)"}/> : <Redirect href={"/(auth)"}/>
-    }
+      
+        <Stack screenOptions={{headerShown: false}}/>
+        {
+          isAuthenticated ? <Redirect href={"/(main)"}/> : <Redirect href={"/(auth)"}/>
+        }
     </>
   )
 }

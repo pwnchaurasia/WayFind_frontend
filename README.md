@@ -77,6 +77,14 @@ The Wayfind Front end app is designed to provide location tracking, SOS, and saf
 
 
 
+## Update expo
+
+```bash
+   npx expo install expo@latest
+   npx expo install --check -- --legacy-peer-deps
+   npx expo start
+```
+
 
 ## Notes
 
