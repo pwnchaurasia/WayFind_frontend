@@ -16,7 +16,7 @@ import { theme } from '@/src/styles/theme';
 import { Feather } from '@expo/vector-icons';
 import imagePath from '@/src/constants/imagePath';
 import LogoSection from '@/src/components/LogoSection';
-import {Link} from 'expo-router';
+import {Link, router} from 'expo-router';
 
 
 
@@ -36,6 +36,12 @@ const UpdateProfile = () => {
     router.push("/(group)"); // 👈 navigate to groups page
 
   }
+
+  const handleTextChange = (newText) => {
+    const validText = newText.replace(/[^a-zA-Z\s]/g, '');
+    setName(validText);
+  };
+
 
 
 
@@ -85,7 +91,7 @@ const UpdateProfile = () => {
                 <TextInput
                   style={styles.input}
                   value={name}
-                  onChangeText={setName}
+                  onChangeText={handleTextChange}
                   placeholderTextColor="#666"
                   placeholder="You'r Good Name"
                   maxLength={20}
