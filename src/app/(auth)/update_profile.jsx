@@ -37,7 +37,7 @@ const UpdateProfile = () => {
 
     await new Promise((resolve) => setTimeout(resolve, 2000)); // 2-second delay
     console.log("Success! Navigating now...");
-    router.push("/(group)"); // 👈 navigate to groups page
+    router.push("/(main)"); // 👈 navigate to groups page
   }
 
   const handleTextChange = (newText) => {

@@ -35,7 +35,7 @@
             "image": "./src/assets/images/icon.png",
             "backgroundColor": "#000000"
           },
-          "imageWidth": 600
+          "resizeMode": "contain"
         }
       ],
       "expo-font",

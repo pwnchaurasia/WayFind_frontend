@@ -3,6 +3,8 @@ import React, { useEffect, useState } from 'react'
 import { Redirect, Stack } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { AuthProvider } from '@/src/context/AuthContext';
+
 
 import {
   Poppins_600SemiBold,
@@ -19,7 +21,6 @@ SplashScreen.preventAutoHideAsync();
 const RootNavigation = () => {
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-
 
 
   const [loaded, error] = useFonts({
@@ -47,13 +48,14 @@ const RootNavigation = () => {
   }
 
   return (
-    <>
-      
+    <SafeAreaProvider>
+      <AuthProvider>
         <Stack screenOptions={{headerShown: false}}/>
         {
           isAuthenticated ? <Redirect href={"/(main)"}/> : <Redirect href={"/(auth)"}/>
         }
-    </>
+        </AuthProvider>
+    </SafeAreaProvider>
   )
 }
 
