@@ -1,12 +1,12 @@
 import React from 'react';
-import { useLocalSearchParams } from 'expo-router';
 import { View } from 'react-native';
+import { useGlobalSearchParams } from 'expo-router';
 import GroupHeader from '@/src/components/groups/GroupHeader';
 import UsersTab from '@/src/components/groups/UsersTab';
 import { useGroupData } from '@/src/hooks/useGroupData';
 
 export default function MembersTabScreen() {
-  const { id } = useLocalSearchParams();
+  const { id } = useGlobalSearchParams();
   const { group, loading } = useGroupData(id);
 
   if (loading || !group) return <View />; // Add loading state

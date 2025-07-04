@@ -10,6 +10,7 @@ import {
   StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import GroupItem from '@/src/components/groups/GroupItem';
 import SearchBar from '@/src/components/groups/SearchBar';
@@ -46,8 +47,8 @@ const GroupListScreen = () => {
   );
 
   const handleGroupPress = (group) => {
-    // Navigate to group details
-    console.log('Group pressed:', group.name);
+    // Navigate to group details with the group ID
+    router.push(`/(main)/group/${group.id}`);
   };
 
   const handleCreateGroup = (groupData) => {

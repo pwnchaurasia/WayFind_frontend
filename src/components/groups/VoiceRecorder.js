@@ -9,21 +9,11 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { 
-  AudioRecorder, 
-  AudioPlayer, 
-  useAudioRecorder, 
-  useAudioPlayer,
-  useAudioRecorderPermissions 
-} from 'expo-audio';
-import * as FileSystem from 'expo-file-system';
 import { colors } from '@/src/constants/colors';
 
 const VoiceRecorder = ({ onSendAudio, group }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
-  const [permissionResponse, requestPermission] = useAudioRecorderPermissions();
-  const recorder = useAudioRecorder();
   
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const timerRef = useRef(null);
@@ -31,9 +21,6 @@ const VoiceRecorder = ({ onSendAudio, group }) => {
 
   useEffect(() => {
     return () => {
-      if (recorder.isRecording) {
-        recorder.stop();
-      }
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
@@ -41,7 +28,7 @@ const VoiceRecorder = ({ onSendAudio, group }) => {
         clearTimeout(recordingTimeoutRef.current);
       }
     };
-  }, [recorder]);
+  }, []);
 
   useEffect(() => {
     if (isRecording) {
@@ -90,13 +77,7 @@ const VoiceRecorder = ({ onSendAudio, group }) => {
 
   const startRecording = async () => {
     try {
-      if (permissionResponse?.status !== 'granted') {
-        console.log('Requesting permission..');
-        await requestPermission();
-      }
-
-      console.log('Starting recording..');
-      await recorder.record();
+      console.log('Starting recording simulation..');
       setIsRecording(true);
       console.log('Recording started');
     } catch (err) {
@@ -106,22 +87,20 @@ const VoiceRecorder = ({ onSendAudio, group }) => {
   };
 
   const stopRecording = async () => {
-    if (!recorder.isRecording) return;
+    if (!isRecording) return;
 
     console.log('Stopping recording..');
     setIsRecording(false);
     
     try {
-      const uri = await recorder.stop();
+      // Simulate audio recording
+      const simulatedUri = `file://simulated_audio_${Date.now()}.m4a`;
       
-      console.log('Recording stopped and stored at', uri);
-      
-      // Get file info to check duration
-      const fileInfo = await FileSystem.getInfoAsync(uri);
+      console.log('Recording stopped and stored at', simulatedUri);
       
       // Send the audio message (we'll estimate duration based on recording time)
-      if (uri && recordingTime > 1) {
-        await sendAudioMessage(uri, recordingTime * 1000); // Convert to milliseconds
+      if (recordingTime > 1) {
+        await sendAudioMessage(simulatedUri, recordingTime * 1000); // Convert to milliseconds
       } else {
         Alert.alert('Recording too short', 'Please record for at least 1 second.');
       }
@@ -140,19 +119,10 @@ const VoiceRecorder = ({ onSendAudio, group }) => {
         onSendAudio(audioUri, duration);
       }
 
-      // Optional: Copy to a permanent location
-      const fileName = `voice_message_${Date.now()}.m4a`;
-      const permanentUri = `${FileSystem.documentDirectory}${fileName}`;
-      
-      await FileSystem.copyAsync({
-        from: audioUri,
-        to: permanentUri,
-      });
-
-      console.log('Audio message sent:', permanentUri);
+      console.log('Audio message sent:', audioUri);
       
       // Here you would send to your backend
-      // await sendAudioToServer(permanentUri, group.id);
+      // await sendAudioToServer(audioUri, group.id);
       
     } catch (error) {
       console.error('Error sending audio message:', error);
@@ -181,16 +151,10 @@ const VoiceRecorder = ({ onSendAudio, group }) => {
   };
 
   const cancelRecording = async () => {
-    if (recorder.isRecording && isRecording) {
+    if (isRecording) {
       console.log('Cancelling recording..');
       setIsRecording(false);
-      
-      try {
-        await recorder.stop();
-        console.log('Recording cancelled');
-      } catch (error) {
-        console.error('Error cancelling recording:', error);
-      }
+      console.log('Recording cancelled');
     }
   };
 

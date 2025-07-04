@@ -1,5 +1,5 @@
 // src/components/MessagesTab.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import {
   View,
   Text,
@@ -10,11 +10,9 @@ import {
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useAudioPlayer } from 'expo-audio';
 import { colors } from '@/src/constants/colors';
 
-const MessagesTab = ({ group }) => {
-  const player = useAudioPlayer();
+const MessagesTab = forwardRef(({ group }, ref) => {
   const [messages, setMessages] = useState([
     {
       id: '1',
@@ -76,55 +74,37 @@ const MessagesTab = ({ group }) => {
     try {
       if (currentPlayingId === message.id) {
         // If clicking the same message, just stop
-        if (player.playing) {
-          player.pause();
-        }
         setCurrentPlayingId(null);
         updateMessagePlayState(message.id, false, 0);
         return;
       }
 
-      // Stop current audio if playing
-      if (player.playing) {
-        player.pause();
-      }
-
-      // For demo purposes, we'll simulate playback since we don't have real audio files
-      if (message.audioUri) {
-        // If we have a real audio URI, we would use:
-        // player.replace(message.audioUri);
-        // player.play();
-        
-        setCurrentPlayingId(message.id);
-        updateMessagePlayState(message.id, true, 0);
-      } else {
-        // Simulate audio playback for demo
-        setCurrentPlayingId(message.id);
-        updateMessagePlayState(message.id, true, 0);
-        
-        // Simulate progress
-        const interval = setInterval(() => {
-          setMessages(prev => prev.map(msg => {
-            if (msg.id === message.id && msg.isPlaying) {
-              const newPosition = msg.currentPosition + 1000;
-              if (newPosition >= msg.durationMs) {
-                clearInterval(interval);
-                setCurrentPlayingId(null);
-                return { ...msg, isPlaying: false, currentPosition: 0 };
-              }
-              return { ...msg, currentPosition: newPosition };
+      // Simulate audio playback for demo
+      setCurrentPlayingId(message.id);
+      updateMessagePlayState(message.id, true, 0);
+      
+      // Simulate progress
+      const interval = setInterval(() => {
+        setMessages(prev => prev.map(msg => {
+          if (msg.id === message.id && msg.isPlaying) {
+            const newPosition = msg.currentPosition + 1000;
+            if (newPosition >= msg.durationMs) {
+              clearInterval(interval);
+              setCurrentPlayingId(null);
+              return { ...msg, isPlaying: false, currentPosition: 0 };
             }
-            return msg;
-          }));
-        }, 1000);
+            return { ...msg, currentPosition: newPosition };
+          }
+          return msg;
+        }));
+      }, 1000);
 
-        // Auto stop after duration
-        setTimeout(() => {
-          clearInterval(interval);
-          setCurrentPlayingId(null);
-          updateMessagePlayState(message.id, false, 0);
-        }, message.durationMs);
-      }
+      // Auto stop after duration
+      setTimeout(() => {
+        clearInterval(interval);
+        setCurrentPlayingId(null);
+        updateMessagePlayState(message.id, false, 0);
+      }, message.durationMs);
     } catch (error) {
       console.error('Error playing audio:', error);
       Alert.alert('Error', 'Could not play audio message');
@@ -161,6 +141,11 @@ const MessagesTab = ({ group }) => {
 
     setMessages(prev => [...prev, newMessage]);
   };
+
+  // Expose methods to parent component
+  useImperativeHandle(ref, () => ({
+    addNewAudioMessage,
+  }));
 
   const generateWaveform = (message) => {
     const bars = 25;
@@ -272,7 +257,7 @@ const MessagesTab = ({ group }) => {
       />
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {
