@@ -15,6 +15,7 @@ import { Feather, Ionicons } from '@expo/vector-icons';
 import GroupItemComponent from '@/src/components/GroupItemComponent';
 import imagePath from '@/src/constants/imagePath';
 import { theme } from '@/src/styles/theme';
+import GroupListScreen from '../../screens/groups/GroupListScreen';
 
 const { width, height } = Dimensions.get('window');
 
@@ -66,41 +67,44 @@ const GroupPageListScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
+      <GroupListScreen>
+        
+      </GroupListScreen>
       
       {/* Header */}
-      <View style={styles.header}>
+      {/* <View style={styles.header}>
         <Text style={styles.headerTitle}>WAYFIND</Text>
         <TouchableOpacity style={styles.menuButton}>
           <Feather name="more-vertical" size={24} color="white" />
         </TouchableOpacity>
-      </View>
+      </View> */}
       
       {/* Search Bar */}
-      <View style={styles.searchContainer}>
+      {/* <View style={styles.searchContainer}>
         <TextInput
           style={styles.searchInput}
           placeholder="Search Groups"
           placeholderTextColor="#888"
         />
         <Feather name="search" size={20} color="#888" style={styles.searchIcon} />
-      </View>
+      </View> */}
       
       {/* Groups Header */}
-      <View style={styles.sectionHeader}>
+      {/* <View style={styles.sectionHeader}>
         <View style={styles.hashtagContainer}>
           <Feather name="hash" size={18} color="#C8C8C8" />
         </View>
         <Text style={styles.sectionTitle}>GROUPS</Text>
-      </View>
+      </View> */}
       
       {/* Groups List */}
-      <FlatList
+      {/* <FlatList
         data={groups}
         renderItem={({ item }) => <GroupItemComponent item={item} />}
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
-      />
+      /> */}
     </SafeAreaView>
   );
 }

@@ -61,7 +61,7 @@ const UpdateProfile = () => {
 
       // Launch image picker
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ImagePicker.MediaType,
         allowsEditing: true,
         aspect: [1, 1], // Square aspect ratio
         quality: 0.8,
