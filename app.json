@@ -14,7 +14,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./src/assets/images/icon.png",
-        "backgroundColor": "#ffffff",
+        "backgroundColor": "#1A1A1A",
         "resizeMode": "cover"
       },
       "softwareKeyboardLayoutMode": "pan"
@@ -29,11 +29,11 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#232323",
+          "backgroundColor": "#1A1A1A",
           "image": "./src/assets/images/icon.png",
           "dark": {
             "image": "./src/assets/images/icon.png",
-            "backgroundColor": "#000000"
+            "backgroundColor": "#1A1A1A"
           },
           "resizeMode": "contain"
         }
