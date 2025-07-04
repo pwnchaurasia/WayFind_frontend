@@ -79,7 +79,6 @@ const LoginPage = () => {
                 defaultCode='IN'
                 layout="second"
                 onChangeText={(text) => {
-                  console.log(text);
                   setPhoneValue(text);
                 }}
                 onChangeFormattedText={(text) => {
