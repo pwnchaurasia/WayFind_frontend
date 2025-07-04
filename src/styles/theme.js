@@ -15,6 +15,7 @@ export const theme = {
       muated_text: '#A1A1A1',
       notification_dot: '#FF0000',
       border_color: '#353540',
+      place_holder_text_color: '#999999',
 
     },
     spacing: {

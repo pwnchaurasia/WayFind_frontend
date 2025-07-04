@@ -23,58 +23,42 @@ import { Link } from 'expo-router';
 import * as Localization from 'expo-localization';
 import LogoSection from '@/src/components/LogoSection';
 import { useAnimatedStyle } from 'react-native-reanimated';
-// import { useGradualAnimation } from '@/src/hooks/useGradualAnimation';
 
 const { width, height } = Dimensions.get('window');
 const scale = PixelRatio.get();
 
 const LoginPage = () => {
-
-  // const  height = useGradualAnimation();
   const locales = Localization.getLocales()[0]['regionCode'];
   const [countryCode, setCountryCode] = useState();
-   
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [valid, setValid] = useState(false);
+  const [phoneValue, setPhoneValue] = useState('');
   const [formattedValue, setFormattedValue] = useState('');
 
   const phoneInput = useRef(null);
+  const scrollViewRef = useRef(null);
 
-  // const keyboard = useAnimatedStyle(() => {
-  //   return {
-  //     height: height.value
-  //   }
-
-  // }, []);
-
-  // const toggleKeyboard = () => {
-  //   if (Keyboard.isVisible()) {
-  //     Keyboard.dismiss();
-  //   } else {
-  //     phoneInput.current?.focus();
-  //   }
-  // };
-
- 
   return (
     <SafeAreaView style={styles.container} edges={['top']}> 
-    <StatusBar barStyle="light-content" backgroundColor={theme.colors.background}/>
-    <KeyboardAvoidingView 
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      keyboardVerticalOffset={100}
-      style={{ flex: 1 }}>
+      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background}/>
+      
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? -50 : 0}
+        style={styles.keyboardAvoidingView}
+      >
         <ScrollView 
-          contentContainerStyle={{ flexGrow: 1 }} 
+          ref={scrollViewRef}
+          contentContainerStyle={styles.scrollViewContent}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
           showsHorizontalScrollIndicator={false}
           bounces={false}
-          style={{ backgroundColor: theme.colors.background }}
-          >
-        
-            {/* Logo Section */}
-            <LogoSection />
-            
-            {/* Middle Content */}
+          style={styles.scrollView}
+        >
+          {/* Logo Section */}
+          <LogoSection />
+          
+          {/* Middle Content */}
           <View style={styles.contentContainer}>
             <Image 
               source={imagePath.paper_plane} 
@@ -88,59 +72,62 @@ const LoginPage = () => {
             </Text>
             
             {/* Phone Input */}
-            
-              <View style={styles.countryCode}>
+            <View style={styles.countryCode}>
               <PhoneInput
                 ref={phoneInput}
-                defaultValue={phoneNumber}
+                defaultValue={phoneValue}
                 defaultCode='IN'
                 layout="second"
                 onChangeText={(text) => {
-                  setPhoneNumber(text);
+                  console.log(text);
+                  setPhoneValue(text);
                 }}
                 onChangeFormattedText={(text) => {
                   setFormattedValue(text);
                 }}
                 withDarkTheme
                 withShadow
-                autoFocus
+
                 containerStyle={styles.containerStyle}
                 textInputStyle={styles.textInputStyle}
                 codeTextStyle={styles.codeTextStyle}
                 textContainerStyle={styles.textContainerStyle}
-                countryPickerButtonStyle={{
-                  alignSelf: 'center', 
-                  height: '100%',
-                  justifyContent: 'center',
-                }}
                 placeholder="98 765 43221"
                 textInputProps={{
-                  style: {
-                    color: theme.colors.input_text || '#FFFFFF', 
-                    fontSize: 16,
-                  },
-                  placeholderTextColor: '#666',
+                  placeholderTextColor: theme.colors.place_holder_text_color,
                   keyboardType: "phone-pad",
-                  maxLength: 15,
+                  maxLength: 11,
+                  onFocus: () => {
+                    // Scroll to a specific position to make input visible
+                    setTimeout(() => {
+                      scrollViewRef.current?.scrollTo({ 
+                        y: 200, // Adjust this value to scroll more/less
+                        animated: true 
+                      });
+                    }, 150);
+                  },
+                  onBlur: () => {
+                    // Optional: scroll back up when input loses focus
+                    setTimeout(() => {
+                      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+                    }, 100);
+                  },
                 }}
               />
-              </View>
+            </View>
           </View>
-          {/* <Animated.View style={keyboardPadding} /> */}
-            {/* Button */}
+          
+          {/* Button */}
           <View style={styles.buttonContainer}>
             <TouchableOpacity style={styles.button}>
-              {/* <Text style={styles.buttonText}>Next Step</Text> */}
               <Link style={styles.buttonText} href="/verify_otp">Next Step</Link>
             </TouchableOpacity>
           </View>
           
           {/* Footer */}
           <Text style={styles.footer}>Made in India by rjsnh1522</Text>
-        
-    </ScrollView>
-
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   )
 }
@@ -148,6 +135,21 @@ const LoginPage = () => {
 export default LoginPage
 
 const styles = StyleSheet.create({
+  // New styles for keyboard handling
+  keyboardAvoidingView: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  scrollView: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  scrollViewContent: {
+    flexGrow: 1,
+    backgroundColor: theme.colors.background,
+    paddingBottom: height * 0.2, // More space for scrolling
+  },
+  
   countryCode:{
     width: '80%',
     alignItems: 'center',
@@ -156,7 +158,6 @@ const styles = StyleSheet.create({
   },
   containerStyle:{
     width: '100%',
-    height: 50,
     backgroundColor: theme.colors.input_box,
     borderTopLeftRadius: 3,
     borderBottomLeftRadius: 3,
@@ -164,7 +165,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-
+    color: theme.colors.input_text,
   },
   textInputStyle:{
     color: "#ffffff",
@@ -172,10 +173,15 @@ const styles = StyleSheet.create({
     width: '100%',
     backgroundColor: theme.colors.input_box,
     textAlign: 'left',
+    height: '100%',
+    padding: 0,
+    marginTop: 0, 
+    marginBottom: 0,  
+    paddingTop: 0,    
+    paddingBottom: 0, 
   },
   textContainerStyle:{
     backgroundColor: theme.colors.input_box,
-    height: 50,
     borderTopRightRadius: 3,
     borderBottomRightRadius: 3,
     color: "ffffff"
@@ -190,31 +196,29 @@ const styles = StyleSheet.create({
     textAlignVertical: 'center'
   },
   container: {
-      flex: 1,
-      width: '100%',
-      height: '100%',
-      flexDirection: 'column',
-      backgroundColor: theme.colors.background
+    flex: 1,
+    width: '100%',
+    height: '100%',
+    flexDirection: 'column',
+    backgroundColor: theme.colors.background
   },
   header: {
-      // flex: 1,
-      width: '100%',
+    width: '100%',
   },
   body: {
-      flex: 2,
-      backgroundColor: 'green',
-      width: '100%',
+    flex: 2,
+    backgroundColor: 'green',
+    width: '100%',
   },
   footer: {
-      flex: 1,
-      backgroundColor: 'blue',
-      width: '100%',
+    flex: 1,
+    backgroundColor: 'blue',
+    width: '100%',
   },
   logoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: height * 0.05,
-    // backgroundColor: 'red',
     justifyContent: 'center',
     width: '100%',
   },
@@ -233,13 +237,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: height * 0.05,
-    
+    paddingBottom: 30, // Extra space around input area
   },
   illustration: {
     width: width * 0.25,
     height: width * 0.25,
     marginBottom: height * 0.05,
-    // backgroundColor: 'red',
   },
   title: {
     color: 'white',
@@ -253,13 +256,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: height * 0.04,
   },
-
   buttonContainer: {
-    flex: 1,
     width: '100%',
     justifyContent: 'center',
-    alignItems: 'center'
-
+    alignItems: 'center',
+    paddingVertical: 20,
   },
   button: {
     width: '80%',
@@ -281,5 +282,4 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     fontSize: 14,
   },
-
 })

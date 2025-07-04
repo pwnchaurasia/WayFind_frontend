@@ -2,28 +2,30 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   View, 
   Text, 
-  SafeAreaView, 
   StatusBar, 
   Image, 
   TouchableOpacity, 
   StyleSheet, 
   Dimensions,
-  TextInput
+  TextInput,
+  KeyboardAvoidingView,
+  ScrollView,
+  Platform
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { theme } from '@/src/styles/theme';
 import LogoSection from '@/src/components/LogoSection';
 import imagePath from '../../constants/imagePath';
 import { Link } from 'expo-router';
 
-
-
 const { width, height } = Dimensions.get('window');
 
 const VerifyOtp = () => {
   const [timer, setTimer] = useState(263); // 4:23 in seconds
-  const [code, setCode] = useState(['2', '4', '8', '']);
+  const [code, setCode] = useState(['', '', '', '', '', '']); // Changed to empty initial state
   const inputRefs = useRef([]);
+  const scrollViewRef = useRef(null);
 
   // Setup timer countdown
   useEffect(() => {
@@ -50,77 +52,123 @@ const VerifyOtp = () => {
   // Handle code input
   const handleCodeChange = (text, index) => {
     const newCode = [...code];
-    newCode[index] = text;
-    setCode(newCode);
     
-    // Auto-focus next input
-    if (text && index < 3) {
-      inputRefs.current[index + 1].focus();
+    // Handle single digit input
+    if (text.length <= 1) {
+      newCode[index] = text;
+      setCode(newCode);
+      
+      // Auto-focus next input if text is entered and not the last input
+      if (text && index < 5) {
+        inputRefs.current[index + 1].focus();
+      }
     }
   };
+
+  // Handle backspace - move to previous input
+  const handleKeyPress = (e, index) => {
+    if (e.nativeEvent.key === 'Backspace' && !code[index] && index > 0) {
+      inputRefs.current[index - 1].focus();
+    }
+  };
+
+  // Handle input focus - scroll to make visible
+  const handleInputFocus = () => {
+    setTimeout(() => {
+      scrollViewRef.current?.scrollTo({ 
+        y: 150, // Adjust this value as needed
+        animated: true 
+      });
+    }, 150);
+  };
+
+  // Handle input blur - scroll back
+  const handleInputBlur = () => {
+    setTimeout(() => {
+      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+    }, 100);
+  };
+
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" />
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
       
-      {/* Logo Section */}
-      <LogoSection />
-      
-      {/* Middle Content */}
-      <View style={styles.contentContainer}>
-        <Image 
-          source={imagePath.mailbox} 
-          style={styles.illustration}
-          resizeMode="contain"
-        />
-        
-        <Text style={styles.title}>Verification Code</Text>
-        <Text style={styles.subtitle}>
-          Please Enter Code that we Send you{'\n'}to your Phone.
-        </Text>
-        
-        {/* Code Input */}
-        <View style={styles.codeContainer}>
-          {[0, 1, 2, 3, 4, 5].map((index) => (
-            <TextInput
-              key={index}
-              ref={(ref) => (inputRefs.current[index] = ref)}
-              style={[
-                styles.codeInput, 
-                code[index] ? styles.filledInput : {},
-                index === 2 ? styles.activeInput : {}
-              ]}
-              value={code[index]}
-              onChangeText={(text) => handleCodeChange(text, index)}
-              keyboardType="number-pad"
-              maxLength={1}
-              selectionColor="#00C853"
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? -50 : 0}
+        style={styles.keyboardAvoidingView}
+      >
+        <ScrollView 
+          ref={scrollViewRef}
+          contentContainerStyle={styles.scrollViewContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          showsHorizontalScrollIndicator={false}
+          bounces={false}
+          style={styles.scrollView}
+        >
+          {/* Logo Section */}
+          <LogoSection />
+          
+          {/* Middle Content */}
+          <View style={styles.contentContainer}>
+            <Image 
+              source={imagePath.mailbox} 
+              style={styles.illustration}
+              resizeMode="contain"
             />
-          ))}
-        </View>
-        
-        {/* Resend Timer */}
-        <View style={styles.resendContainer}>
-          <Text style={styles.resendText}>
-            Resend in <Text style={styles.timerText}>{formatTime(timer)}</Text>
-          </Text>
-        </View>
-        
-        {/* Call Option */}
-        <TouchableOpacity style={styles.callOption}>
-          <Text style={styles.callOptionText}>Get Verification Code By Call</Text>
-        </TouchableOpacity>
-      </View>
-      
-      {/* Button */}
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.button}>
-          {/* <Text style={styles.buttonText}>Verify Code</Text> */}
-          <Link href="/update_profile" style={styles.buttonText}> Verify Code</Link>
-        </TouchableOpacity>
-      </View>
-      
-      {/* Footer */}
-      <Text style={styles.footer}>Made in India by rjsnh1522</Text>
+            
+            <Text style={styles.title}>Verification Code</Text>
+            <Text style={styles.subtitle}>
+              Please Enter Code that we Send you{'\n'}to your Phone.
+            </Text>
+            
+            {/* Code Input */}
+            <View style={styles.codeContainer}>
+              {[0, 1, 2, 3, 4, 5].map((index) => (
+                <TextInput
+                  key={index}
+                  ref={(ref) => (inputRefs.current[index] = ref)}
+                  style={[
+                    styles.codeInput, 
+                    code[index] ? styles.filledInput : {},
+                  ]}
+                  value={code[index]}
+                  onChangeText={(text) => handleCodeChange(text, index)}
+                  onKeyPress={(e) => handleKeyPress(e, index)}
+                  keyboardType="number-pad"
+                  maxLength={1}
+                  selectionColor="#00C853"
+                  onFocus={handleInputFocus}
+                  onBlur={handleInputBlur}
+                />
+              ))}
+            </View>
+            
+            {/* Resend Timer */}
+            <View style={styles.resendContainer}>
+              <Text style={styles.resendText}>
+                Resend in <Text style={styles.timerText}>{formatTime(timer)}</Text>
+              </Text>
+            </View>
+            
+            {/* Call Option */}
+            <TouchableOpacity style={styles.callOption}>
+              <Text style={styles.callOptionText}>Get Verification Code By Call</Text>
+            </TouchableOpacity>
+          </View>
+          
+          {/* Button */}
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity style={styles.button}>
+              <Link href="/update_profile" style={styles.buttonText}> Verify Code</Link>
+            </TouchableOpacity>
+          </View>
+          
+          {/* Footer */}
+          <Text style={styles.footer}>Made in India by rjsnh1522</Text>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -128,6 +176,21 @@ const VerifyOtp = () => {
 export default VerifyOtp
 
 const styles = StyleSheet.create({
+  // New styles for keyboard handling
+  keyboardAvoidingView: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  scrollView: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  scrollViewContent: {
+    flexGrow: 1,
+    backgroundColor: theme.colors.background,
+    paddingBottom: 0, // Remove extra padding to fit on screen
+  },
+  
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
@@ -154,6 +217,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: height * 0.05, // Add space between logo and content
   },
   illustration: {
     width: width * 0.3,
@@ -186,10 +250,13 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 18,
     textAlign: 'center',
+    textAlignVertical: 'center', // This centers text vertically on Android
     fontWeight: 'bold',
+    lineHeight: 20, // This helps center text vertically on iOS (matches height)
   },
   filledInput: {
-    borderWidth: 0,
+    borderWidth: 1,
+    borderColor: '#00C853',
   },
   activeInput: {
     borderWidth: 1,
@@ -213,8 +280,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   buttonContainer: {
-    marginBottom: height * 0.05,
+    width: '100%',
+    justifyContent: 'center',
     alignItems: 'center',
+    paddingVertical: 20,
   },
   button: {
     backgroundColor: 'transparent',

@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from 'react-native'
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import React from 'react'
 import { theme } from '@/src/styles/theme';
 import imagePath from '@/src/constants/imagePath';
