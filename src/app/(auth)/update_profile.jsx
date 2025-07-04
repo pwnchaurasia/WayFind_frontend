@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   View, 
   Text, 
-  SafeAreaView, 
   StatusBar, 
   Image, 
   TouchableOpacity, 
@@ -10,15 +9,17 @@ import {
   Dimensions,
   TextInput,
   KeyboardAvoidingView,
-  Platform
+  ScrollView,
+  Platform,
+  Alert
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { theme } from '@/src/styles/theme';
 import { Feather } from '@expo/vector-icons';
 import imagePath from '@/src/constants/imagePath';
 import LogoSection from '@/src/components/LogoSection';
-import {Link, router} from 'expo-router';
-
-
+import { Link, router } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 
 const { width, height } = Dimensions.get('window');
 
@@ -26,15 +27,17 @@ const UpdateProfile = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [nameCount, setNameCount] = useState(0);
+  const [profileImage, setProfileImage] = useState(null);
+  const scrollViewRef = useRef(null);
 
   const handleSubmit = async () => {
     console.log("Name:", name);
     console.log("Email:", email);
+    console.log("Profile Image:", profileImage);
 
     await new Promise((resolve) => setTimeout(resolve, 2000)); // 2-second delay
     console.log("Success! Navigating now...");
     router.push("/(group)"); // 👈 navigate to groups page
-
   }
 
   const handleTextChange = (newText) => {
@@ -42,122 +45,187 @@ const UpdateProfile = () => {
     setName(validText);
   };
 
+  const selectImage = async () => {
+    try {
+      // Request permission
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permission Required',
+          'We need access to your photo library to select a profile picture.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
 
+      // Launch image picker
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1], // Square aspect ratio
+        quality: 0.8,
+        allowsMultipleSelection: false,
+      });
 
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setProfileImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Error selecting image:', error);
+      Alert.alert('Error', 'Failed to select image. Please try again.');
+    }
+  };
+
+  // Handle input focus - scroll to make visible
+  const handleInputFocus = () => {
+    setTimeout(() => {
+      scrollViewRef.current?.scrollTo({ 
+        y: 150, // Reduced scroll distance
+        animated: true 
+      });
+    }, 100);
+  };
+
+  // Handle input blur - scroll back
+  const handleInputBlur = () => {
+    setTimeout(() => {
+      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+    }, 100);
+  };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" />
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === "ios" ? "padding" : undefined} 
-        style={{ flex: 1 }} 
-        keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
-        >
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
       
-        {/* Logo Section */}
-        <LogoSection />
-        
-        {/* Middle Content */}
-        <View style={styles.contentContainer}>
-          <Image 
-            source={imagePath.avatar_pixel} 
-            style={styles.illustration}
-            resizeMode="contain"
-          />
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        style={styles.keyboardAvoidingView}
+      >
+        <ScrollView 
+          ref={scrollViewRef}
+          contentContainerStyle={styles.scrollViewContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          showsHorizontalScrollIndicator={false}
+          bounces={false}
+          style={styles.scrollView}
+        >
+          {/* Logo Section */}
+          <LogoSection />
           
-          <Text style={styles.title}>Profile Look</Text>
-          <Text style={styles.subtitle}>
-            You can change profile Avatar,{'\n'}Set some bio and choose a username
-          </Text>
-          
-          {/* Profile Avatar */}
-          <View style={styles.avatarContainer}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>M</Text>
-            </View>
-            <TouchableOpacity style={styles.editIcon}>
-              <Feather name="edit-2" size={18} color="white" />
-            </TouchableOpacity>
-          </View>
-          
-          {/* Profile Fields */}
-          <View style={styles.fieldsContainer}>
-            {/* Name Field */}
-            <View style={styles.fieldWrapper}>
-              <View style={styles.iconContainer}>
-                <Feather name="more-horizontal" size={24} color="#00C853" />
+          {/* Middle Content */}
+          <View style={styles.contentContainer}>
+            <Text style={styles.title}>Update Profile</Text>
+            
+            {/* Profile Avatar */}
+            <View style={styles.avatarContainer}>
+              <View style={styles.avatar}>
+                {profileImage ? (
+                  <Image 
+                    source={{ uri: profileImage }} 
+                    style={styles.avatarImage}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <Text style={styles.avatarText}>M</Text>
+                )}
               </View>
-              <View style={styles.inputContainer}>
-                <TextInput
-                  style={styles.input}
-                  value={name}
-                  onChangeText={handleTextChange}
-                  placeholderTextColor="#666"
-                  placeholder="You'r Good Name"
-                  maxLength={20}
-                  onChange={(event) => {
-                    setNameCount(event.nativeEvent.text.length); }}
-                />
-                <Text style={styles.fieldLabel}>Name</Text>
-                <View style={styles.counterContainer}>
-                  <Text style={styles.counter}> {nameCount} <Text style={styles.maxCount}>/ 20</Text></Text>
+              <TouchableOpacity style={styles.editIcon} onPress={selectImage}>
+                <Feather name="edit-2" size={18} color="white" />
+              </TouchableOpacity>
+            </View>
+            
+            {/* Profile Fields */}
+            <View style={styles.fieldsContainer}>
+              {/* Name Field */}
+              <View style={styles.fieldWrapper}>
+                <View style={styles.iconContainer}>
+                  <Feather name="more-horizontal" size={24} color="#00C853" />
+                </View>
+                <View style={styles.inputContainer}>
+                  <TextInput
+                    style={styles.input}
+                    value={name}
+                    onChangeText={handleTextChange}
+                    placeholderTextColor="#666"
+                    placeholder="You'r Good Name"
+                    maxLength={20}
+                    onChange={(event) => {
+                      setNameCount(event.nativeEvent.text.length);
+                    }}
+                    onFocus={handleInputFocus}
+                    onBlur={handleInputBlur}
+                  />
+                  <Text style={styles.fieldLabel}>Name</Text>
+                  <View style={styles.counterContainer}>
+                    <Text style={styles.counter}> {nameCount} <Text style={styles.maxCount}>/ 20</Text></Text>
+                  </View>
+                </View>
+              </View>
+              
+              <View style={styles.separator} />
+              
+              {/* Email Field */}
+              <View style={styles.fieldWrapper}>
+                <View style={styles.iconContainer}>
+                  <Feather name="at-sign" size={24} color="#00C853" />
+                </View>
+                <View style={styles.inputContainer}>
+                  <TextInput
+                    style={styles.input}
+                    value={email}
+                    onChangeText={setEmail}
+                    placeholderTextColor="#666"
+                    keyboardType="email-address"
+                    placeholder="youremail@example.com"
+                    onFocus={handleInputFocus}
+                    onBlur={handleInputBlur}
+                  />
+                  <Text style={styles.fieldLabel}>Email</Text>
                 </View>
               </View>
             </View>
-            
-            <View style={styles.separator} />
-            
-            {/* Email Field */}
-            <View style={styles.fieldWrapper}>
-              <View style={styles.iconContainer}>
-                <Feather name="at-sign" size={24} color="#00C853" />
-              </View>
-              <View style={styles.inputContainer}>
-                <TextInput
-                  style={styles.input}
-                  value={email}
-                  onChangeText={setEmail}
-                  placeholderTextColor="#666"
-                  keyboardType="email-address"
-                  placeholder="youremail@example.com"
-                />
-                <Text style={styles.fieldLabel}>Email</Text>
-              </View>
-            </View>
           </View>
-        </View>
-        
-        {/* Button */}
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-            <Text style={styles.buttonText}>Done</Text>
-            {/* <Link href="(group)" style={styles.buttonText}>Done</Link> */}
-          </TouchableOpacity>
-        </View>
-        
+          
+          {/* Button */}
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity style={styles.button} onPress={handleSubmit}>
+              <Text style={styles.buttonText}>Done</Text>
+            </TouchableOpacity>
+          </View>
+          
+          {/* Footer */}
+          <Text style={styles.footer}>Made in India by rjsnh1522</Text>
+        </ScrollView>
       </KeyboardAvoidingView>
-      {/* Footer */}
-        <Text style={styles.footer}>Made in India by rjsnh1522</Text>
     </SafeAreaView>
   );
 }
 
 export default UpdateProfile;
 
-
 const styles = StyleSheet.create({
+  // Keyboard handling styles
+  keyboardAvoidingView: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  scrollView: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  scrollViewContent: {
+    flexGrow: 1,
+    backgroundColor: theme.colors.background,
+    minHeight: height, // Ensure minimum height
+  },
+  
   container: {
     flex: 1,
-    backgroundColor: '#121212',
+    backgroundColor: theme.colors.background,
     paddingHorizontal: width * 0.05,
-    backgroundColor: theme.colors.input_box,
-    borderTopLeftRadius: 3,
-    borderBottomLeftRadius: 3,
-    height: '100%',
-    // alignItems: 'center',
-    // flexDirection: 'row',
-    // justifyContent: 'center',
-    // alignItems: 'center',
   },
   logoContainer: {
     flexDirection: 'row',
@@ -181,6 +249,8 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: height * 0.03, // Reduced margin
+    paddingBottom: height * 0.05, // Add padding to prevent cutting
   },
   illustration: {
     width: width * 0.25,
@@ -191,7 +261,7 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 32,
     fontWeight: '600',
-    marginBottom: 10,
+    marginBottom: height * 0.03, // Reduced margin
   },
   subtitle: {
     color: 'white',
@@ -201,15 +271,21 @@ const styles = StyleSheet.create({
   },
   avatarContainer: {
     position: 'relative',
-    marginBottom: height * 0.05,
+    marginBottom: height * 0.04, // Reduced margin
   },
   avatar: {
     width: 80,
     height: 80,
-    borderRadius: 60,
+    borderRadius: 40,
     backgroundColor: '#7B68EE', // Purple color for avatar
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden', // Ensure image fits within circle
+  },
+  avatarImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
   },
   avatarText: {
     color: 'white',
@@ -277,12 +353,11 @@ const styles = StyleSheet.create({
     marginLeft: 50,
   },
   buttonContainer: {
-    marginBottom: height * 0.05,
-    // flex: 1,
+    marginTop: 'auto', // Push button to bottom
+    marginBottom: height * 0.02,
     width: '100%',
     justifyContent: 'center',
     alignItems: 'center'
-
   },
   button: {
     backgroundColor: 'transparent',

@@ -20,7 +20,7 @@ const LogoSection = () => {
         style={styles.logo}
         resizeMode='contain'
         />
-      <Text style={styles.appName}>Wayfind</Text>
+      <Text style={styles.appName}>WayFind</Text>
     </View>
   )
 }
