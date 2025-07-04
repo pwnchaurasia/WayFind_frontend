@@ -123,9 +123,10 @@ const LoginPage = () => {
             </TouchableOpacity>
           </View>
           
-          {/* Footer */}
-          <Text style={styles.footer}>Made in India by rjsnh1522</Text>
         </ScrollView>
+        
+        {/* Footer - positioned at bottom */}
+        <Text style={styles.footer}>Made with love in India by rjsnh1522</Text>
       </KeyboardAvoidingView>
     </SafeAreaView>
   )

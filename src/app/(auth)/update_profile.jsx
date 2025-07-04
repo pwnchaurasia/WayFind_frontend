@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -9,9 +9,10 @@ import {
   Dimensions,
   TextInput,
   KeyboardAvoidingView,
-  ScrollView,
   Platform,
-  Alert
+  Alert,
+  Keyboard,
+  Animated
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { theme } from '@/src/styles/theme';
@@ -28,7 +29,8 @@ const UpdateProfile = () => {
   const [email, setEmail] = useState("");
   const [nameCount, setNameCount] = useState(0);
   const [profileImage, setProfileImage] = useState(null);
-  const scrollViewRef = useRef(null);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const animatedValue = useRef(new Animated.Value(0)).current;
 
   const handleSubmit = async () => {
     console.log("Name:", name);
@@ -44,6 +46,34 @@ const UpdateProfile = () => {
     const validText = newText.replace(/[^a-zA-Z\s]/g, '');
     setName(validText);
   };
+
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', (event) => {
+      const keyboardHeight = event.endCoordinates.height;
+      setKeyboardHeight(keyboardHeight);
+      
+      Animated.timing(animatedValue, {
+        toValue: -keyboardHeight * 0.3, // Move up by 30% of keyboard height
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
+    });
+
+    const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
+      setKeyboardHeight(0);
+      
+      Animated.timing(animatedValue, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
+    });
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
 
   const selectImage = async () => {
     try {
@@ -77,41 +107,18 @@ const UpdateProfile = () => {
     }
   };
 
-  // Handle input focus - scroll to make visible
-  const handleInputFocus = () => {
-    setTimeout(() => {
-      scrollViewRef.current?.scrollTo({ 
-        y: 150, // Reduced scroll distance
-        animated: true 
-      });
-    }, 100);
-  };
-
-  // Handle input blur - scroll back
-  const handleInputBlur = () => {
-    setTimeout(() => {
-      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-    }, 100);
-  };
-
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
       
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
-        style={styles.keyboardAvoidingView}
+      <Animated.View 
+        style={[
+          styles.animatedContainer,
+          {
+            transform: [{ translateY: animatedValue }]
+          }
+        ]}
       >
-        <ScrollView 
-          ref={scrollViewRef}
-          contentContainerStyle={styles.scrollViewContent}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-          showsHorizontalScrollIndicator={false}
-          bounces={false}
-          style={styles.scrollView}
-        >
           {/* Logo Section */}
           <LogoSection />
           
@@ -155,8 +162,6 @@ const UpdateProfile = () => {
                     onChange={(event) => {
                       setNameCount(event.nativeEvent.text.length);
                     }}
-                    onFocus={handleInputFocus}
-                    onBlur={handleInputBlur}
                   />
                   <Text style={styles.fieldLabel}>Name</Text>
                   <View style={styles.counterContainer}>
@@ -180,8 +185,6 @@ const UpdateProfile = () => {
                     placeholderTextColor="#666"
                     keyboardType="email-address"
                     placeholder="youremail@example.com"
-                    onFocus={handleInputFocus}
-                    onBlur={handleInputBlur}
                   />
                   <Text style={styles.fieldLabel}>Email</Text>
                 </View>
@@ -197,9 +200,8 @@ const UpdateProfile = () => {
           </View>
           
           {/* Footer */}
-          <Text style={styles.footer}>Made in India by rjsnh1522</Text>
-        </ScrollView>
-      </KeyboardAvoidingView>
+          <Text style={styles.footer}>Made with love in India by rjsnh1522</Text>
+      </Animated.View>
     </SafeAreaView>
   );
 }
@@ -207,19 +209,10 @@ const UpdateProfile = () => {
 export default UpdateProfile;
 
 const styles = StyleSheet.create({
-  // Keyboard handling styles
-  keyboardAvoidingView: {
+  // Animated container for smooth keyboard handling
+  animatedContainer: {
     flex: 1,
     backgroundColor: theme.colors.background,
-  },
-  scrollView: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
-  scrollViewContent: {
-    flexGrow: 1,
-    backgroundColor: theme.colors.background,
-    minHeight: height, // Ensure minimum height
   },
   
   container: {
@@ -249,8 +242,8 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: height * 0.03, // Reduced margin
-    paddingBottom: height * 0.05, // Add padding to prevent cutting
+    marginTop: height * 0.03,
+    paddingHorizontal: width * 0.05,
   },
   illustration: {
     width: width * 0.25,
@@ -353,11 +346,11 @@ const styles = StyleSheet.create({
     marginLeft: 50,
   },
   buttonContainer: {
-    marginTop: 'auto', // Push button to bottom
-    marginBottom: height * 0.02,
     width: '100%',
     justifyContent: 'center',
-    alignItems: 'center'
+    alignItems: 'center',
+    paddingVertical: 20,
+    paddingHorizontal: width * 0.05,
   },
   button: {
     backgroundColor: 'transparent',

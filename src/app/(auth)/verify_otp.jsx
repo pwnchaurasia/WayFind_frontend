@@ -10,7 +10,9 @@ import {
   TextInput,
   KeyboardAvoidingView,
   ScrollView,
-  Platform
+  Platform,
+  Keyboard,
+  Animated
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -26,6 +28,7 @@ const VerifyOtp = () => {
   const [code, setCode] = useState(['', '', '', '', '', '']); // Changed to empty initial state
   const inputRefs = useRef([]);
   const scrollViewRef = useRef(null);
+  const animatedValue = useRef(new Animated.Value(0)).current;
 
   // Setup timer countdown
   useEffect(() => {
@@ -40,6 +43,32 @@ const VerifyOtp = () => {
     }, 1000);
     
     return () => clearInterval(interval);
+  }, []);
+
+  // Keyboard handling
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', (event) => {
+      const keyboardHeight = event.endCoordinates.height;
+      
+      Animated.timing(animatedValue, {
+        toValue: -keyboardHeight * 0.2, // Move up by 20% of keyboard height
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
+    });
+
+    const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
+      Animated.timing(animatedValue, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
+    });
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
   }, []);
 
   // Format timer as MM:SS
@@ -72,41 +101,19 @@ const VerifyOtp = () => {
     }
   };
 
-  // Handle input focus - scroll to make visible
-  const handleInputFocus = () => {
-    setTimeout(() => {
-      scrollViewRef.current?.scrollTo({ 
-        y: 150, // Adjust this value as needed
-        animated: true 
-      });
-    }, 150);
-  };
-
-  // Handle input blur - scroll back
-  const handleInputBlur = () => {
-    setTimeout(() => {
-      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-    }, 100);
-  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
       
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? -50 : 0}
-        style={styles.keyboardAvoidingView}
+      <Animated.View 
+        style={[
+          styles.animatedContainer,
+          {
+            transform: [{ translateY: animatedValue }]
+          }
+        ]}
       >
-        <ScrollView 
-          ref={scrollViewRef}
-          contentContainerStyle={styles.scrollViewContent}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-          showsHorizontalScrollIndicator={false}
-          bounces={false}
-          style={styles.scrollView}
-        >
           {/* Logo Section */}
           <LogoSection />
           
@@ -139,8 +146,6 @@ const VerifyOtp = () => {
                   keyboardType="number-pad"
                   maxLength={1}
                   selectionColor="#00C853"
-                  onFocus={handleInputFocus}
-                  onBlur={handleInputBlur}
                 />
               ))}
             </View>
@@ -166,9 +171,8 @@ const VerifyOtp = () => {
           </View>
           
           {/* Footer */}
-          <Text style={styles.footer}>Made in India by rjsnh1522</Text>
-        </ScrollView>
-      </KeyboardAvoidingView>
+          <Text style={styles.footer}>Made with love in India by rjsnh1522</Text>
+      </Animated.View>
     </SafeAreaView>
   );
 }
@@ -176,19 +180,10 @@ const VerifyOtp = () => {
 export default VerifyOtp
 
 const styles = StyleSheet.create({
-  // New styles for keyboard handling
-  keyboardAvoidingView: {
+  // Animated container for smooth keyboard handling
+  animatedContainer: {
     flex: 1,
     backgroundColor: theme.colors.background,
-  },
-  scrollView: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
-  scrollViewContent: {
-    flexGrow: 1,
-    backgroundColor: theme.colors.background,
-    paddingBottom: 0, // Remove extra padding to fit on screen
   },
   
   container: {
