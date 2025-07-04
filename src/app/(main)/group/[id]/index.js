@@ -10,22 +10,29 @@ export default function MessagesTabScreen() {
   const { id } = useGlobalSearchParams();
   const { group, loading } = useGroupData(id);
   const messagesTabRef = useRef(null);
+  const voiceRecorderRef = useRef(null);
 
   const handleSendAudio = (audioUri, duration) => {
-    // This would typically send the audio to your backend
     console.log('Sending audio message:', audioUri, duration);
     
-    // For now, we can add it to the messages in MessagesTab
-    // You might want to lift the messages state up or use a context
     if (messagesTabRef.current && messagesTabRef.current.addNewAudioMessage) {
       messagesTabRef.current.addNewAudioMessage(audioUri, duration);
     }
   };
 
+  // Expose voice recorder methods globally for tab bar access
+  useEffect(() => {
+    if (global.voiceRecorderRef) {
+      global.voiceRecorderRef = voiceRecorderRef;
+    } else {
+      global.voiceRecorderRef = voiceRecorderRef;
+    }
+  }, []);
+
   if (loading || !group) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <Text>Loading...</Text>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#121212' }}>
+        <Text style={{ color: 'white' }}>Loading...</Text>
       </View>
     );
   }
@@ -35,6 +42,7 @@ export default function MessagesTabScreen() {
       <GroupHeader group={group} />
       <MessagesTab ref={messagesTabRef} group={group} />
       <VoiceRecorder 
+        ref={voiceRecorderRef}
         group={group}
         onSendAudio={handleSendAudio}
       />

@@ -4,6 +4,7 @@ import { Redirect, Stack } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from '@/src/context/AuthContext';
+import LoadingScreen from '@/src/components/LoadingScreen';
 
 
 import {
@@ -44,7 +45,7 @@ const RootNavigation = () => {
   },[loaded, error])
 
   if (!loaded && !error) {
-    return null;
+    return <LoadingScreen />;
   }
 
   return (

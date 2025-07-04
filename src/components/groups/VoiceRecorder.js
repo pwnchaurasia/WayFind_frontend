@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import {
   View,
   TouchableOpacity,
@@ -11,7 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/src/constants/colors';
 
-const VoiceRecorder = ({ onSendAudio, group }) => {
+const VoiceRecorder = forwardRef(({ onSendAudio, group }, ref) => {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   
@@ -158,6 +158,14 @@ const VoiceRecorder = ({ onSendAudio, group }) => {
     }
   };
 
+  // Expose methods to parent component via ref
+  useImperativeHandle(ref, () => ({
+    startRecording,
+    stopRecording,
+    cancelRecording,
+    isRecording,
+  }));
+
   return (
     <View style={styles.container}>
       {isRecording && (
@@ -208,7 +216,7 @@ const VoiceRecorder = ({ onSendAudio, group }) => {
       )}
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {
