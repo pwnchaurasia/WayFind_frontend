@@ -2,14 +2,14 @@ import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } f
 import {
   View,
   TouchableOpacity,
-  StyleSheet,
   Animated,
   Text,
   Alert,
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '@/src/constants/colors';
+import { globalStyles, formatTime } from '@/src/styles/globalStyles';
+import { theme } from '@/src/styles/theme';
 
 const VoiceRecorder = forwardRef(({ onSendAudio, group }, ref) => {
   const [isRecording, setIsRecording] = useState(false);
@@ -167,29 +167,32 @@ const VoiceRecorder = forwardRef(({ onSendAudio, group }, ref) => {
   }));
 
   return (
-    <View style={styles.container}>
+    <View style={[
+      globalStyles.voiceRecorderContainer,
+      Platform.OS === 'android' && globalStyles.voiceRecorderContainerAndroid
+    ]}>
       {isRecording && (
-        <View style={styles.recordingInfo}>
-          <View style={styles.recordingHeader}>
-            <View style={styles.recordingIndicator}>
-              <View style={styles.recordingDot} />
-              <Text style={styles.recordingText}>Recording</Text>
+        <View style={globalStyles.recordingInfo}>
+          <View style={globalStyles.recordingHeader}>
+            <View style={globalStyles.recordingIndicator}>
+              <View style={globalStyles.recordingDot} />
+              <Text style={globalStyles.recordingText}>Recording</Text>
             </View>
-            <TouchableOpacity onPress={cancelRecording} style={styles.cancelButton}>
-              <Ionicons name="close" size={20} color={colors.error} />
+            <TouchableOpacity onPress={cancelRecording} style={globalStyles.cancelButton}>
+              <Ionicons name="close" size={theme.fontSize.lg} color={theme.colors.error} />
             </TouchableOpacity>
           </View>
           
-          <Text style={styles.timerText}>{formatTime(recordingTime)}</Text>
-          <Text style={styles.hintText}>
+          <Text style={globalStyles.timerText}>{formatTime(recordingTime)}</Text>
+          <Text style={globalStyles.hintText}>
             {Platform.OS === 'ios' ? 'Release to send' : 'Tap to stop and send'}
           </Text>
         </View>
       )}
       
-      <Animated.View style={[styles.micButtonContainer, { transform: [{ scale: pulseAnim }] }]}>
+      <Animated.View style={[globalStyles.micButtonContainer, { transform: [{ scale: pulseAnim }] }]}>
         <TouchableOpacity
-          style={[styles.micButton, isRecording && styles.recordingButton]}
+          style={[globalStyles.micButton, isRecording && globalStyles.recordingButton]}
           onPress={handlePress}
           onLongPress={handleLongPress}
           onPressOut={handlePressOut}
@@ -198,17 +201,17 @@ const VoiceRecorder = forwardRef(({ onSendAudio, group }, ref) => {
         >
           <Ionicons 
             name={isRecording ? "stop" : "mic"} 
-            size={28} 
-            color="#FFFFFF" 
+            size={theme.fontSize.huge} 
+            color={theme.colors.textPrimary} 
           />
         </TouchableOpacity>
       </Animated.View>
       
       {isRecording && (
-        <View style={styles.progressBar}>
+        <View style={globalStyles.progressBar}>
           <View 
             style={[
-              styles.progressFill, 
+              globalStyles.progressFill, 
               { width: `${(recordingTime / 30) * 100}%` }
             ]} 
           />
@@ -216,104 +219,6 @@ const VoiceRecorder = forwardRef(({ onSendAudio, group }, ref) => {
       )}
     </View>
   );
-});
-
-const styles = StyleSheet.create({
-  container: {
-    position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 90 : 70,
-    alignSelf: 'center',
-    alignItems: 'center',
-    zIndex: 1000,
-  },
-  recordingInfo: {
-    backgroundColor: colors.surface,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 25,
-    marginBottom: 16,
-    alignItems: 'center',
-    minWidth: 200,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  recordingHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '100%',
-    marginBottom: 8,
-  },
-  recordingIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  recordingDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.error,
-    marginRight: 8,
-  },
-  recordingText: {
-    fontSize: 14,
-    color: colors.textPrimary,
-    fontWeight: '600',
-  },
-  cancelButton: {
-    padding: 4,
-  },
-  timerText: {
-    fontSize: 18,
-    color: colors.textPrimary,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  hintText: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    textAlign: 'center',
-  },
-  micButtonContainer: {
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.65,
-    elevation: 8,
-  },
-  micButton: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: colors.error,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  recordingButton: {
-    backgroundColor: '#FF1744',
-  },
-  progressBar: {
-    width: 200,
-    height: 4,
-    backgroundColor: colors.surface,
-    borderRadius: 2,
-    marginTop: 12,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: colors.error,
-    borderRadius: 2,
-  },
 });
 
 export default VoiceRecorder;

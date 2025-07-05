@@ -10,7 +10,8 @@ import {
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '@/src/constants/colors';
+import { globalStyles, getAvatarColor, generateInitials, formatDuration } from '@/src/styles/globalStyles';
+import { theme } from '@/src/styles/theme';
 
 const MessagesTab = forwardRef(({ group }, ref) => {
   const [messages, setMessages] = useState([
@@ -46,29 +47,6 @@ const MessagesTab = forwardRef(({ group }, ref) => {
 
   const [currentPlayingId, setCurrentPlayingId] = useState(null);
 
-  const generateInitials = (name) => {
-    return name
-      .split(' ')
-      .map(word => word.charAt(0))
-      .join('')
-      .substring(0, 2)
-      .toUpperCase();
-  };
-
-  const getInitialsColor = (name) => {
-    const colorOptions = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FECA57', '#FF9FF3'];
-    let hash = 0;
-    for (let i = 0; i < name.length; i++) {
-      hash = name.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    return colorOptions[Math.abs(hash) % colorOptions.length];
-  };
-
-  const formatDuration = (milliseconds) => {
-    const minutes = Math.floor(milliseconds / 60000);
-    const seconds = Math.floor((milliseconds % 60000) / 1000);
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  };
 
   const playAudio = async (message) => {
     try {
@@ -159,10 +137,10 @@ const MessagesTab = forwardRef(({ group }, ref) => {
         <View 
           key={index} 
           style={[
-            styles.waveformBar,
+            globalStyles.waveformBar,
             { 
               height,
-              backgroundColor: isActive ? colors.primary : colors.textSecondary,
+              backgroundColor: isActive ? theme.colors.primary : theme.colors.textSecondary,
             }
           ]} 
         />
@@ -174,39 +152,39 @@ const MessagesTab = forwardRef(({ group }, ref) => {
     const isOwnMessage = item.senderId === 'current-user';
     
     return (
-      <View style={styles.messageContainer}>
-        <View style={[styles.messageRow, isOwnMessage && styles.ownMessageRow]}>
+      <View style={globalStyles.messageContainer}>
+        <View style={[globalStyles.messageRow, isOwnMessage && globalStyles.ownMessageRow]}>
           {!isOwnMessage && (
             <View style={styles.avatarContainer}>
               {item.avatar ? (
-                <Image source={{ uri: item.avatar }} style={styles.avatar} />
+                <Image source={{ uri: item.avatar }} style={globalStyles.avatar} />
               ) : (
-                <View style={[styles.avatarPlaceholder, { backgroundColor: getInitialsColor(item.sender) }]}>
-                  <Text style={styles.avatarText}>{generateInitials(item.sender)}</Text>
+                <View style={[globalStyles.avatar, globalStyles.avatarPlaceholder, { backgroundColor: getAvatarColor(item.sender) }]}>
+                  <Text style={[globalStyles.avatarText, globalStyles.avatarTextMedium]}>{generateInitials(item.sender)}</Text>
                 </View>
               )}
             </View>
           )}
           
-          <View style={[styles.messageContent, isOwnMessage && styles.ownMessageContent]}>
+          <View style={[globalStyles.messageContent, isOwnMessage && globalStyles.ownMessageContent]}>
             {!isOwnMessage && (
-              <Text style={styles.senderName}>{item.sender}</Text>
+              <Text style={globalStyles.senderName}>{item.sender}</Text>
             )}
             
-            <View style={[styles.audioMessage, isOwnMessage && styles.ownAudioMessage]}>
+            <View style={[globalStyles.audioMessage, isOwnMessage && globalStyles.ownAudioMessage]}>
               <TouchableOpacity 
-                style={styles.playButton}
+                style={globalStyles.playButton}
                 onPress={() => playAudio(item)}
               >
                 <Ionicons 
                   name={item.isPlaying ? "pause" : "play"} 
                   size={16} 
-                  color="#FFFFFF" 
+                  color={theme.colors.textPrimary} 
                 />
               </TouchableOpacity>
               
-              <View style={styles.waveform}>
-                <View style={styles.waveformBars}>
+              <View style={globalStyles.waveform}>
+                <View style={globalStyles.waveformBars}>
                   {generateWaveform(item)}
                 </View>
               </View>
@@ -225,15 +203,15 @@ const MessagesTab = forwardRef(({ group }, ref) => {
               )}
             </View>
             
-            <Text style={[styles.messageTime, isOwnMessage && styles.ownMessageTime]}>
+            <Text style={[globalStyles.messageTime, isOwnMessage && globalStyles.ownMessageTime]}>
               {item.time}
             </Text>
           </View>
           
           {isOwnMessage && (
             <View style={styles.avatarContainer}>
-              <View style={[styles.avatarPlaceholder, { backgroundColor: getInitialsColor('You') }]}>
-                <Text style={styles.avatarText}>YU</Text>
+              <View style={[globalStyles.avatar, globalStyles.avatarPlaceholder, { backgroundColor: getAvatarColor('You') }]}>
+                <Text style={[globalStyles.avatarText, globalStyles.avatarTextMedium]}>YU</Text>
               </View>
             </View>
           )}
@@ -243,7 +221,7 @@ const MessagesTab = forwardRef(({ group }, ref) => {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={globalStyles.container}>
       <FlatList
         data={messages}
         renderItem={renderMessage}
@@ -260,127 +238,39 @@ const MessagesTab = forwardRef(({ group }, ref) => {
 });
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
   messagesList: {
     flex: 1,
   },
   messagesContent: {
-    padding: 16,
+    padding: theme.spacing.lg,
     paddingBottom: 100, // Space for voice recorder
   },
   dateHeader: {
     textAlign: 'center',
-    color: colors.textSecondary,
-    fontSize: 14,
-    marginBottom: 20,
-    marginTop: 10,
-  },
-  messageContainer: {
-    marginBottom: 20,
-  },
-  messageRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    marginBottom: 8,
-  },
-  ownMessageRow: {
-    flexDirection: 'row-reverse',
+    color: theme.colors.textSecondary,
+    fontSize: theme.fontSize.md,
+    marginBottom: theme.spacing.lg,
+    marginTop: theme.spacing.md,
   },
   avatarContainer: {
-    marginHorizontal: 8,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-  },
-  avatarPlaceholder: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-  },
-  messageContent: {
-    maxWidth: '70%',
-  },
-  ownMessageContent: {
-    alignItems: 'flex-end',
-  },
-  senderName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    marginBottom: 4,
-  },
-  audioMessage: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: 20,
-    padding: 12,
-    minWidth: 250,
-  },
-  ownAudioMessage: {
-    backgroundColor: colors.primary + '20',
-  },
-  playButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  waveform: {
-    flex: 1,
-    marginRight: 12,
-  },
-  waveformBars: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: 30,
-    justifyContent: 'space-between',
-  },
-  waveformBar: {
-    width: 3,
-    backgroundColor: colors.textSecondary,
-    marginHorizontal: 0.5,
-    borderRadius: 1.5,
+    marginHorizontal: theme.spacing.sm,
   },
   duration: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginRight: 8,
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    marginRight: theme.spacing.sm,
     minWidth: 35,
   },
   playCount: {
-    backgroundColor: colors.primary,
-    borderRadius: 10,
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.borderRadius.md,
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
   playCountText: {
-    fontSize: 10,
-    color: '#FFFFFF',
-    fontWeight: 'bold',
-  },
-  messageTime: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: 4,
-  },
-  ownMessageTime: {
-    textAlign: 'right',
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.textPrimary,
+    fontWeight: theme.fontWeight.bold,
   },
 });
 

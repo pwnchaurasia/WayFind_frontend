@@ -3,7 +3,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
   Image,
   TouchableOpacity,
@@ -14,7 +13,8 @@ import {
 import MapView, { Marker } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
-import { colors } from '@/src/constants/colors';
+import { globalStyles, getAvatarColor, generateInitials, getTimeSince } from '@/src/styles/globalStyles';
+import { theme } from '@/src/styles/theme';
 
 const { width, height } = Dimensions.get('window');
 
@@ -264,38 +264,6 @@ const MapTab = ({ group }) => {
     }
   };
 
-  const generateInitials = (name) => {
-    return name
-      .split(' ')
-      .map(word => word.charAt(0))
-      .join('')
-      .substring(0, 2)
-      .toUpperCase();
-  };
-
-  const getInitialsColor = (name) => {
-    const colorOptions = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FECA57', '#FF9FF3'];
-    let hash = 0;
-    for (let i = 0; i < name.length; i++) {
-      hash = name.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    return colorOptions[Math.abs(hash) % colorOptions.length];
-  };
-
-  const getTimeSince = (date) => {
-    const now = new Date();
-    const diff = now - new Date(date);
-    const minutes = Math.floor(diff / 60000);
-    
-    if (minutes < 1) return 'Just now';
-    if (minutes < 60) return `${minutes}m ago`;
-    
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours}h ago`;
-    
-    const days = Math.floor(hours / 24);
-    return `${days}d ago`;
-  };
 
   const focusOnUser = (user) => {
     if (mapRef.current) {
@@ -347,23 +315,23 @@ const MapTab = ({ group }) => {
       onPress={() => setSelectedUser(user)}
       anchor={{ x: 0.5, y: 0.5 }}
     >
-      <View style={styles.markerContainer}>
+      <View style={globalStyles.markerContainer}>
         {/* User Avatar */}
         {user.avatar ? (
           <Image 
             source={{ uri: user.avatar }} 
             style={[
-              styles.markerImage,
-              !user.isOnline && styles.offlineMarker
+              globalStyles.markerImage,
+              !user.isOnline && globalStyles.offlineMarker
             ]} 
           />
         ) : (
           <View style={[
-            styles.markerPlaceholder, 
-            { backgroundColor: getInitialsColor(user.name) },
-            !user.isOnline && styles.offlineMarker
+            globalStyles.markerPlaceholder, 
+            { backgroundColor: getAvatarColor(user.name) },
+            !user.isOnline && globalStyles.offlineMarker
           ]}>
-            <Text style={styles.markerText}>
+            <Text style={globalStyles.markerText}>
               {generateInitials(user.name)}
             </Text>
           </View>
@@ -371,14 +339,14 @@ const MapTab = ({ group }) => {
         
         {/* Online Status Indicator */}
         {user.isOnline && (
-          <View style={styles.onlineIndicator}>
-            <View style={styles.onlineDot} />
+          <View style={globalStyles.onlineIndicator}>
+            <View style={globalStyles.onlineDot} />
           </View>
         )}
         
         {/* User Name Label */}
-        <View style={styles.nameLabel}>
-          <Text style={styles.nameLabelText}>{user.name}</Text>
+        <View style={globalStyles.nameLabel}>
+          <Text style={globalStyles.nameLabelText}>{user.name}</Text>
         </View>
       </View>
     </Marker>
@@ -392,9 +360,9 @@ const MapTab = ({ group }) => {
         coordinate={currentLocation}
         anchor={{ x: 0.5, y: 0.5 }}
       >
-        <View style={styles.currentLocationMarker}>
-          <View style={styles.currentLocationDot} />
-          <View style={styles.currentLocationCircle} />
+        <View style={globalStyles.currentLocationMarker}>
+          <View style={globalStyles.currentLocationDot} />
+          <View style={globalStyles.currentLocationCircle} />
         </View>
       </Marker>
     );
@@ -402,20 +370,20 @@ const MapTab = ({ group }) => {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Loading map...</Text>
+      <View style={globalStyles.loadingContainer}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+        <Text style={globalStyles.loadingText}>Loading map...</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={globalStyles.container}>
       {/* Map Container */}
-      <View style={styles.mapContainer}>
+      <View style={globalStyles.mapContainer}>
         <MapView
           ref={mapRef}
-          style={styles.map}
+          style={globalStyles.map}
           initialRegion={mapRegion}
           customMapStyle={customMapStyle}
           showsUserLocation={false} // We'll use custom marker
@@ -435,56 +403,56 @@ const MapTab = ({ group }) => {
         </MapView>
 
         {/* Map Controls */}
-        <View style={styles.mapControls}>
+        <View style={globalStyles.mapControls}>
           <TouchableOpacity 
-            style={styles.controlButton}
+            style={globalStyles.controlButton}
             onPress={centerOnMyLocation}
           >
-            <Ionicons name="locate" size={20} color={colors.textPrimary} />
+            <Ionicons name="locate" size={theme.fontSize.lg} color={theme.colors.textPrimary} />
           </TouchableOpacity>
           
           <TouchableOpacity 
-            style={styles.controlButton}
+            style={globalStyles.controlButton}
             onPress={fitAllMarkers}
           >
-            <Ionicons name="people" size={20} color={colors.textPrimary} />
+            <Ionicons name="people" size={theme.fontSize.lg} color={theme.colors.textPrimary} />
           </TouchableOpacity>
         </View>
 
         {/* Selected User Info */}
         {selectedUser && (
-          <View style={styles.userInfoCard}>
+          <View style={globalStyles.userInfoCard}>
             <TouchableOpacity 
-              style={styles.closeButton}
+              style={globalStyles.closeButton}
               onPress={() => setSelectedUser(null)}
             >
-              <Ionicons name="close" size={20} color={colors.textSecondary} />
+              <Ionicons name="close" size={theme.fontSize.lg} color={theme.colors.textSecondary} />
             </TouchableOpacity>
             
-            <View style={styles.userInfoContent}>
+            <View style={globalStyles.userInfoContent}>
               {selectedUser.avatar ? (
-                <Image source={{ uri: selectedUser.avatar }} style={styles.userInfoAvatar} />
+                <Image source={{ uri: selectedUser.avatar }} style={globalStyles.userInfoAvatar} />
               ) : (
                 <View style={[
-                  styles.userInfoAvatarPlaceholder, 
-                  { backgroundColor: getInitialsColor(selectedUser.name) }
+                  globalStyles.userInfoAvatarPlaceholder, 
+                  { backgroundColor: getAvatarColor(selectedUser.name) }
                 ]}>
-                  <Text style={styles.userInfoAvatarText}>
+                  <Text style={globalStyles.userInfoAvatarText}>
                     {generateInitials(selectedUser.name)}
                   </Text>
                 </View>
               )}
               
-              <View style={styles.userInfoDetails}>
-                <Text style={styles.userInfoName}>{selectedUser.name}</Text>
-                <Text style={styles.userInfoStatus}>
+              <View style={globalStyles.userInfoDetails}>
+                <Text style={globalStyles.userInfoName}>{selectedUser.name}</Text>
+                <Text style={globalStyles.userInfoStatus}>
                   {selectedUser.isOnline ? (
-                    <><Ionicons name="radio-button-on" size={12} color={colors.primary} /> Online</>
+                    <><Ionicons name="radio-button-on" size={theme.fontSize.sm} color={theme.colors.primary} /> Online</>
                   ) : (
-                    <><Ionicons name="radio-button-off" size={12} color={colors.textSecondary} /> {getTimeSince(selectedUser.lastSeen)}</>
+                    <><Ionicons name="radio-button-off" size={theme.fontSize.sm} color={theme.colors.textSecondary} /> {getTimeSince(selectedUser.lastSeen)}</>
                   )}
                 </Text>
-                <Text style={styles.userInfoAccuracy}>
+                <Text style={globalStyles.userInfoAccuracy}>
                   Accuracy: ±{selectedUser.accuracy}m
                 </Text>
               </View>
@@ -494,49 +462,49 @@ const MapTab = ({ group }) => {
       </View>
 
       {/* Active Users List */}
-      <View style={styles.usersListContainer}>
-        <Text style={styles.sectionTitle}>
+      <View style={globalStyles.usersListContainer}>
+        <Text style={globalStyles.sectionTitle}>
           Active Users ({userLocations.filter(u => u.isOnline).length}/{userLocations.length})
         </Text>
         
         <ScrollView 
           horizontal 
           showsHorizontalScrollIndicator={false}
-          style={styles.usersList}
-          contentContainerStyle={styles.usersListContent}
+          style={globalStyles.usersList}
+          contentContainerStyle={globalStyles.usersListContent}
         >
           {userLocations.map((user) => (
             <TouchableOpacity
               key={user.id}
               style={[
-                styles.userCard,
-                selectedUser?.id === user.id && styles.selectedUserCard
+                globalStyles.userCard,
+                selectedUser?.id === user.id && globalStyles.selectedUserCard
               ]}
               onPress={() => focusOnUser(user)}
             >
               {user.avatar ? (
-                <Image source={{ uri: user.avatar }} style={styles.userCardAvatar} />
+                <Image source={{ uri: user.avatar }} style={globalStyles.userCardAvatar} />
               ) : (
                 <View style={[
-                  styles.userCardAvatarPlaceholder, 
-                  { backgroundColor: getInitialsColor(user.name) }
+                  globalStyles.userCardAvatarPlaceholder, 
+                  { backgroundColor: getAvatarColor(user.name) }
                 ]}>
-                  <Text style={styles.userCardAvatarText}>
+                  <Text style={globalStyles.userCardAvatarText}>
                     {generateInitials(user.name)}
                   </Text>
                 </View>
               )}
               
-              <Text style={styles.userCardName} numberOfLines={1}>
+              <Text style={globalStyles.userCardName} numberOfLines={1}>
                 {user.name}
               </Text>
               
-              <View style={styles.userCardStatus}>
+              <View style={globalStyles.userCardStatus}>
                 <View style={[
-                  styles.statusDot, 
-                  { backgroundColor: user.isOnline ? colors.primary : colors.textSecondary }
+                  globalStyles.statusDot, 
+                  { backgroundColor: user.isOnline ? theme.colors.primary : theme.colors.textSecondary }
                 ]} />
-                <Text style={styles.userCardStatusText}>
+                <Text style={globalStyles.userCardStatusText}>
                   {user.isOnline ? 'Online' : getTimeSince(user.lastSeen)}
                 </Text>
               </View>
@@ -547,271 +515,5 @@ const MapTab = ({ group }) => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-  },
-  loadingText: {
-    color: colors.textPrimary,
-    fontSize: 16,
-    marginTop: 10,
-  },
-  mapContainer: {
-    flex: 1,
-    position: 'relative',
-  },
-  map: {
-    flex: 1,
-  },
-  mapControls: {
-    position: 'absolute',
-    top: 20,
-    right: 20,
-    flexDirection: 'column',
-  },
-  controlButton: {
-    backgroundColor: colors.surface,
-    borderRadius: 25,
-    width: 50,
-    height: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  markerContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  markerImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    borderWidth: 3,
-    borderColor: colors.primary,
-  },
-  markerPlaceholder: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 3,
-    borderColor: colors.primary,
-  },
-  markerText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-  },
-  offlineMarker: {
-    opacity: 0.6,
-    borderColor: colors.textSecondary,
-  },
-  onlineIndicator: {
-    position: 'absolute',
-    bottom: 2,
-    right: 2,
-    backgroundColor: colors.background,
-    borderRadius: 8,
-    padding: 2,
-  },
-  onlineDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: colors.primary,
-  },
-  nameLabel: {
-    backgroundColor: colors.surface,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginTop: 5,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.22,
-    shadowRadius: 2.22,
-    elevation: 3,
-  },
-  nameLabelText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
-  currentLocationMarker: {
-    width: 20,
-    height: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  currentLocationDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: colors.primary,
-    position: 'absolute',
-  },
-  currentLocationCircle: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: colors.primary + '30',
-    borderWidth: 2,
-    borderColor: colors.primary,
-  },
-  userInfoCard: {
-    position: 'absolute',
-    bottom: 180,
-    left: 20,
-    right: 20,
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  closeButton: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-    zIndex: 1,
-  },
-  userInfoContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  userInfoAvatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    marginRight: 12,
-  },
-  userInfoAvatarPlaceholder: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  userInfoAvatarText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-  },
-  userInfoDetails: {
-    flex: 1,
-  },
-  userInfoName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: colors.textPrimary,
-    marginBottom: 4,
-  },
-  userInfoStatus: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginBottom: 2,
-  },
-  userInfoAccuracy: {
-    fontSize: 12,
-    color: colors.textSecondary,
-  },
-  usersListContainer: {
-    backgroundColor: colors.surface,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingTop: 16,
-    maxHeight: 140,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: colors.textPrimary,
-    paddingHorizontal: 20,
-    marginBottom: 12,
-  },
-  usersList: {
-    paddingLeft: 20,
-  },
-  usersListContent: {
-    paddingRight: 20,
-  },
-  userCard: {
-    width: 80,
-    alignItems: 'center',
-    marginRight: 16,
-    padding: 8,
-    borderRadius: 12,
-  },
-  selectedUserCard: {
-    backgroundColor: colors.primary + '20',
-  },
-  userCardAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginBottom: 4,
-  },
-  userCardAvatarPlaceholder: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  userCardAvatarText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-  },
-  userCardName: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    textAlign: 'center',
-    marginBottom: 2,
-  },
-  userCardStatus: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginRight: 4,
-  },
-  userCardStatusText: {
-    fontSize: 10,
-    color: colors.textSecondary,
-  },
-});
 
 export default MapTab;
