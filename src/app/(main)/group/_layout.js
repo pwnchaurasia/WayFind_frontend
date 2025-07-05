@@ -3,66 +3,68 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/src/constants/colors';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { useState } from 'react';
+import { useGlobalSearchParams, useRouter } from 'expo-router';
+import VoiceRecorder from '@/src/components/groups/VoiceRecorder';
+import { useGroupData } from '@/src/hooks/useGroupData';
 
 const CustomTabBar = ({ state, descriptors, navigation }) => {
-  const handleMicPress = () => {
-    // Trigger voice recording on the messages screen
-    if (global.voiceRecorderRef && global.voiceRecorderRef.current) {
-      global.voiceRecorderRef.current.startRecording();
-    }
+  const { id } = useGlobalSearchParams();
+  const { group } = useGroupData(id);
+  const router = useRouter();
+
+  const handleSendAudio = (audioUri, duration) => {
+    console.log('Sending audio message:', audioUri, duration);
+    // Handle audio sending logic here
+    // You can add your audio message sending logic here
+    // For example, you might want to add it to your messages state
   };
 
   return (
-    <View style={styles.tabBar}>
-      {state.routes.map((route, index) => {
-        const { options } = descriptors[route.key];
-        const isFocused = state.index === index;
+    <>
+      {/* Voice Recorder Component - positioned above the tab bar */}
+      {group && (
+        <VoiceRecorder 
+          group={group}
+          onSendAudio={handleSendAudio}
+        />
+      )}
+      
+      <View style={styles.tabBar}>
+        {state.routes.map((route, index) => {
+          const { options } = descriptors[route.key];
+          const isFocused = state.index === index;
 
-        const onPress = () => {
+          const onPress = () => {
+            const event = navigation.emit({
+              type: 'tabPress',
+              target: route.key,
+              canPreventDefault: true,
+            });
+
+            if (!isFocused && !event.defaultPrevented) {
+              navigation.navigate(route.name);
+            }
+          };
+
+          // Skip rendering the voice-recorder tab as a regular tab
           if (route.name === 'voice-recorder') {
-            handleMicPress();
-            return;
+            return null; // Don't render as a tab item since we'll show the VoiceRecorder component separately
           }
 
-          const event = navigation.emit({
-            type: 'tabPress',
-            target: route.key,
-            canPreventDefault: true,
-          });
-
-          if (!isFocused && !event.defaultPrevented) {
-            navigation.navigate(route.name);
-          }
-        };
-
-        // Skip rendering the voice-recorder tab as a regular tab
-        if (route.name === 'voice-recorder') {
+          const color = isFocused ? '#00C853' : '#666';
+          
           return (
             <TouchableOpacity
               key={route.key}
               onPress={onPress}
-              style={styles.micButtonContainer}
+              style={styles.tabIcon}
             >
-              <View style={styles.micButton}>
-                <Ionicons name="mic" size={28} color="white" />
-              </View>
+              {options.tabBarIcon({ color, size: 24, focused: isFocused })}
             </TouchableOpacity>
           );
-        }
-
-        const color = isFocused ? '#00C853' : '#666';
-        
-        return (
-          <TouchableOpacity
-            key={route.key}
-            onPress={onPress}
-            style={styles.tabIcon}
-          >
-            {options.tabBarIcon({ color, size: 24, focused: isFocused })}
-          </TouchableOpacity>
-        );
-      })}
-    </View>
+        })}
+      </View>
+    </>
   );
 };
 

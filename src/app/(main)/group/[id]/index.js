@@ -12,14 +12,6 @@ export default function MessagesTabScreen() {
   const messagesTabRef = useRef(null);
   const voiceRecorderRef = useRef(null);
 
-  const handleSendAudio = (audioUri, duration) => {
-    console.log('Sending audio message:', audioUri, duration);
-    
-    if (messagesTabRef.current && messagesTabRef.current.addNewAudioMessage) {
-      messagesTabRef.current.addNewAudioMessage(audioUri, duration);
-    }
-  };
-
   // Expose voice recorder methods globally for tab bar access
   useEffect(() => {
     if (global.voiceRecorderRef) {
@@ -41,11 +33,6 @@ export default function MessagesTabScreen() {
     <View style={{ flex: 1 }}>
       <GroupHeader group={group} />
       <MessagesTab ref={messagesTabRef} group={group} />
-      <VoiceRecorder 
-        ref={voiceRecorderRef}
-        group={group}
-        onSendAudio={handleSendAudio}
-      />
     </View>
   );
 }
