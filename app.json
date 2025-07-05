@@ -40,6 +40,12 @@
           "resizeMode": "contain"
         }
       ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Allow WayFind to access your microphone."
+        }
+      ],
       "expo-font",
       "expo-localization",
       "expo-web-browser"
