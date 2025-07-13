@@ -1,10 +1,10 @@
 export const theme = {
   colors: {
     // Background colors
-    background: '#1A1A1A',
+    background: '#1C1C23',
     surface: '#2A2A2A',
     inputBg: '#17171C',
-    inputBoxBg:'#353540',
+    inputBoxBg:'#17171C',
     
     // Text colors
     text: '#ffffff',
@@ -43,6 +43,9 @@ export const theme = {
     // error colors
     errorBorderColor: '#FF6B6B',
     errorTextColor: '#FF6B6B',
+
+    // button
+    buttonBackgroundGreen: 'rgba(0, 200, 83, 0.1)'
 
   },
   

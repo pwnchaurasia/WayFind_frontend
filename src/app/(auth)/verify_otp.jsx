@@ -8,27 +8,28 @@ import {
   StyleSheet, 
   Dimensions,
   TextInput,
-  KeyboardAvoidingView,
-  ScrollView,
-  Platform,
   Keyboard,
-  Animated
+  Animated,
+  ActivityIndicator
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { theme } from '@/src/styles/theme';
 import LogoSection from '@/src/components/LogoSection';
 import imagePath from '../../constants/imagePath';
-import { Link } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
+import { verifyOTP } from '@/src/apis/authService';
 
 const { width, height } = Dimensions.get('window');
 
 const VerifyOtp = () => {
-  const [timer, setTimer] = useState(263); // 4:23 in seconds
+  const params = useLocalSearchParams();
+  const [timer, setTimer] = useState(60); // 60 in seconds
   const [code, setCode] = useState(['', '', '', '', '', '']); // Changed to empty initial state
   const inputRefs = useRef([]);
-  const scrollViewRef = useRef(null);
   const animatedValue = useRef(new Animated.Value(0)).current;
+  const [isLoading, setIsLoading] = useState(false);
+  const [validationError, setValidationError] = useState('');
 
   // Setup timer countdown
   useEffect(() => {
@@ -78,6 +79,83 @@ const VerifyOtp = () => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Validation function
+  const validateOTP = () => {
+    setValidationError('');
+    
+    const otpCode = code.join('');
+    if (!otpCode || otpCode.length !== 6) {
+      setValidationError('Please enter the complete 6-digit OTP code');
+      return false;
+    }
+    
+    return true;
+  };
+
+  const handleverifyOTP = async () => {
+    if (!validateOTP()) {
+      return;
+    }
+
+    setIsLoading(true);
+    setValidationError('');
+
+    try {
+      const otpCode = code.join('');
+      
+      const payload = {
+        phone_number: params.phone_number,
+        country_code: params.country_code,
+        formatted_phone: params.formatted_phone,
+        otp: otpCode
+      };
+
+      console.log('Verifying OTP with payload:', payload);
+      
+      const response = await verifyOTP(payload);
+      console.log("Response from verifyOTP:", response);
+      if (response && (response.status === 200 || response.status === 201)) {
+        console.log('OTP verification successful:', response);
+
+        console.log('OTP verification successful: data', response.data);
+        if (response.data) {
+          console.log('has data')
+          setToken({
+            access_token: response.data.access_token, 
+            refresh_token: response.data.refresh_token
+          });
+          console.log('response.data.is_profile_complete', response.data.is_profile_complete)
+          if(response.data.is_profile_complete === false){
+            router.push('/update_profile');
+          }
+          else {
+            console.log('group tabs')
+            // Redirect to groups page
+            router.push('/(main)/(tabs)');
+          }
+        }else{
+          console.log('no data found in response')
+        }
+      }else{
+        console.log('I am here')
+      }
+
+    } catch (error) {
+      console.error('OTP verification failed:', error);
+      
+      // Handle different error scenarios
+      if (error?.message) {
+        setValidationError(error.message);
+      } else if (error?.error) {
+        setValidationError(error.error);
+      } else {
+        setValidationError('Invalid OTP. Please try again.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Handle code input
   const handleCodeChange = (text, index) => {
     const newCode = [...code];
@@ -86,6 +164,11 @@ const VerifyOtp = () => {
     if (text.length <= 1) {
       newCode[index] = text;
       setCode(newCode);
+      
+      // Clear validation error when user starts typing
+      if (validationError) {
+        setValidationError('');
+      }
       
       // Auto-focus next input if text is entered and not the last input
       if (text && index < 5) {
@@ -131,23 +214,31 @@ const VerifyOtp = () => {
             </Text>
             
             {/* Code Input */}
-            <View style={styles.codeContainer}>
-              {[0, 1, 2, 3, 4, 5].map((index) => (
-                <TextInput
-                  key={index}
-                  ref={(ref) => (inputRefs.current[index] = ref)}
-                  style={[
-                    styles.codeInput, 
-                    code[index] ? styles.filledInput : {},
-                  ]}
-                  value={code[index]}
-                  onChangeText={(text) => handleCodeChange(text, index)}
-                  onKeyPress={(e) => handleKeyPress(e, index)}
-                  keyboardType="number-pad"
-                  maxLength={1}
-                  selectionColor="#00C853"
-                />
-              ))}
+            <View style={styles.codeInputContainer}>
+              <View style={styles.codeContainer}>
+                {[0, 1, 2, 3, 4, 5].map((index) => (
+                  <TextInput
+                    key={index}
+                    ref={(ref) => (inputRefs.current[index] = ref)}
+                    style={[
+                      styles.codeInput, 
+                      code[index] ? styles.filledInput : {},
+                      validationError ? styles.errorInput : {},
+                    ]}
+                    value={code[index]}
+                    onChangeText={(text) => handleCodeChange(text, index)}
+                    onKeyPress={(e) => handleKeyPress(e, index)}
+                    keyboardType="number-pad"
+                    maxLength={1}
+                    selectionColor="#00C853"
+                  />
+                ))}
+              </View>
+              
+              {/* Validation Error */}
+              {validationError ? (
+                <Text style={styles.errorText}>{validationError}</Text>
+              ) : null}
             </View>
             
             {/* Resend Timer */}
@@ -165,8 +256,22 @@ const VerifyOtp = () => {
           
           {/* Button */}
           <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.button}>
-              <Link href="/update_profile" style={styles.buttonText}> Verify Code</Link>
+            <TouchableOpacity 
+            style={[styles.button, styles.otpButton, isLoading && styles.buttonDisabled]}
+            onPress={handleverifyOTP}
+            disabled={isLoading}
+            >
+              {/* <Link href="/update_profile" style={styles.buttonText}> Verify Code</Link> */}
+
+            {isLoading ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="small" color="#00C853" />
+                  <Text style={[styles.buttonText, styles.loadingText]}>Verifying OTP...</Text>
+                </View>
+            ) : (
+              <Text style={styles.buttonText}>Verify OTP</Text>
+            )}
+
             </TouchableOpacity>
           </View>
           
@@ -231,10 +336,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: height * 0.04,
   },
+  codeInputContainer: {
+    width: '80%',
+    alignItems: 'center',
+  },
   codeContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    width: '80%',
+    width: '100%',
     marginTop: 20,
   },
   codeInput: {
@@ -253,9 +362,20 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#00C853',
   },
+  errorInput: {
+    borderWidth: 1,
+    borderColor: theme.colors.errorBorderColor,
+  },
   activeInput: {
     borderWidth: 1,
     borderColor: '#00C853',
+  },
+  errorText: {
+    color: theme.colors.errorTextColor,
+    fontSize: 14,
+    marginTop: 8,
+    textAlign: 'center',
+    width: '100%',
   },
   resendContainer: {
     marginTop: height * 0.04,
@@ -293,6 +413,18 @@ const styles = StyleSheet.create({
     color: '#00C853',
     fontSize: 18,
     fontWeight: '500',
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+    borderColor: '#666',
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    marginLeft: 10,
   },
   footer: {
     color: 'white',

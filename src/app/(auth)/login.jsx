@@ -11,7 +11,6 @@ import {
   KeyboardAvoidingView,
   ScrollView,
   Platform,
-  Alert,
   ActivityIndicator
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -19,10 +18,9 @@ import imagePath from '@/src/constants/imagePath'
 import { theme } from '@/src/styles/theme';
 import { Poppins_600SemiBold } from '@expo-google-fonts/poppins';
 import PhoneInput from "react-native-phone-number-input";
-import { Link, router } from 'expo-router';
+import { router } from 'expo-router';
 import * as Localization from 'expo-localization';
 import LogoSection from '@/src/components/LogoSection';
-import { useAnimatedStyle } from 'react-native-reanimated';
 import { requestOTP } from '@/src/apis/authService';
 
 const { width, height } = Dimensions.get('window');
@@ -82,8 +80,11 @@ const LoginPage = () => {
       
       if (response) {
         console.log('OTP request successful:', response);
-        // Navigate to verify OTP page
-        router.push('/verify_otp');
+        // Navigate to verify OTP page with phone data
+        router.push({
+          pathname: '/verify_otp',
+          params: payload
+        });
       }
     } catch (error) {
       console.error('OTP request failed:', error);
@@ -392,7 +393,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   otpButton: {
-    backgroundColor: 'rgba(0, 200, 83, 0.1)',
+    backgroundColor: theme.colors.buttonBackgroundGreen,
   },
   buttonDisabled: {
     opacity: 0.6,

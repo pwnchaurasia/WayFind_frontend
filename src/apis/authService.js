@@ -9,9 +9,18 @@ export const requestOTP = async (payload) => {
         })
         .catch((error) => {
             console.log("error in requestOTP", error);
-            console.log('Error:', error.message);              // "Network Error"
-            console.log('Error config:', error.config?.url);   // See which URL failed
-            console.log('Full Error:', JSON.stringify(error)); // Inspect full object
+            throw error.response?.data || error;
+        });
+}
+
+export const verifyOTP = async (payload) => {
+    console.log("payload in verifyOTP", payload);
+    return await API.post("/v1/auth/verify-otp", payload)
+        .then((response) => {
+            return response.data;
+        })
+        .catch((error) => {
+            console.log("error in verifyOTP", error);
             throw error.response?.data || error;
         });
 }
@@ -39,6 +48,7 @@ export const isAuthenticated = async () => {
 // Export as default object for consistency
 const AuthService = {
     requestOTP,
+    verifyOTP,
     isAuthenticated
 };
 

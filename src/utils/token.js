@@ -9,7 +9,7 @@ export const getRefreshToken = async () => {
 };
 
 export const setToken = async (payload) => {
-  await SecureStore.setItemAsync('access_token', payload.accessToken);
+  await SecureStore.setItemAsync('access_token', payload.access_token);
   await SecureStore.setItemAsync('refresh_token', payload.refresh_token);
 };
 
