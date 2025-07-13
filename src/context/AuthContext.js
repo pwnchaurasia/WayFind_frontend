@@ -57,17 +57,55 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    checkAuthStatus();
+    let isMounted = true;
+    
+    const initializeAuth = async () => {
+      try {
+        console.log('AuthContext: Initializing authentication check...');
+        
+        // Check if user is authenticated (this will handle token validation)
+        const isValid = await AuthService.isAuthenticated();
+        
+        if (isMounted) {
+          console.log('AuthContext: Authentication status:', isValid);
+          setIsAuthenticated(isValid);
+          
+          if (!isValid) {
+            // Clear user data if not authenticated
+            setUser(null);
+          }
+        }
+      } catch (error) {
+        if (isMounted) {
+          console.error('AuthContext: Auth check failed:', error);
+          setIsAuthenticated(false);
+          setUser(null);
+        }
+      } finally {
+        if (isMounted) {
+          console.log("AuthContext: Setting loading to false");
+          setIsLoading(false);
+        }
+      }
+    };
+
+    initializeAuth();
+
+    // Cleanup function to prevent state updates on unmounted component
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const checkAuthStatus = async () => {
     try {
+      console.log('AuthContext: Manual auth status check...');
       setIsLoading(true);
       
       // Check if user is authenticated (this will handle token validation)
       const isValid = await AuthService.isAuthenticated();
       
-      console.log('Authentication status:', isValid);
+      console.log('AuthContext: Manual check - Authentication status:', isValid);
       setIsAuthenticated(isValid);
       
       if (!isValid) {
@@ -75,11 +113,11 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
       }
     } catch (error) {
-      console.error('Auth check failed:', error);
+      console.error('AuthContext: Manual auth check failed:', error);
       setIsAuthenticated(false);
       setUser(null);
     } finally {
-      console.log("SettingLoading to be false")
+      console.log("AuthContext: Manual check - Setting loading to false");
       setIsLoading(false);
     }
   };

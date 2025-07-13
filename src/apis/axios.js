@@ -5,7 +5,7 @@ import { getAccessToken } from '@/src/utils/token';
 const ENV = Constants.expoConfig?.extra?.env || 'dev';
 
 const baseURLs = {
-  dev: 'https://dev-api.example.com',
+  dev: 'http://127.0.0.1:8000',
   sit: 'https://sit-api.example.com',
   prod: 'https://api.example.com',
 };

@@ -60,6 +60,7 @@ class AuthenticationService {
     try {
       const accessToken = await getAccessToken();
       
+      console.log("in isAuthenticated, accessToken: check", accessToken);
       // No token means not authenticated
       if (!accessToken) {
         console.log('No access token found');
