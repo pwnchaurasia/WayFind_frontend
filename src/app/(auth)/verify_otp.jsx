@@ -237,11 +237,7 @@ const VerifyOtp = () => {
                 Resend in <Text style={styles.timerText}>{formatTime(timer)}</Text>
               </Text>
             </View>
-            
-            {/* Call Option */}
-            <TouchableOpacity style={styles.callOption}>
-              <Text style={styles.callOptionText}>Get Verification Code By Call</Text>
-            </TouchableOpacity>
+
           </View>
           
           {/* Button */}
@@ -421,5 +417,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 20,
     fontSize: 14,
+  },
+  otpButton: {
+    backgroundColor: theme.colors.buttonBackgroundGreen,
   },
 });

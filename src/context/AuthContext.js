@@ -8,6 +8,7 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState(null);
+  const [isProfileComplete, setIsProfileComplete] = useState(true);
 
   /**
    * Login user and set authentication state
@@ -61,18 +62,36 @@ export const AuthProvider = ({ children }) => {
     
     const initializeAuth = async () => {
       try {
-        console.log('AuthContext: Initializing authentication check...');
-        
-        // Check if user is authenticated (this will handle token validation)
         const isValid = await AuthService.isAuthenticated();
         
         if (isMounted) {
           console.log('AuthContext: Authentication status:', isValid);
           setIsAuthenticated(isValid);
           
-          if (!isValid) {
+          if (isValid) {
+            // If authenticated, check profile completion
+            try {
+              const response = await AuthService.getCurrentUser();
+
+              if(response.status !== 200) {
+                throw new Error(`Failed to fetch user profile: ${response.statusText}`);
+              }
+              const currentUser = response.data?.user
+              console.log('new Current User:', currentUser);
+              setUser(currentUser);
+              
+              const profileComplete = currentUser?.is_profile_complete ? currentUser.is_profile_complete : false;
+              setIsProfileComplete(profileComplete);
+              
+            } catch (error) {
+              console.error('AuthContext: Failed to get user profile:', error);
+              // If we can't get profile, assume it's incomplete
+              setIsProfileComplete(false);
+            }
+          } else {
             // Clear user data if not authenticated
             setUser(null);
+            setIsProfileComplete(true); // Reset to default
           }
         }
       } catch (error) {
@@ -122,10 +141,18 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  /**
+   * Update profile completion status
+   * @param {boolean} isComplete - Profile completion status
+   */
+  const updateProfileCompletion = (isComplete) => {
+    setIsProfileComplete(isComplete);
+  };
+
 
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, isLoading, user, login, logout, checkAuthStatus }}>
+    <AuthContext.Provider value={{ isAuthenticated, isLoading, user, isProfileComplete, login, logout, checkAuthStatus, updateProfileCompletion }}>
       {children}
     </AuthContext.Provider>
   );

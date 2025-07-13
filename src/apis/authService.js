@@ -37,7 +37,7 @@ export const isAuthenticated = async () => {
         
         console.log("Requesting for new token from backend...")
         // Validate token with backend
-        const response = await API.get("/v1/auth/verify");
+        const response = await API.post("/v1/auth/verify");
         return response.status === 200;
     } catch (error) {
         console.error('Token validation failed:', error);

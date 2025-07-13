@@ -15,20 +15,26 @@ import LoadingScreen from '@/src/components/LoadingScreen';
  * This approach works better with Expo Router's file-based routing.
  */
 export default function Index() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, isProfileComplete } = useAuth();
+
+  console.log('Index: isAuthenticated:', isAuthenticated);
+  console.log('Index: isLoading:', isLoading);
+  console.log('Index: isProfileComplete:', isProfileComplete);
 
   // Show loading screen while checking authentication
-  if (isLoading) {
-    console.log('Index: Still loading authentication status...');
-    return <LoadingScreen />;
-  }
-
-  // Redirect based on authentication status
-  if (isAuthenticated) {
-    console.log('Index: User is authenticated, redirecting to main');
-    return <Redirect href="/(main)" />;
-  } else {
-    console.log('Index: User is not authenticated, redirecting to login');
-    return <Redirect href="/(auth)/login" />;
-  }
+    if (isLoading) {
+      return <LoadingScreen />;
+    }
+  
+    // Redirect based on authentication status
+    if (isAuthenticated) {
+      // If authenticated but profile is incomplete, redirect to update profile
+      if (!isProfileComplete) {
+        return <Redirect href="/(auth)/update_profile" />;
+      }
+      // If authenticated and profile is complete, redirect to main app
+      return <Redirect href="/(main)" />;
+    } else {
+      return <Redirect href="/(auth)/login" />;
+    }
 }

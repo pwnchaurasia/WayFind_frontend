@@ -21,25 +21,49 @@ import imagePath from '@/src/constants/imagePath';
 import LogoSection from '@/src/components/LogoSection';
 import { Link, router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
+import { useAuth } from '@/src/context/AuthContext';
+import UserService from '@/src/apis/userService';
 
 const { width, height } = Dimensions.get('window');
 
 const UpdateProfile = () => {
+  const { updateProfileCompletion } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [nameCount, setNameCount] = useState(0);
   const [profileImage, setProfileImage] = useState(null);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const animatedValue = useRef(new Animated.Value(0)).current;
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async () => {
+    setIsLoading(true);
     console.log("Name:", name);
     console.log("Email:", email);
     console.log("Profile Image:", profileImage);
 
-    await new Promise((resolve) => setTimeout(resolve, 2000)); // 2-second delay
-    console.log("Success! Navigating now...");
-    router.push("/(main)"); // 👈 navigate to groups page
+    try {
+      const payload = {
+        name,
+        email
+      };
+      const response = await UserService.updateCurrentUserProfile(payload);
+      console.log("Response:", response);
+      if (response.status !== 202) {
+        throw new Error('Failed to update profile');
+      }else{
+        // Update profile completion status
+        updateProfileCompletion(true);
+        
+        console.log("Success! Navigating now...");
+        router.push("/(main)"); // Navigate to groups page
+      }
+    } catch (error) {
+      console.error("Profile update failed:", error);
+      Alert.alert('Error', 'Failed to update profile. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   const handleTextChange = (newText) => {
@@ -194,7 +218,10 @@ const UpdateProfile = () => {
           
           {/* Button */}
           <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.button} onPress={handleSubmit}>
+            <TouchableOpacity 
+            style={[styles.button, styles.otpButton, isLoading && styles.buttonDisabled]}
+            disabled={isLoading}
+            onPress={handleSubmit}>
               <Text style={styles.buttonText}>Done</Text>
             </TouchableOpacity>
           </View>
@@ -371,5 +398,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 20,
     fontSize: 14,
+  },
+  otpButton: {
+    backgroundColor: theme.colors.buttonBackgroundGreen,
   },
 });

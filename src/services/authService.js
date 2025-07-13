@@ -60,7 +60,6 @@ class AuthenticationService {
     try {
       const accessToken = await getAccessToken();
       
-      console.log("in isAuthenticated, accessToken: check", accessToken);
       // No token means not authenticated
       if (!accessToken) {
         console.log('No access token found');
@@ -69,7 +68,7 @@ class AuthenticationService {
 
       // Try to validate current token
       try {
-        const response = await API.get("/v1/auth/verify");
+        const response = await API.post("/v1/auth/verify");
         return response.status === 200;
       } catch (error) {
         // If token validation fails, try to refresh
@@ -101,13 +100,14 @@ class AuthenticationService {
         return false;
       }
 
-      const response = await API.post("/v1/auth/refresh", {
+      const response = await API.post("/v1/auth/refresh-token", {
         refresh_token: refreshToken
       });
-
+      console.log("response of refresh token", response.data);
+      // If response contains new tokens, store them
       // Store new tokens
       if (response.data.tokens) {
-        await setToken(response.data.tokens);
+        await setToken({access_token: response.data.tokens.access_token, refresh_token: response.data.tokens.refresh_token});
         console.log('Token refreshed successfully');
         return true;
       }
@@ -151,8 +151,8 @@ class AuthenticationService {
    */
   async getCurrentUser() {
     try {
-      const response = await API.get("/v1/auth/profile");
-      return response.data;
+      const response = await API.get("/v1/users/me");
+      return response;
     } catch (error) {
       console.error('Failed to get user profile:', error);
       throw error.response?.data || error;
