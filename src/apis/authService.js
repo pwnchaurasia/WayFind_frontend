@@ -5,7 +5,7 @@ export const requestOTP = async (payload) => {
     console.log("payload in requestOTP", payload);
     return await API.post("/v1/auth/request-otp", payload)
         .then((response) => {
-            return response.data;
+            return response;
         })
         .catch((error) => {
             console.log("error in requestOTP", error);
@@ -17,7 +17,7 @@ export const verifyOTP = async (payload) => {
     console.log("payload in verifyOTP", payload);
     return await API.post("/v1/auth/verify-otp", payload)
         .then((response) => {
-            return response.data;
+            return response;
         })
         .catch((error) => {
             console.log("error in verifyOTP", error);

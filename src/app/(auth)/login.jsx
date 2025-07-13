@@ -77,9 +77,8 @@ const LoginPage = () => {
       console.log('Requesting OTP with payload:', payload);
       
       const response = await requestOTP(payload);
-      
-      if (response) {
-        console.log('OTP request successful:', response);
+      console.log('OTP request successful:', response.data, response.status);
+      if (response.status === 201) {
         // Navigate to verify OTP page with phone data
         router.push({
           pathname: '/verify_otp',

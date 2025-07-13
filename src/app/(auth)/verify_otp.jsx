@@ -19,6 +19,7 @@ import LogoSection from '@/src/components/LogoSection';
 import imagePath from '../../constants/imagePath';
 import { router, useLocalSearchParams } from 'expo-router';
 import { verifyOTP } from '@/src/apis/authService';
+import { setToken } from '@/src/utils/token';
 
 const { width, height } = Dimensions.get('window');
 
@@ -109,28 +110,18 @@ const VerifyOtp = () => {
         formatted_phone: params.formatted_phone,
         otp: otpCode
       };
-
-      console.log('Verifying OTP with payload:', payload);
-      
       const response = await verifyOTP(payload);
-      console.log("Response from verifyOTP:", response);
-      if (response && (response.status === 200 || response.status === 201)) {
-        console.log('OTP verification successful:', response);
-
-        console.log('OTP verification successful: data', response.data);
+      console.log("Response from verifyOTP:", response.data, response.status);
+      if (response && (response.status === 201)) {
         if (response.data) {
-          console.log('has data')
           setToken({
             access_token: response.data.access_token, 
             refresh_token: response.data.refresh_token
           });
-          console.log('response.data.is_profile_complete', response.data.is_profile_complete)
           if(response.data.is_profile_complete === false){
             router.push('/update_profile');
           }
           else {
-            console.log('group tabs')
-            // Redirect to groups page
             router.push('/(main)/(tabs)');
           }
         }else{
@@ -142,7 +133,6 @@ const VerifyOtp = () => {
 
     } catch (error) {
       console.error('OTP verification failed:', error);
-      
       // Handle different error scenarios
       if (error?.message) {
         setValidationError(error.message);
