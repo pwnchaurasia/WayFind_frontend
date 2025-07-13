@@ -39,6 +39,11 @@ export const theme = {
     
     // Avatar colors for initials
     avatarColors: ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FECA57', '#FF9FF3'],
+
+    // error colors
+    errorBorderColor: '#FF6B6B',
+    errorTextColor: '#FF6B6B',
+
   },
   
   spacing: {
