@@ -5,6 +5,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from '@/src/context/AuthContext';
 import LoadingScreen from '@/src/components/LoadingScreen';
+import { useAuth } from '@/src/context/AuthContext';
 
 
 import {
@@ -19,10 +20,33 @@ import {
 
 SplashScreen.preventAutoHideAsync();
 
+
+const AppNavigator = () => {
+
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
+
+  return (
+      <Stack screenOptions={{headerShown: false}}>
+        { 
+          isAuthenticated ? 
+            ( <Stack.Screen name="(main)" redirect />) 
+          : 
+            (<Stack.Screen name="(auth)" redirect />)
+        }
+      </Stack>
+  );
+};
+
+
+
 const RootNavigation = () => {
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-
+  const [isLoading, setIsLoading] = useState(true); // Add this
 
   const [loaded, error] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
@@ -50,12 +74,9 @@ const RootNavigation = () => {
 
   return (
     <SafeAreaProvider>
-      <AuthProvider>
-        <Stack screenOptions={{headerShown: false}}/>
-        {
-          isAuthenticated ? <Redirect href={"/(main)"}/> : <Redirect href={"/(auth)"}/>
-        }
-        </AuthProvider>
+      <AuthProvider> 
+        <AppNavigator/>
+      </AuthProvider>
     </SafeAreaProvider>
   )
 }
