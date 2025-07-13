@@ -1,9 +1,10 @@
 export const theme = {
   colors: {
     // Background colors
-    background: '#1c1c23',
+    background: '#1A1A1A',
     surface: '#2A2A2A',
     inputBg: '#17171C',
+    inputBoxBg:'#353540',
     
     // Text colors
     text: '#ffffff',
@@ -12,6 +13,7 @@ export const theme = {
     mutedText: '#A1A1A1',
     placeholderText: '#666666',
     inputText: '#ffffff',
+
     
     // Primary colors
     primary: '#00C851',

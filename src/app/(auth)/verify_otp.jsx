@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
   codeInput: {
     width: 40,
     height: 40,
-    backgroundColor: theme.colors.input_box,
+    backgroundColor: theme.colors.inputBoxBg,
     borderRadius: 5,
     color: 'white',
     fontSize: 18,

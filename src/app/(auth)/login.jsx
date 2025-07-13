@@ -93,7 +93,7 @@ const LoginPage = () => {
                 textContainerStyle={styles.textContainerStyle}
                 placeholder="98 765 43221"
                 textInputProps={{
-                  placeholderTextColor: theme.colors.place_holder_text_color,
+                  placeholderTextColor: theme.colors.placeholderText,
                   keyboardType: "phone-pad",
                   maxLength: 11,
                   onFocus: () => {
@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
     color: "ffffff"
   },
   codeTextStyle:{
-    color: theme.colors.input_text,
+    color: theme.colors.inputText,
     fontSize: 16,
     marginTop: 0, 
     marginBottom: 0,  
