@@ -8,18 +8,23 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Audio } from 'expo-audio';
 import { globalStyles, formatTime } from '@/src/styles/globalStyles';
 import { theme } from '@/src/styles/theme';
 
 const VoiceRecorder = forwardRef(({ onSendAudio, group }, ref) => {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
+  const [recording, setRecording] = useState(null);
   
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const timerRef = useRef(null);
   const recordingTimeoutRef = useRef(null);
 
   useEffect(() => {
+    // Request audio permissions on component mount
+    requestPermissions();
+    
     return () => {
       if (timerRef.current) {
         clearInterval(timerRef.current);
@@ -27,8 +32,30 @@ const VoiceRecorder = forwardRef(({ onSendAudio, group }, ref) => {
       if (recordingTimeoutRef.current) {
         clearTimeout(recordingTimeoutRef.current);
       }
+      // Clean up recording if component unmounts
+      if (recording) {
+        recording.stopAndUnloadAsync();
+      }
     };
   }, []);
+
+  const requestPermissions = async () => {
+    try {
+      const { status } = await Audio.requestPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permission Required',
+          'Microphone permission is required to record audio messages.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Settings', onPress: () => Audio.requestPermissionsAsync() }
+          ]
+        );
+      }
+    } catch (error) {
+      console.error('Error requesting audio permissions:', error);
+    }
+  };
 
   useEffect(() => {
     if (isRecording) {
@@ -77,7 +104,19 @@ const VoiceRecorder = forwardRef(({ onSendAudio, group }, ref) => {
 
   const startRecording = async () => {
     try {
-      console.log('Starting recording simulation..');
+      console.log('Starting recording...');
+      
+      // Set audio mode for recording
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
+
+      const { recording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
+      
+      setRecording(recording);
       setIsRecording(true);
       console.log('Recording started');
     } catch (err) {
@@ -87,26 +126,34 @@ const VoiceRecorder = forwardRef(({ onSendAudio, group }, ref) => {
   };
 
   const stopRecording = async () => {
-    if (!isRecording) return;
+    if (!isRecording || !recording) return;
 
-    console.log('Stopping recording..');
+    console.log('Stopping recording...');
     setIsRecording(false);
     
     try {
-      // Simulate audio recording
-      const simulatedUri = `file://simulated_audio_${Date.now()}.m4a`;
+      await recording.stopAndUnloadAsync();
+      const uri = recording.getURI();
       
-      console.log('Recording stopped and stored at', simulatedUri);
+      console.log('Recording stopped and stored at', uri);
       
-      // Send the audio message (we'll estimate duration based on recording time)
-      if (recordingTime > 1) {
-        await sendAudioMessage(simulatedUri, recordingTime * 1000); // Convert to milliseconds
+      // Get recording status to get duration
+      const status = await recording.getStatusAsync();
+      const duration = status.durationMillis || recordingTime * 1000;
+      
+      // Reset recording state
+      setRecording(null);
+      
+      // Send the audio message
+      if (recordingTime >= 1) {
+        await sendAudioMessage(uri, duration);
       } else {
         Alert.alert('Recording too short', 'Please record for at least 1 second.');
       }
     } catch (error) {
       console.error('Error stopping recording:', error);
       Alert.alert('Error', 'Failed to save recording.');
+      setRecording(null);
     }
   };
 
@@ -151,10 +198,18 @@ const VoiceRecorder = forwardRef(({ onSendAudio, group }, ref) => {
   };
 
   const cancelRecording = async () => {
-    if (isRecording) {
-      console.log('Cancelling recording..');
+    if (isRecording && recording) {
+      console.log('Cancelling recording...');
       setIsRecording(false);
-      console.log('Recording cancelled');
+      
+      try {
+        await recording.stopAndUnloadAsync();
+        setRecording(null);
+        console.log('Recording cancelled');
+      } catch (error) {
+        console.error('Error cancelling recording:', error);
+        setRecording(null);
+      }
     }
   };
 

@@ -10,6 +10,7 @@ import {
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Audio } from 'expo-audio';
 import { globalStyles, getAvatarColor, generateInitials, formatDuration } from '@/src/styles/globalStyles';
 import { theme } from '@/src/styles/theme';
 
@@ -21,8 +22,8 @@ const MessagesTab = forwardRef(({ group }, ref) => {
       senderId: '3',
       time: '06:40',
       type: 'audio',
-      duration: '12min',
-      durationMs: 720000, // 12 minutes in milliseconds
+      duration: '0:05',
+      durationMs: 5000, // 5 seconds for demo
       playCount: 2,
       avatar: null,
       audioUri: null, // Will be set when recording
@@ -35,8 +36,8 @@ const MessagesTab = forwardRef(({ group }, ref) => {
       senderId: 'current-user',
       time: '07:55',
       type: 'audio',
-      duration: '12min',
-      durationMs: 720000,
+      duration: '0:08',
+      durationMs: 8000, // 8 seconds for demo
       playCount: 2,
       avatar: null,
       audioUri: null,
@@ -46,10 +47,27 @@ const MessagesTab = forwardRef(({ group }, ref) => {
   ]);
 
   const [currentPlayingId, setCurrentPlayingId] = useState(null);
+  const [sound, setSound] = useState(null);
+  const [playbackStatus, setPlaybackStatus] = useState(null);
+
+  useEffect(() => {
+    return () => {
+      // Clean up sound when component unmounts
+      if (sound) {
+        sound.unloadAsync();
+      }
+    };
+  }, []);
 
 
   const playAudio = async (message) => {
     try {
+      // Stop current playing audio if any
+      if (sound) {
+        await sound.unloadAsync();
+        setSound(null);
+      }
+
       if (currentPlayingId === message.id) {
         // If clicking the same message, just stop
         setCurrentPlayingId(null);
@@ -57,35 +75,88 @@ const MessagesTab = forwardRef(({ group }, ref) => {
         return;
       }
 
-      // Simulate audio playback for demo
+      // If no audioUri, simulate playback for demo messages
+      if (!message.audioUri) {
+        // Simulate audio playback for demo
+        setCurrentPlayingId(message.id);
+        updateMessagePlayState(message.id, true, 0);
+        
+        // Simulate progress
+        const interval = setInterval(() => {
+          setMessages(prev => prev.map(msg => {
+            if (msg.id === message.id && msg.isPlaying) {
+              const newPosition = msg.currentPosition + 100;
+              if (newPosition >= msg.durationMs) {
+                clearInterval(interval);
+                setCurrentPlayingId(null);
+                return { ...msg, isPlaying: false, currentPosition: 0 };
+              }
+              return { ...msg, currentPosition: newPosition };
+            }
+            return msg;
+          }));
+        }, 100);
+
+        // Auto stop after duration
+        setTimeout(() => {
+          clearInterval(interval);
+          setCurrentPlayingId(null);
+          updateMessagePlayState(message.id, false, 0);
+        }, message.durationMs);
+        return;
+      }
+
+      // Play real audio
+      console.log('Loading audio from:', message.audioUri);
+      
+      // Set audio mode for playback
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        playsInSilentModeIOS: true,
+      });
+
+      const { sound: newSound } = await Audio.Sound.createAsync(
+        { uri: message.audioUri },
+        { shouldPlay: true },
+        onPlaybackStatusUpdate
+      );
+
+      setSound(newSound);
       setCurrentPlayingId(message.id);
       updateMessagePlayState(message.id, true, 0);
-      
-      // Simulate progress
-      const interval = setInterval(() => {
-        setMessages(prev => prev.map(msg => {
-          if (msg.id === message.id && msg.isPlaying) {
-            const newPosition = msg.currentPosition + 1000;
-            if (newPosition >= msg.durationMs) {
-              clearInterval(interval);
-              setCurrentPlayingId(null);
-              return { ...msg, isPlaying: false, currentPosition: 0 };
-            }
-            return { ...msg, currentPosition: newPosition };
-          }
-          return msg;
-        }));
-      }, 1000);
 
-      // Auto stop after duration
-      setTimeout(() => {
-        clearInterval(interval);
-        setCurrentPlayingId(null);
-        updateMessagePlayState(message.id, false, 0);
-      }, message.durationMs);
+      console.log('Playing audio');
     } catch (error) {
       console.error('Error playing audio:', error);
       Alert.alert('Error', 'Could not play audio message');
+      setCurrentPlayingId(null);
+      updateMessagePlayState(message.id, false, 0);
+    }
+  };
+
+  const onPlaybackStatusUpdate = (status) => {
+    setPlaybackStatus(status);
+    
+    if (status.isLoaded && currentPlayingId) {
+      const position = status.positionMillis || 0;
+      const duration = status.durationMillis || 0;
+      
+      // Update message progress
+      setMessages(prev => prev.map(msg => 
+        msg.id === currentPlayingId 
+          ? { ...msg, currentPosition: position, durationMs: duration }
+          : msg
+      ));
+
+      // Handle playback completion
+      if (status.didJustFinish) {
+        setCurrentPlayingId(null);
+        updateMessagePlayState(currentPlayingId, false, 0);
+        if (sound) {
+          sound.unloadAsync();
+          setSound(null);
+        }
+      }
     }
   };
 
