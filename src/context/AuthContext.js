@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import AuthService from '@/src/apis/authService';
-import { getAccessToken, getRefreshToken } from '@/src/utils/token';
+import AuthService from '@/src/services/authService';
+import { removeToken } from '@/src/utils/token';
 
 const AuthContext = createContext();
 
@@ -9,14 +9,51 @@ export const AuthProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState(null);
 
-  const login = (userData) => {
-    setUser(userData);
-    setIsAuthenticated(true);
+  /**
+   * Login user and set authentication state
+   * @param {Object} userData - User data from authentication
+   */
+  const login = async (userData) => {
+    try {
+      setUser(userData);
+      setIsAuthenticated(true);
+      
+      // Optionally fetch fresh user data
+      if (!userData) {
+        const currentUser = await AuthService.getCurrentUser();
+        setUser(currentUser);
+      }
+    } catch (error) {
+      console.error('Login state update failed:', error);
+      // Still set authenticated state even if user fetch fails
+      setIsAuthenticated(true);
+    }
   };
 
-  const logout = () => {
-    setUser(null);
-    setIsAuthenticated(false);
+  /**
+   * Logout user and clear all authentication state
+   */
+  const logout = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Call logout service (handles backend logout and token cleanup)
+      await AuthService.logout();
+      
+      // Clear local state
+      setUser(null);
+      setIsAuthenticated(false);
+      
+      console.log('User logged out successfully');
+    } catch (error) {
+      console.error('Logout failed:', error);
+      
+      // Still clear local state even if service call fails
+      setUser(null);
+      setIsAuthenticated(false);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -25,25 +62,25 @@ export const AuthProvider = ({ children }) => {
 
   const checkAuthStatus = async () => {
     try {
-      // 1. Get token from SecureStore
-      const auth_token = await getAccessToken();
-      const refresh_token = await getRefreshToken();
-      console.log('Auth Token:', auth_token)
-      console.log('refresh_token Token:', refresh_token)
-
-      if (!auth_token) {
-        // No token = not authenticated
-        setIsAuthenticated(false);
-      } else {
-        // 2. Validate token with backend
-        const isValid = await AuthService.isAuthenticated(); // This calls your /auth/verify endpoint
-        setIsAuthenticated(isValid);
+      setIsLoading(true);
+      
+      // Check if user is authenticated (this will handle token validation)
+      const isValid = await AuthService.isAuthenticated();
+      
+      console.log('Authentication status:', isValid);
+      setIsAuthenticated(isValid);
+      
+      if (!isValid) {
+        // Clear user data if not authenticated
+        setUser(null);
       }
     } catch (error) {
       console.error('Auth check failed:', error);
       setIsAuthenticated(false);
+      setUser(null);
     } finally {
-      setIsLoading(false); // Hide splash screen
+      console.log("SettingLoading to be false")
+      setIsLoading(false);
     }
   };
 

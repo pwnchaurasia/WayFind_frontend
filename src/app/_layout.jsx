@@ -1,11 +1,10 @@
-import { StyleSheet, Text, View } from 'react-native'
-import React, { useEffect, useState } from 'react'
-import { Redirect, Stack } from 'expo-router'
+import { StyleSheet } from 'react-native'
+import React, { useEffect } from 'react'
 import * as SplashScreen from 'expo-splash-screen';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from '@/src/context/AuthContext';
 import LoadingScreen from '@/src/components/LoadingScreen';
-import { useAuth } from '@/src/context/AuthContext';
+import AuthGuard from '@/src/components/AuthGuard';
 
 
 import {
@@ -21,33 +20,16 @@ import {
 SplashScreen.preventAutoHideAsync();
 
 
-const AppNavigator = () => {
-
-  const { isAuthenticated, isLoading } = useAuth();
-
-  if (isLoading) {
-    return <LoadingScreen />;
-  }
-
-  return (
-      <Stack screenOptions={{headerShown: false}}>
-        { 
-          isAuthenticated ? 
-            ( <Stack.Screen name="(main)" redirect />) 
-          : 
-            (<Stack.Screen name="(auth)" redirect />)
-        }
-      </Stack>
-  );
-};
-
-
-
+/**
+ * RootNavigation Component
+ * 
+ * This is the main entry point of the app. It handles:
+ * 1. Font loading
+ * 2. Splash screen management
+ * 3. Provides authentication context
+ * 4. Renders the AuthGuard for routing logic
+ */
 const RootNavigation = () => {
-
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true); // Add this
-
   const [loaded, error] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
     Poppins_600SemiBold,
@@ -58,16 +40,16 @@ const RootNavigation = () => {
   });
   
 
-  useEffect (() => {
+  useEffect(() => {
     async function hideSplash() {
       if (loaded || error) {
         await SplashScreen.hideAsync();
       }
-      
     }
     hideSplash();
-  },[loaded, error])
+  }, [loaded, error])
 
+  // Show loading screen while fonts are loading
   if (!loaded && !error) {
     return <LoadingScreen />;
   }
@@ -75,12 +57,12 @@ const RootNavigation = () => {
   return (
     <SafeAreaProvider>
       <AuthProvider> 
-        <AppNavigator/>
+        <AuthGuard />
       </AuthProvider>
     </SafeAreaProvider>
   )
 }
 
-export default RootNavigation 
+export default RootNavigation
 
 const styles = StyleSheet.create({})

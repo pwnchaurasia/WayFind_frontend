@@ -1,4 +1,5 @@
 import API from "@/src/apis/axios";
+import { getAccessToken } from "@/src/utils/token";
 
 export const requestOTP = async (payload) => {
     return await API.post("/v1/auth/request-otp", payload)
@@ -11,5 +12,27 @@ export const requestOTP = async (payload) => {
 }
 
 export const isAuthenticated = async () => {
-    return true
+    try {
+        const token = await getAccessToken();
+        
+        // If no token exists, user is not authenticated
+        if (!token) {
+            return false;
+        }
+
+        // Validate token with backend
+        const response = await API.get("/v1/auth/verify");
+        return response.status === 200;
+    } catch (error) {
+        console.error('Token validation failed:', error);
+        return false;
+    }
 }
+
+// Export as default object for consistency
+const AuthService = {
+    requestOTP,
+    isAuthenticated
+};
+
+export default AuthService;

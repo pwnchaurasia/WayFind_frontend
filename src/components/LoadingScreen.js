@@ -12,7 +12,7 @@ const LoadingScreen = () => {
           style={styles.logo}
           resizeMode="contain"
         />
-        <Text style={styles.appName}>WayFind11111111</Text>
+        <Text style={styles.appName}>WayFind</Text>
       </View>
       <ActivityIndicator 
         size="large" 
