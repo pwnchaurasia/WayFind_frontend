@@ -2,11 +2,16 @@ import API from "@/src/apis/axios";
 import { getAccessToken } from "@/src/utils/token";
 
 export const requestOTP = async (payload) => {
+    console.log("payload in requestOTP", payload);
     return await API.post("/v1/auth/request-otp", payload)
         .then((response) => {
             return response.data;
         })
         .catch((error) => {
+            console.log("error in requestOTP", error);
+            console.log('Error:', error.message);              // "Network Error"
+            console.log('Error config:', error.config?.url);   // See which URL failed
+            console.log('Full Error:', JSON.stringify(error)); // Inspect full object
             throw error.response?.data || error;
         });
 }

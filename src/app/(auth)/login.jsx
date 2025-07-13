@@ -161,7 +161,6 @@ const LoginPage = () => {
                   onChangeCountry={handleCountryChange}
                   withDarkTheme
                   withShadow
-
                   containerStyle={[
                     styles.containerStyle,
                     validationError ? styles.containerStyleError : {}
@@ -177,6 +176,7 @@ const LoginPage = () => {
                     placeholderTextColor: theme.colors.placeholderText,
                     keyboardType: "phone-pad",
                     maxLength: 11,
+                    cursorColor: theme.colors.textPrimary,
                     onFocus: () => {
                       // Scroll to a specific position to make input visible
                       setTimeout(() => {
@@ -205,10 +205,6 @@ const LoginPage = () => {
           
           {/* Button */}
           <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.button}>
-              <Link style={styles.buttonText} href="/verify_otp">Next Step</Link>
-            </TouchableOpacity>
-            
             <TouchableOpacity 
               style={[styles.button, styles.otpButton, isLoading && styles.buttonDisabled]} 
               onPress={handleRequestOTP}
@@ -253,14 +249,14 @@ const styles = StyleSheet.create({
   },
   
   countryCode:{
-    width: '80%',
+    width: '90%',
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'center',
   },
   containerStyle:{
     width: '100%',
-    backgroundColor: theme.colors.input_box,
+    backgroundColor: theme.colors.inputBoxBg,
     borderTopLeftRadius: 3,
     borderBottomLeftRadius: 3,
     alignItems: 'center',

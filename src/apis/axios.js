@@ -5,11 +5,12 @@ import { getAccessToken } from '@/src/utils/token';
 const ENV = Constants.expoConfig?.extra?.env || 'dev';
 
 const baseURLs = {
-  dev: 'http://127.0.0.1:8000',
+  dev: 'https://8cb724e03233.ngrok-free.app',
   sit: 'https://sit-api.example.com',
   prod: 'https://api.example.com',
 };
 
+console.log(baseURLs[ENV], 'baseURL for axios');
 const API = axios.create({
   baseURL: baseURLs[ENV],
   headers: {
