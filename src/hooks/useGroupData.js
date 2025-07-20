@@ -79,7 +79,7 @@ export const useGroupData = (groupId) => {
         }
       };
 
-      setGroup(dummyGroups[groupId] || dummyGroups['1']);
+      setGroup([]);
     } finally {
       setLoading(false);
     }

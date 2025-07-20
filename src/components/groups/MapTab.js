@@ -168,80 +168,12 @@ const MapTab = ({ group }) => {
         setUserLocations(locations);
       } else {
         // Fallback to mock data for development
-        setUserLocations([
-          {
-            id: '1',
-            userId: '1',
-            name: 'Mahdi Fadaee',
-            latitude: 40.7589,
-            longitude: -73.9851,
-            avatar: null,
-            isOnline: true,
-            lastSeen: new Date(),
-            accuracy: 10,
-          },
-          {
-            id: '2',
-            userId: '3',
-            name: 'Hooman Abasi',
-            latitude: 40.7614,
-            longitude: -73.9776,
-            avatar: null,
-            isOnline: true,
-            lastSeen: new Date(),
-            accuracy: 15,
-          },
-          {
-            id: '3',
-            userId: '2',
-            name: 'Arman',
-            latitude: 40.7505,
-            longitude: -73.9934,
-            avatar: null,
-            isOnline: false,
-            lastSeen: new Date(Date.now() - 300000), // 5 minutes ago
-            accuracy: 20,
-          },
-          {
-            id: '4',
-            userId: '4',
-            name: 'Duxica Team',
-            latitude: 40.7580,
-            longitude: -73.9855,
-            avatar: null,
-            isOnline: true,
-            lastSeen: new Date(),
-            accuracy: 8,
-          },
-        ]);
+        setUserLocations([]);
       }
     } catch (error) {
       console.error('Error fetching group locations:', error);
       // Set mock data on error
-      setUserLocations([
-        {
-          id: '1',
-          userId: '1',
-          name: 'Mahdi Fadaee',
-          latitude: 40.7589,
-          longitude: -73.9851,
-          avatar: null,
-          isOnline: true,
-          lastSeen: new Date(),
-          accuracy: 10,
-        },
-        {
-          id: '2',
-          userId: '3',
-          name: 'Hooman Abasi',
-          latitude: 40.7614,
-          longitude: -73.9776,
-          avatar: null,
-          isOnline: true,
-          lastSeen: new Date(),
-          accuracy: 15,
-        },
-      ]);
+      setUserLocations([]);
     }
   };
 

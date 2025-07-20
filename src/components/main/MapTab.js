@@ -11,32 +11,7 @@ import {
 import { colors } from '@/src/constants/colors';
 
 const MapTab = ({ group }) => {
-  const [userLocations] = useState([
-    {
-      id: '1',
-      name: 'Mahdi Fadaee',
-      latitude: 40.7589,
-      longitude: -73.9851,
-      avatar: null,
-      isOnline: true,
-    },
-    {
-      id: '2',
-      name: 'Hooman Abasi',
-      latitude: 40.7614,
-      longitude: -73.9776,
-      avatar: null,
-      isOnline: true,
-    },
-    {
-      id: '3',
-      name: 'Arman',
-      latitude: 40.7505,
-      longitude: -73.9934,
-      avatar: null,
-      isOnline: false,
-    },
-  ]);
+  const [userLocations] = useState([]);
 
   const generateInitials = (name) => {
     return name

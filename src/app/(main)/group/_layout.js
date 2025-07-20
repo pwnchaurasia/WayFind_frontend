@@ -7,9 +7,7 @@ import { useGlobalSearchParams, useRouter } from 'expo-router';
 import VoiceRecorder from '@/src/components/groups/VoiceRecorder';
 import { useGroupData } from '@/src/hooks/useGroupData';
 
-const CustomTabBar = ({ state, descriptors, navigation }) => {
-  const { id } = useGlobalSearchParams();
-  const { group } = useGroupData(id);
+const CustomTabBar = ({ state, descriptors, navigation, group, groupId }) => {
   const router = useRouter();
 
   const handleSendAudio = (audioUri, duration) => {
@@ -69,9 +67,15 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
 };
 
 export default function GroupLayout() {
+  // Get group ID from route parameters
+  const { id } = useGlobalSearchParams();
+  
+  // Fetch group data using the custom hook
+  const { group, loading, error, refreshGroup } = useGroupData(id);
+
   return (
     <Tabs
-      tabBar={(props) => <CustomTabBar {...props} />}
+      tabBar={(props) => <CustomTabBar {...props} group={group} groupId={id} />}
       screenOptions={{
         headerShown: false,
       }}

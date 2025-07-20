@@ -36,14 +36,26 @@ const GroupService = {
     },
     getGroupUsers: async (groupId) => {
         console.log("groupId in getGroupUsers", groupId);
-        return await API.get(`/v1/groups/${groupId}/users`)
-            .then((response) => {
-                return response;
-            })
-            .catch((error) => {
-                console.log("error in getGroupUsers", error);
-                throw error.response?.data || error;
-            });
+        
+        try {
+            const response = await API.get(`/v1/groups/${groupId}/users`)
+            if (response.status !== 200) {
+                throw new Error(response.data?.message || 'Failed to fetch group users');
+            }
+            console.log(response.data);
+            return response.data; // Return just the data on success
+            
+        } catch (error) {
+            if (error.response) {
+                // Server responded with error status (400, 500, etc.)
+                const errorData = error.response.data;
+                throw new Error(errorData?.message || `Server error: ${error.response.status}`);
+            } else {
+                // Network error or other issues
+                throw new Error('Network error. Please check your connection.');
+            }
+            
+        }
     },
     refreshGroupJoinLink: async (groupId) => {
         console.log("groupId in refreshGroupJoinLink", groupId);

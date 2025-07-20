@@ -17,8 +17,11 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import SearchBar from './SearchBar';
 import { colors } from '@/src/constants/colors';
+import GroupService from '@/src/apis/groupService';
+import { useGlobalSearchParams, useRouter } from 'expo-router';
 
 const UsersTab = ({ group, isAdmin = false }) => {
+  const { id } = useGlobalSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -27,7 +30,8 @@ const UsersTab = ({ group, isAdmin = false }) => {
   const [showUserModal, setShowUserModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteLink, setInviteLink] = useState('');
-
+  console.log("Group data here", group);
+  console.log('id in UserTab:', id);
   useEffect(() => {
     fetchGroupMembers();
   }, [group.id]);
@@ -36,82 +40,14 @@ const UsersTab = ({ group, isAdmin = false }) => {
     try {
       setLoading(true);
       
-      // Replace with your actual API endpoint
-      const your_auth_token = 'your_auth_token_here'; // Replace with your auth token
-      const response = await fetch(`https://your-api.com/groups/${group.id}/members`, {
-        headers: {
-          'Authorization': `Bearer ${your_auth_token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
+      const response = await GroupService.getGroupUsers(id)
+      console.log(response)
       if (response.ok) {
         const membersData = await response.json();
         setMembers(membersData);
       } else {
         // Fallback to mock data for development
-        setMembers([
-          {
-            id: '1',
-            name: 'Mahdi Fadaee',
-            phone: '+1 (234) 567-8901',
-            email: 'mahdi@example.com',
-            image: null,
-            isOnline: true,
-            lastSeen: new Date(),
-            role: 'admin',
-            joinedAt: new Date(Date.now() - 86400000 * 30), // 30 days ago
-            isCurrentUser: false,
-          },
-          {
-            id: '2',
-            name: 'Arman',
-            phone: '+1 (234) 567-8902',
-            email: 'arman@example.com',
-            image: null,
-            isOnline: false,
-            lastSeen: new Date(Date.now() - 300000), // 5 minutes ago
-            role: 'member',
-            joinedAt: new Date(Date.now() - 86400000 * 15), // 15 days ago
-            isCurrentUser: false,
-          },
-          {
-            id: '3',
-            name: 'Hooman Abasi',
-            phone: '+1 (234) 567-8903',
-            email: 'hooman@example.com',
-            image: null,
-            isOnline: true,
-            lastSeen: new Date(),
-            role: 'moderator',
-            joinedAt: new Date(Date.now() - 86400000 * 20), // 20 days ago
-            isCurrentUser: false,
-          },
-          {
-            id: '4',
-            name: 'Duxica Team',
-            phone: '+1 (234) 567-8904',
-            email: 'team@duxica.com',
-            image: null,
-            isOnline: true,
-            lastSeen: new Date(),
-            role: 'member',
-            joinedAt: new Date(Date.now() - 86400000 * 5), // 5 days ago
-            isCurrentUser: false,
-          },
-          {
-            id: 'current-user',
-            name: 'You',
-            phone: '+1 (234) 567-8900',
-            email: 'you@example.com',
-            image: null,
-            isOnline: true,
-            lastSeen: new Date(),
-            role: 'admin',
-            joinedAt: new Date(Date.now() - 86400000 * 45), // 45 days ago
-            isCurrentUser: true,
-          },
-        ]);
+        setMembers([]);
       }
     } catch (error) {
       console.error('Error fetching group members:', error);
