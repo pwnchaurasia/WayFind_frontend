@@ -43,7 +43,7 @@ const GroupItem = ({ group, onPress }) => {
         
         <View style={styles.groupInfo}>
           <Text style={styles.groupName}>{group.name}</Text>
-          <Text style={styles.memberCount}>{group.memberCount} Members</Text>
+          <Text style={styles.memberCount}>{group.members_count} Members</Text>
         </View>
       </View>
 

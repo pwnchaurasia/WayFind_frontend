@@ -41,9 +41,9 @@ const CreateJoinGroupModal = ({ visible, onClose, onCreateGroup, onJoinGroup }) 
       const createGroupResponse = await GroupService.createGroup(payload);
 
       // Success - everything worked
-      console.log('Group created successfully:', groupData);
-      onCreateGroup(groupData.group);
-      setGeneratedLink(groupData.group.join_url);
+      console.log('Group created successfully:', createGroupResponse);
+      onCreateGroup(createGroupResponse.group);
+      setGeneratedLink(createGroupResponse.group.join_url);
       // Parent will close modal via onCreateGroup
     } catch (error) {
       // All errors come here - show user the error message

@@ -63,13 +63,14 @@ const GroupListScreen = () => {
 
   const handleCreateGroup = (groupData) => {
     // Add new group to the list
+    console.log('new group data:', groupData);
     const newGroup = {
-      id: Date.now().toString(),
-      name: groupData.name,
-      memberCount: 1,
+      id: groupData?.id,
+      name: groupData?.name,
+      memberCount: groupData.memberCount,
       image: groupData.image,
     };
-    setGroups([...groups, newGroup]);
+    setGroups([newGroup, ...groups]);
     setIsModalVisible(false);
   };
 

@@ -5,12 +5,12 @@ const GroupService = {
     createGroup: async (payload) => {
         console.log("payload in createGroup", payload);
         try {
-            const resp = await API.post("/v1/groups", payload)    
+            const response = await API.post("/v1/groups", payload)    
             // If status is not 201, throw error
             if (response.status !== 201) {
                 throw new Error(response.data?.message || 'Failed to create group');
             }
-        
+            console.log("Group created successfully:", response.data);
             return response.data; // Return just the data on success
         } catch (error) {
              // Handle different error cases
