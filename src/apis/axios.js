@@ -5,7 +5,7 @@ import { getAccessToken } from '@/src/utils/token';
 const ENV = Constants.expoConfig?.extra?.env || 'dev';
 
 const baseURLs = {
-  dev: 'https://8cb724e03233.ngrok-free.app',
+  dev: 'https://6fa541ae49f3.ngrok-free.app',
   sit: 'https://sit-api.example.com',
   prod: 'https://api.example.com',
 };

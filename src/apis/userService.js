@@ -12,6 +12,28 @@ const UserService = {
                 console.log("error in updateCurrentUserProfile", error);
                 throw error.response?.data || error;
             });
+    },
+    getCurrentUserProfile: async () => {
+        console.log("payload in getCurrentUserProfile");
+        try {
+            const response = await API.get("/v1/users/me");
+            return response;
+        } catch (error) {
+            console.error('Failed to get user profile:', error);
+            throw error.response?.data || error;
+        }
+    },
+    getCurrentUserGroups: async () => {
+        try {
+            const response = await API.get("/v1/users/groups");
+            return response;
+            
+        } catch (error) {
+            console.error('Failed to get user groups:', error);
+            throw error.response?.data || error;
+            
+        }
+
     }
 
 };

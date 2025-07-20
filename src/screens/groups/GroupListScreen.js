@@ -1,6 +1,6 @@
 
 // src/screens/GroupListScreen.js
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -10,40 +10,50 @@ import {
   StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import GroupItem from '@/src/components/groups/GroupItem';
 import SearchBar from '@/src/components/groups/SearchBar';
 import FloatingActionButton from '@/src/components/groups/FloatingActionButton';
 import CreateJoinGroupModal from '@/src/components/groups/CreateJoinGroupModal';
 import { colors } from '@/src/constants/colors';
+import UserService from '@/src/apis/userService';
 
 const GroupListScreen = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [groups, setGroups] = useState([
-    {
-      id: '1',
-      name: 'Duxica Group',
-      memberCount: 22,
-      image: null,
-    },
-    {
-      id: '2',
-      name: 'Probo Team',
-      memberCount: 22,
-      image: null,
-    },
-    {
-      id: '3',
-      name: 'DOTX Team',
-      memberCount: 22,
-      image: null,
-    },
-  ]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [groups, setGroups] = useState([]);
 
-  const filteredGroups = groups.filter(group =>
-    group.name.toLowerCase().includes(searchQuery.toLowerCase())
+  
+  useFocusEffect(
+    useCallback(() => {
+      fetchUserGroups();
+    }, [])
+  );
+
+  const fetchUserGroups = async () => {
+    setIsLoading(true);
+    try {
+    
+      const userGroups = await UserService.getCurrentUserGroups();
+      if (userGroups.status !== 200) {
+        Alert.alert('Error', 'Not able to fecth user groups');
+      }else{
+        console.log('userGroups.data', userGroups.data.groups);
+        setGroups(userGroups.data.groups);
+      }
+    } catch (error) {
+      console.error('Failed to fetch groups:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
+
+  const filteredGroups = groups.filter(grp =>
+    grp.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleGroupPress = (group) => {
@@ -109,6 +119,17 @@ const GroupListScreen = () => {
         style={styles.groupsList}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.groupsListContent}
+        // Empty state component
+        ListEmptyComponent={() => (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyTitle}>No Groups Yet</Text>
+            <Text style={styles.emptySubtitle}>
+              Please join a group or create one to get started
+            </Text>
+          </View>
+        )}
+
+
       />
 
       {/* Floating Action Button */}
@@ -166,6 +187,26 @@ const styles = StyleSheet.create({
   },
   groupsListContent: {
     paddingBottom: 100,
+  },
+
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+    paddingVertical: 60,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 8,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 24,
   },
 });
 
