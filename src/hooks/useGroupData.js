@@ -16,6 +16,7 @@ export const useGroupData = (groupId) => {
       setLoading(true);
       
       // Replace with your actual API endpoint
+      const your_auth_token = 'your_auth_token_here'; // Replace with your auth token
       const response = await fetch(`https://your-api.com/groups/${groupId}`, {
         headers: {
           'Authorization': `Bearer ${your_auth_token}`,

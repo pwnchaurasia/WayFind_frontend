@@ -155,6 +155,7 @@ const MapTab = ({ group }) => {
   const fetchGroupLocations = async () => {
     try {
       // Replace with your actual API endpoint
+      const your_auth_token = 'your_auth_token_here'; // Replace with your auth token
       const response = await fetch(`https://your-api.com/groups/${group.id}/locations`, {
         headers: {
           'Authorization': `Bearer ${your_auth_token}`,
@@ -247,6 +248,7 @@ const MapTab = ({ group }) => {
   const sendLocationToServer = async (location) => {
     try {
       // Replace with your actual API endpoint
+      const your_auth_token = 'your_auth_token_here'; // Replace with your auth token
       await fetch(`https://your-api.com/groups/${group.id}/location`, {
         method: 'POST',
         headers: {

@@ -127,7 +127,7 @@ export default function GroupLayout() {
         }}
       />
       <Tabs.Screen
-        name="settings"
+        name="[id]/settings"
         options={{
           title: 'Settings',
           tabBarIcon: ({ color, size, focused }) => (

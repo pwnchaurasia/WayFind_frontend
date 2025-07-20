@@ -37,6 +37,7 @@ const UsersTab = ({ group, isAdmin = false }) => {
       setLoading(true);
       
       // Replace with your actual API endpoint
+      const your_auth_token = 'your_auth_token_here'; // Replace with your auth token
       const response = await fetch(`https://your-api.com/groups/${group.id}/members`, {
         headers: {
           'Authorization': `Bearer ${your_auth_token}`,
@@ -207,6 +208,7 @@ const UsersTab = ({ group, isAdmin = false }) => {
   const generateInviteLink = async () => {
     try {
       // Replace with your actual API endpoint
+      const your_auth_token = 'your_auth_token_here'; // Replace with your auth token
       const response = await fetch(`https://your-api.com/groups/${group.id}/invite`, {
         method: 'POST',
         headers: {
@@ -270,6 +272,7 @@ const UsersTab = ({ group, isAdmin = false }) => {
   const removeUserFromGroup = async (user) => {
     try {
       // Replace with your actual API endpoint
+      const your_auth_token = 'your_auth_token_here'; // Replace with your auth token
       const response = await fetch(`https://your-api.com/groups/${group.id}/members/${user.id}`, {
         method: 'DELETE',
         headers: {
@@ -308,6 +311,7 @@ const UsersTab = ({ group, isAdmin = false }) => {
   const changeUserRole = async (user, newRole) => {
     try {
       // Replace with your actual API endpoint
+      const your_auth_token = 'your_auth_token_here'; // Replace with your auth token
       const response = await fetch(`https://your-api.com/groups/${group.id}/members/${user.id}/role`, {
         method: 'PUT',
         headers: {
