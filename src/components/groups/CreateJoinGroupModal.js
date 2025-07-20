@@ -15,6 +15,7 @@ import * as Clipboard from 'expo-clipboard';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { colors } from '@/src/constants/colors';
 import * as ImagePicker from 'expo-image-picker';
+import GroupService from '@/src/apis/groupService';
 
 const CreateJoinGroupModal = ({ visible, onClose, onCreateGroup, onJoinGroup }) => {
   const [activeTab, setActiveTab] = useState('create');
@@ -22,24 +23,39 @@ const CreateJoinGroupModal = ({ visible, onClose, onCreateGroup, onJoinGroup }) 
   const [groupImage, setGroupImage] = useState(null);
   const [groupCode, setGroupCode] = useState('');
   const [generatedLink, setGeneratedLink] = useState('');
+  
 
-  const handleCreateGroup = () => {
+  const handleCreateGroup = async () => {
     if (!groupName.trim()) {
       Alert.alert('Error', 'Please enter a group name');
       return;
     }
 
-    const groupData = {
+    const payload = {
       name: groupName,
       image: groupImage,
     };
 
     // Simulate API call and generate link
-    const mockLink = `https://yourapp.com/join/group/${Date.now()}`;
-    setGeneratedLink(mockLink);
+    try {
+      const createGroupResponse = await GroupService.createGroup(payload);
 
-    onCreateGroup(groupData);
-    resetForm();
+      // Success - everything worked
+      console.log('Group created successfully:', groupData);
+      onCreateGroup(groupData.group);
+      setGeneratedLink(groupData.group.join_url);
+      // Parent will close modal via onCreateGroup
+    } catch (error) {
+      // All errors come here - show user the error message
+      console.log('Create group error:', error);
+      Alert.alert('Error', error.message);
+      // Modal stays open for retry
+    }finally {
+      resetForm();
+    }
+
+    
+    
   };
 
   const handleJoinGroup = () => {
@@ -47,7 +63,7 @@ const CreateJoinGroupModal = ({ visible, onClose, onCreateGroup, onJoinGroup }) 
       Alert.alert('Error', 'Please enter a group code');
       return;
     }
-
+    console.log('I am here in handle join group');
     onJoinGroup(groupCode);
     resetForm();
   };
