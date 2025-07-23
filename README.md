@@ -58,14 +58,14 @@ The Wayfind Front end app is designed to provide location tracking, SOS, and saf
 
 ### Tasks
 
-- [] Splash Screen
-- [] Login Screen
-- [] OTP verify screen
-- [] Update profile, with name and email
-- [] Create Group
+- [X] Splash Screen
+- [X] Login Screen
+- [X] OTP verify screen
+- [X] Update profile, with name and email
+- [X] Create Group
 - [] Share Group join link
 - [] Join group via link
-- [] Show all user's groups
+- [X] Show User's Group
 - [] Show map, and render group members location as marker on map.
 - [] display tab on bottom, l -> r : back, location, Speak, members, voice notes.
 - [] members list would be displayed on scrollable overlay. with Their Name: and phone number and call button
