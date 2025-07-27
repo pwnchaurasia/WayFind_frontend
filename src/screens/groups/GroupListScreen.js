@@ -8,6 +8,7 @@ import {
   FlatList,
   TouchableOpacity,
   StatusBar,
+  Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
@@ -37,11 +38,12 @@ const GroupListScreen = () => {
     try {
     
       const userGroups = await UserService.getCurrentUserGroups();
-      if (userGroups.status !== 200) {
+
+      if (!userGroups || !userGroups.groups) {
         Alert.alert('Error', 'Not able to fecth user groups');
+        throw new Error('No members found');
       }else{
-        console.log('userGroups.data', userGroups.data.groups);
-        setGroups(userGroups.data.groups);
+        setGroups(userGroups.groups);
       }
     } catch (error) {
       console.error('Failed to fetch groups:', error);

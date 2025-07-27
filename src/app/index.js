@@ -2,6 +2,8 @@ import React, { useEffect } from 'react';
 import { Redirect } from 'expo-router';
 import { useAuth } from '@/src/context/AuthContext';
 import LoadingScreen from '@/src/components/LoadingScreen';
+import { useLocationTracking } from '@/src/hooks/useLocationTracking';
+import { getDeviceInfo, sendDeviceInfo } from '@/src/utils/deviceInfo';
 
 /**
  * Index Component - Initial Route Handler
@@ -16,10 +18,27 @@ import LoadingScreen from '@/src/components/LoadingScreen';
  */
 export default function Index() {
   const { isAuthenticated, isLoading, isProfileComplete } = useAuth();
+  const { isTracking, hasPermission, requestPermission } = useLocationTracking();
 
-  console.log('Index: isAuthenticated:', isAuthenticated);
-  console.log('Index: isLoading:', isLoading);
-  console.log('Index: isProfileComplete:', isProfileComplete);
+   useEffect(() => {
+    // Send device info on app start
+    const initializeDeviceInfo = async () => {
+      if (isAuthenticated && !isLoading) {
+        try {
+          const deviceInfo = await getDeviceInfo();
+          if (deviceInfo) {
+            await sendDeviceInfo(deviceInfo);
+            console.log('Device info sent after authentication');
+          }
+
+        } catch (error) {
+          console.error('Error sending device info after auth:', error);
+        }
+      }
+    };
+
+    initializeDeviceInfo();
+  }, [isAuthenticated, isLoading]);
 
   // Show loading screen while checking authentication
     if (isLoading) {

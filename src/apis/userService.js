@@ -4,20 +4,28 @@ import API from "@/src/apis/axios";
 const UserService = {
     updateCurrentUserProfile: async (payload) => {
         console.log("payload in updateCurrentUserProfile", payload);
-        return await API.put("/v1/users/me", payload)
-            .then((response) => {
-                return response;
-            })
-            .catch((error) => {
-                console.log("error in updateCurrentUserProfile", error);
-                throw error.response?.data || error;
-            });
+        try{
+            const response = await API.put("/v1/users/me", payload)
+            if (response.status !== 200) {
+                throw new Error('Failed to update user profile');
+            }
+            console.log('User profile updated successfully');
+            // Optionally update device last active time
+            return response.data
+
+        } catch (error) {
+            console.error('Failed to update user profile:', error);
+            throw error.response?.data || error;
+        }
     },
     getCurrentUserProfile: async () => {
         console.log("payload in getCurrentUserProfile");
         try {
             const response = await API.get("/v1/users/me");
-            return response;
+            if (response.status !== 200) {
+                throw new Error('Failed to fetch user profile');
+            }
+            return response.data; // Return just the data on success
         } catch (error) {
             console.error('Failed to get user profile:', error);
             throw error.response?.data || error;
@@ -25,8 +33,12 @@ const UserService = {
     },
     getCurrentUserGroups: async () => {
         try {
-            const response = await API.get("/v1/users/groups");
-            return response;
+            const response = await API.get("/v1/users/me/groups");
+            console.log('User groups fetched successfully:', response.data);
+            if (response.status !== 200) {
+                throw new Error('Failed to fetch user groups');
+            }
+            return response.data;
             
         } catch (error) {
             console.error('Failed to get user groups:', error);
@@ -34,6 +46,30 @@ const UserService = {
             
         }
 
+    },
+    updateDeviceLastActive: async () => {
+        try {
+            const response = await API.put('/v1/users/me/device-info/last-active');
+            if (response.status !== 200) {
+                throw new Error('Failed to update device last active');
+            }
+            return response.data;
+        } catch (error) {
+            console.error('Failed to update device last active:', error);
+            throw error.response?.data || error;
+        }
+    },
+    updateUsersDeviceInfo: async (deviceInfo) => {
+        try {
+            const response = await API.post('/v1/users/me/device-info', deviceInfo);
+            if (response.status !== 200) {
+                throw new Error('Failed to update device info');
+            }
+            return response.data;
+        } catch (error) {
+            console.error('Failed to update device info:', error);
+            throw error.response?.data || error;
+        }
     }
 
 };
