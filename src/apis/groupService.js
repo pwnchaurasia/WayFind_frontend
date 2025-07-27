@@ -40,7 +40,6 @@ const GroupService = {
             if (response.status !== 200) {
                 throw new Error(response.data?.message || 'Failed to fetch group info');
             }
-            console.log("I am here in getGroupById", response.data);
             return response.data; // Return just the data on success
             
         } catch (error) {
@@ -56,14 +55,13 @@ const GroupService = {
 
     },
     getGroupUsers: async (groupId) => {
-        console.log("groupId in getGroupUsers", groupId);
         
         try {
             const response = await API.get(`/v1/groups/${groupId}/users`)
             if (response.status !== 200) {
                 throw new Error(response.data?.message || 'Failed to fetch group users');
             }
-            console.log(response.data);
+            
             return response.data; // Return just the data on success
             
         } catch (error) {

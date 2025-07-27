@@ -11,7 +11,7 @@ const GroupHeader = ({ group, showBackButton = true }) => {
   const handleBack = () => {
     router.back();
   };
-
+  
   if (!group) {
     return <View style={globalStyles.header} />;
   }
@@ -29,7 +29,7 @@ const GroupHeader = ({ group, showBackButton = true }) => {
           {group.image ? (
             <Image source={{ uri: group.image }} style={globalStyles.avatarMedium} />
           ) : (
-            <View style={[globalStyles.avatarMedium, globalStyles.avatarPlaceholder, { backgroundColor: getAvatarColor(group.name) }]}>
+            <View style={[globalStyles.avatar, globalStyles.avatarPlaceholder, { backgroundColor: getAvatarColor(group.name) }]}>
               <Text style={[globalStyles.avatarText, globalStyles.avatarTextMedium]}>{generateInitials(group.name)}</Text>
             </View>
           )}
@@ -37,7 +37,7 @@ const GroupHeader = ({ group, showBackButton = true }) => {
           <View style={styles.groupDetails}>
             <Text style={styles.groupName}>{group.name}</Text>
             <Text style={styles.groupStatus}>
-              {group.onlineCount || 0} online, {group.memberCount || 0} members
+              {group.members_count || 0} online, {group.members_count || 0} members
             </Text>
           </View>
         </View>

@@ -30,8 +30,7 @@ const UsersTab = ({ group, isAdmin = false }) => {
   const [showUserModal, setShowUserModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteLink, setInviteLink] = useState('');
-  console.log("Group data here", group);
-  console.log('id in UserTab:', id);
+  
   useEffect(() => {
     fetchGroupMembers();
   }, [group.id]);
@@ -39,16 +38,15 @@ const UsersTab = ({ group, isAdmin = false }) => {
   const fetchGroupMembers = async () => {
     try {
       setLoading(true);
-      
+
       const response = await GroupService.getGroupUsers(id)
-      console.log(response)
-      if (response.ok) {
-        const membersData = await response.json();
-        setMembers(membersData);
-      } else {
-        // Fallback to mock data for development
-        setMembers([]);
+      console.log("Fetched group user", response)
+      if(!response || !response.users) {
+        throw new Error('No members found');
       }
+      const membersData = response?.users || []; 
+      setMembers(membersData);
+      
     } catch (error) {
       console.error('Error fetching group members:', error);
       Alert.alert('Error', 'Failed to load group members');
@@ -64,10 +62,12 @@ const UsersTab = ({ group, isAdmin = false }) => {
   };
 
   const filteredMembers = members.filter(member =>
-    member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    member.phone.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    member.email.toLowerCase().includes(searchQuery.toLowerCase())
+    member?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    member?.phone_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    member?.email?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  console.log('Filtered Members:', filteredMembers);
 
   const generateInitials = (name) => {
     return name
@@ -170,7 +170,7 @@ const UsersTab = ({ group, isAdmin = false }) => {
 
   const handleInvitePress = () => {
     setShowInviteModal(true);
-    generateInviteLink();
+    // generateInviteLink();
   };
 
   const copyInviteLink = async () => {
@@ -300,23 +300,23 @@ const UsersTab = ({ group, isAdmin = false }) => {
             {item.isOnline && <View style={styles.onlineIndicator} />}
           </View>
           
-          <Text style={styles.memberPhone}>{item.phone}</Text>
-          <Text style={styles.memberEmail}>{item.email}</Text>
+          <Text style={styles.memberPhone}>{item?.phone_number}</Text>
+          {/* <Text style={styles.memberEmail}>{item?.email}</Text> */}
           
           <View style={styles.memberMeta}>
             <View style={styles.roleContainer}>
               <Ionicons 
-                name={getRoleIcon(item.role)} 
+                name={getRoleIcon(item?.role)} 
                 size={12} 
-                color={getRoleColor(item.role)} 
+                color={getRoleColor(item?.role)} 
               />
-              <Text style={[styles.roleText, { color: getRoleColor(item.role) }]}>
-                {item.role.charAt(0).toUpperCase() + item.role.slice(1)}
+              <Text style={[styles.roleText, { color: getRoleColor(item?.role) }]}>
+                {item?.role.charAt(0).toUpperCase() + item.role.slice(1)}
               </Text>
             </View>
             
             <Text style={styles.lastSeenText}>
-              {item.isOnline ? 'Online' : `Last seen ${getTimeSince(item.lastSeen)}`}
+              {item.isOnline ? 'Online' : `Last seen ${getTimeSince(item.last_seen)}`}
             </Text>
           </View>
         </View>
