@@ -12,6 +12,7 @@ export default function MessagesTabScreen() {
   const messagesTabRef = useRef(null);
   const voiceRecorderRef = useRef(null);
 
+  console.log("I am here in index page in [id] ")
   // Expose voice recorder methods globally for tab bar access
   useEffect(() => {
     if (global.voiceRecorderRef) {

@@ -27,7 +27,7 @@ import UserService from '@/src/apis/userService';
 const { width, height } = Dimensions.get('window');
 
 const UpdateProfile = () => {
-  const { updateProfileCompletion } = useAuth();
+  const { updateProfileCompletion, user } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [nameCount, setNameCount] = useState(0);
@@ -35,6 +35,8 @@ const UpdateProfile = () => {
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const animatedValue = useRef(new Animated.Value(0)).current;
   const [isLoading, setIsLoading] = useState(false);
+
+  console.log("user here test test test", user)
 
   const handleSubmit = async () => {
     setIsLoading(true);
