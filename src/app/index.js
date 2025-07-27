@@ -4,6 +4,7 @@ import { useAuth } from '@/src/context/AuthContext';
 import LoadingScreen from '@/src/components/LoadingScreen';
 import { useLocationTracking } from '@/src/hooks/useLocationTracking';
 import { getDeviceInfo, sendDeviceInfo } from '@/src/utils/deviceInfo';
+// import {removeToken} from '@/src/utils/token';
 
 /**
  * Index Component - Initial Route Handler
@@ -19,7 +20,7 @@ import { getDeviceInfo, sendDeviceInfo } from '@/src/utils/deviceInfo';
 export default function Index() {
   const { isAuthenticated, isLoading, isProfileComplete } = useAuth();
   const { isTracking, hasPermission, requestPermission } = useLocationTracking();
-
+  
    useEffect(() => {
     // Send device info on app start
     const initializeDeviceInfo = async () => {

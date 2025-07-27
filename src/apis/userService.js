@@ -3,9 +3,10 @@ import API from "@/src/apis/axios";
 
 const UserService = {
     updateCurrentUserProfile: async (payload) => {
-        console.log("payload in updateCurrentUserProfile", payload);
+        
         try{
             const response = await API.put("/v1/users/me", payload)
+            console.log('Updating user profile with payload:', response);
             if (response.status !== 200) {
                 throw new Error('Failed to update user profile');
             }
@@ -19,7 +20,7 @@ const UserService = {
         }
     },
     getCurrentUserProfile: async () => {
-        console.log("payload in getCurrentUserProfile");
+        
         try {
             const response = await API.get("/v1/users/me");
             if (response.status !== 200) {
@@ -34,7 +35,7 @@ const UserService = {
     getCurrentUserGroups: async () => {
         try {
             const response = await API.get("/v1/users/me/groups");
-            console.log('User groups fetched successfully:', response.data);
+            
             if (response.status !== 200) {
                 throw new Error('Failed to fetch user groups');
             }
