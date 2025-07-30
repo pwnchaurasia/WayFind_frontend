@@ -441,7 +441,7 @@ const UsersTab = ({ group, isAdmin = false }) => {
                 <View style={styles.userInfoSection}>
                   <View style={styles.infoItem}>
                     <Ionicons name="call" size={20} color={colors.textSecondary} />
-                    <Text style={styles.infoText}>{selectedUser.phone}</Text>
+                    <Text style={styles.infoText}>{selectedUser.phone_number}</Text>
                   </View>
                   
                   <View style={styles.infoItem}>
@@ -463,7 +463,7 @@ const UsersTab = ({ group, isAdmin = false }) => {
                       color={selectedUser.isOnline ? colors.primary : colors.textSecondary} 
                     />
                     <Text style={styles.infoText}>
-                      {selectedUser.isOnline ? 'Online' : `Last seen ${getTimeSince(selectedUser.lastSeen)}`}
+                      {selectedUser.isOnline ? 'Online' : `Last seen ${getTimeSince(selectedUser.last_seen)}`}
                     </Text>
                   </View>
                 </View>

@@ -4,18 +4,19 @@ import { useGlobalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import GroupHeader from '@/src/components/groups/GroupHeader';
 import { useGroupData } from '@/src/hooks/useGroupData';
+import { globalStyles } from '@/src/styles/globalStyles';
 
 export default function SettingsScreen() {
   const { id } = useGlobalSearchParams();
   const { group, loading } = useGroupData(id);
 
   if (loading || !group) {
-    return (
-      <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Loading...</Text>
-      </View>
-    );
-  }
+       return (
+         <View style={globalStyles.loadingContainer}>
+           <Text style={globalStyles.loadingText}>Loading...</Text>
+         </View>
+       );
+    }
 
   const settingsOptions = [
     {
