@@ -8,7 +8,8 @@ import {
   FlatList,
   TouchableOpacity,
   StatusBar,
-  Alert
+  Alert,
+  RefreshControl
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
@@ -122,6 +123,12 @@ const GroupListScreen = () => {
         style={styles.groupsList}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.groupsListContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={isLoading}
+            onRefresh={fetchUserGroups}
+          />
+        }
         // Empty state component
         ListEmptyComponent={() => (
           <View style={styles.emptyState}>
