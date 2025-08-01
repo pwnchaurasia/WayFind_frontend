@@ -16,6 +16,7 @@ import * as Location from 'expo-location';
 import { globalStyles, getAvatarColor, generateInitials, getTimeSince } from '@/src/styles/globalStyles';
 import { theme } from '@/src/styles/theme';
 import GroupService from '@/src/apis/groupService';
+import LocationTrackingService from '@/src/services/locationService';
 
 const { width, height } = Dimensions.get('window');
 
@@ -29,6 +30,11 @@ const MapTab = ({ group }) => {
   const [locationPermission, setLocationPermission] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    setUserCurrentLocation();
+  }, []);
+
+
   const [mapRegion, setMapRegion] = useState({
     latitude: 40.7589, // Default to NYC
     longitude: -73.9851,
@@ -38,6 +44,29 @@ const MapTab = ({ group }) => {
 
   const mapRef = useRef(null);
   const locationSubscription = useRef(null);
+
+
+
+  const setUserCurrentLocation = async () => {
+    try {
+      const location = await LocationTrackingService.getCurrentLocation();
+      console.log('Current location:', location);
+      if (location) {
+        setMapRegion({
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+          latitudeDelta: 0.0922,
+          longitudeDelta: 0.0421,
+        });
+      }
+      // If location is null, keep the default NYC coordinates
+    } catch (error) {
+      console.error('Error getting current location for map:', error);
+      // Keep default coordinates
+    }
+  };
+
+
 
   // Custom map style for OpenStreetMap look
   const customMapStyle = [
@@ -115,10 +144,8 @@ const MapTab = ({ group }) => {
       setLocationPermission(true);
 
       // Get current location
-      const location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
-      });
-
+      const location = await LocationTrackingService.getCurrentLocation();
+      console.log("line 148 - Current location:", location);
       const newLocation = {
         latitude: location.coords.latitude,
         longitude: location.coords.longitude,
@@ -132,21 +159,7 @@ const MapTab = ({ group }) => {
       });
 
       // Start watching location changes
-      locationSubscription.current = await Location.watchPositionAsync(
-        {
-          accuracy: Location.Accuracy.High,
-          timeInterval: 10000, // Update every 10 seconds
-          distanceInterval: 10, // Update every 10 meters
-        },
-        (location) => {
-          const newLocation = {
-            latitude: location.coords.latitude,
-            longitude: location.coords.longitude,
-          };
-          setCurrentLocation(newLocation);
-          // sendLocationToServer(newLocation);
-        }
-      );
+      locationSubscription.current = await LocationTrackingService.startLocationTracking()
 
     } catch (error) {
       console.error('Error getting location:', error);
@@ -173,28 +186,6 @@ const MapTab = ({ group }) => {
       setLoading(false);
     }
   };
-
-
-  // const sendLocationToServer = async (location) => {
-  //   try {
-  //     // Replace with your actual API endpoint
-  //     const your_auth_token = 'your_auth_token_here'; // Replace with your auth token
-  //     await fetch(`https://your-api.com/groups/${group.id}/location`, {
-  //       method: 'POST',
-  //       headers: {
-  //         'Authorization': `Bearer ${your_auth_token}`,
-  //         'Content-Type': 'application/json',
-  //       },
-  //       body: JSON.stringify({
-  //         latitude: location.latitude,
-  //         longitude: location.longitude,
-  //         timestamp: new Date().toISOString(),
-  //       }),
-  //     });
-  //   } catch (error) {
-  //     console.error('Error sending location to server:', error);
-  //   }
-  // };
 
 
   const focusOnUser = (user) => {
@@ -323,7 +314,7 @@ const MapTab = ({ group }) => {
           showsCompass={false}
           showsScale={false}
           showsBuildings={true}
-          showsTraffic={false}
+          showsTraffic={true}
           onRegionChangeComplete={setMapRegion}
           mapType="standard" // Uses OpenStreetMap data
         >
