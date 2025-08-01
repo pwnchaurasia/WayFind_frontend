@@ -76,8 +76,27 @@ const GroupService = {
             
         }
     },
+    getGroupUsersLocation: async (groupId) => {
+        try {
+            const response = await API.get(`/v1/groups/${groupId}/users/locations`)
+            if (response.status !== 200) {
+                throw new Error(response.data?.message || 'Failed to fetch group users');
+            }
+            return response.data; // Return just the data on success
+            
+        } catch (error) {
+            if (error.response) {
+                // Server responded with error status (400, 500, etc.)
+                const errorData = error.response.data;
+                throw new Error(errorData?.message || `Server error: ${error.response.status}`);
+            } else {
+                // Network error or other issues
+                throw new Error('Network error. Please check your connection.');
+            }
+            
+        }
+    },
     refreshGroupJoinLink: async (groupId) => {
-        console.log("groupId in refreshGroupJoinLink", groupId);
         return await API.post(`/v1/groups/${groupId}/refresh-join-link`)
             .then((response) => {
                 return response;

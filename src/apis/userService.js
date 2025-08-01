@@ -71,7 +71,19 @@ const UserService = {
             console.error('Failed to update device info:', error);
             throw error.response?.data || error;
         }
-    }
+    },
+    updateUserLocation: async (locationData) => {
+        try {
+            const response = await API.put('/v1/users/me/location', locationData);
+            if (response.status !== 200) {
+                throw new Error('Failed to update user location');
+            }
+            return response.data;
+        } catch (error) {
+            console.error('Failed to update user location:', error);
+            throw error.response?.data || error;
+        }
+    },
 
 };
 

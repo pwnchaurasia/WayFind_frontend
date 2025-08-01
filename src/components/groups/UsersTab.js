@@ -67,8 +67,6 @@ const UsersTab = ({ group, isAdmin = false }) => {
     member?.email?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  console.log('Filtered Members:', filteredMembers);
-
   const generateInitials = (name) => {
     return name
       .split(' ')

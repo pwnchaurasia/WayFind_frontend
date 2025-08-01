@@ -15,15 +15,20 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { globalStyles, getAvatarColor, generateInitials, getTimeSince } from '@/src/styles/globalStyles';
 import { theme } from '@/src/styles/theme';
+import GroupService from '@/src/apis/groupService';
 
 const { width, height } = Dimensions.get('window');
 
+const THREE_MINUTES = 3 * 60 * 1000;
+
 const MapTab = ({ group }) => {
+  console.log("MapTab component rendered for group:", group);
   const [userLocations, setUserLocations] = useState([]);
   const [currentLocation, setCurrentLocation] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
   const [locationPermission, setLocationPermission] = useState(false);
   const [loading, setLoading] = useState(true);
+
   const [mapRegion, setMapRegion] = useState({
     latitude: 40.7589, // Default to NYC
     longitude: -73.9851,
@@ -71,13 +76,14 @@ const MapTab = ({ group }) => {
   ];
 
   useEffect(() => {
+    console.log('In user effect for MapTab');
     initializeLocation();
-    fetchGroupLocations();
+    fetchGroupMembersLocation();
 
     // Set up real-time location updates
     const interval = setInterval(() => {
-      fetchGroupLocations();
-    }, 10000); // Update every 10 seconds
+      fetchGroupMembersLocation();
+    }, THREE_MINUTES);
 
     return () => {
       clearInterval(interval);
@@ -85,7 +91,7 @@ const MapTab = ({ group }) => {
         locationSubscription.current.remove();
       }
     };
-  }, []);
+  }, [group.id]);
 
   const initializeLocation = async () => {
     try {
@@ -138,9 +144,7 @@ const MapTab = ({ group }) => {
             longitude: location.coords.longitude,
           };
           setCurrentLocation(newLocation);
-          
-          // Send location to server
-          sendLocationToServer(newLocation);
+          // sendLocationToServer(newLocation);
         }
       );
 
@@ -152,51 +156,45 @@ const MapTab = ({ group }) => {
     }
   };
 
-  const fetchGroupLocations = async () => {
+  const fetchGroupMembersLocation = async () => {
     try {
-      // Replace with your actual API endpoint
-      const your_auth_token = 'your_auth_token_here'; // Replace with your auth token
-      const response = await fetch(`https://your-api.com/groups/${group.id}/locations`, {
-        headers: {
-          'Authorization': `Bearer ${your_auth_token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        const locations = await response.json();
-        setUserLocations(locations);
-      } else {
-        // Fallback to mock data for development
-        setUserLocations([]);
+      setLoading(true);
+      const response = await GroupService.getGroupUsersLocation(group.id)
+      
+      if(!response || !response.users_location) {
+        Alert.alert('Error', 'Failed to load group members');
+        throw new Error('No user locations found');
       }
+
+      setUserLocations(response.users_location);
     } catch (error) {
-      console.error('Error fetching group locations:', error);
-      // Set mock data on error
-      setUserLocations([]);
+      Alert.alert('Error', 'Failed to load group members');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const sendLocationToServer = async (location) => {
-    try {
-      // Replace with your actual API endpoint
-      const your_auth_token = 'your_auth_token_here'; // Replace with your auth token
-      await fetch(`https://your-api.com/groups/${group.id}/location`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${your_auth_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          latitude: location.latitude,
-          longitude: location.longitude,
-          timestamp: new Date().toISOString(),
-        }),
-      });
-    } catch (error) {
-      console.error('Error sending location to server:', error);
-    }
-  };
+
+  // const sendLocationToServer = async (location) => {
+  //   try {
+  //     // Replace with your actual API endpoint
+  //     const your_auth_token = 'your_auth_token_here'; // Replace with your auth token
+  //     await fetch(`https://your-api.com/groups/${group.id}/location`, {
+  //       method: 'POST',
+  //       headers: {
+  //         'Authorization': `Bearer ${your_auth_token}`,
+  //         'Content-Type': 'application/json',
+  //       },
+  //       body: JSON.stringify({
+  //         latitude: location.latitude,
+  //         longitude: location.longitude,
+  //         timestamp: new Date().toISOString(),
+  //       }),
+  //     });
+  //   } catch (error) {
+  //     console.error('Error sending location to server:', error);
+  //   }
+  // };
 
 
   const focusOnUser = (user) => {

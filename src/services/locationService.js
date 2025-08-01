@@ -4,6 +4,7 @@ import * as TaskManager from 'expo-task-manager';
 import API from '@/src/apis/axios';
 import * as SecureStore from 'expo-secure-store';
 import { getAccessToken } from "@/src/utils/token";
+import UserService from '@/src/apis/userService';
 
 
 const LOCATION_TASK_NAME = 'background-location-task';
@@ -91,7 +92,7 @@ class LocationTrackingService {
 
   async sendLocationToBackend(locationData) {
     try {
-      const response = await API.put('/v1/users/me/location', locationData);
+      const response = await UserService.updateUserLocation(locationData);
       console.log('Location updated successfully');
       return response.data;
     } catch (error) {

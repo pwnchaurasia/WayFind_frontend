@@ -40,21 +40,21 @@ const VoiceRecorder = forwardRef(({ onSendAudio, group }, ref) => {
   }, []);
 
   const requestPermissions = async () => {
-    try {
-      const { status } = await Audio.requestPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert(
-          'Permission Required',
-          'Microphone permission is required to record audio messages.',
-          [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Settings', onPress: () => Audio.requestPermissionsAsync() }
-          ]
-        );
-      }
-    } catch (error) {
-      console.error('Error requesting audio permissions:', error);
-    }
+    // try {
+    //   const { status } = await Audio.requestPermissionsAsync();
+    //   if (status !== 'granted') {
+    //     Alert.alert(
+    //       'Permission Required',
+    //       'Microphone permission is required to record audio messages.',
+    //       [
+    //         { text: 'Cancel', style: 'cancel' },
+    //         { text: 'Settings', onPress: () => Audio.requestPermissionsAsync() }
+    //       ]
+    //     );
+    //   }
+    // } catch (error) {
+    //   console.error('Error requesting audio permissions:', error);
+    // }
   };
 
   useEffect(() => {

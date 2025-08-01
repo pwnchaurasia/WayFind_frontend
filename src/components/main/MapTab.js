@@ -7,11 +7,45 @@ import {
   ScrollView,
   Image,
   TouchableOpacity,
+  Alert
 } from 'react-native';
 import { colors } from '@/src/constants/colors';
+import GroupService from '@/src/apis/groupService';
 
-const MapTab = ({ group }) => {
-  const [userLocations] = useState([]);
+
+
+const MapTabsss = ({ group }) => {
+  console.log('Group ID:', group.id);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [userLocations, setUserLocations] = useState([]);
+
+  console.log("I am here in MapTab with group id: ", group.id);
+
+  useEffect(() => {
+    fetchGroupMembersLocation();
+  }, [group.id]);
+
+  const fetchGroupMembersLocation = async () => {
+    try {
+      setLoading(true);
+      // Simulated fetch for user locations
+      const response = await GroupService.getGroupUsersLocation(id)
+      // const data = await response.json();
+      // setUserLocations(data);
+    } catch (error) {
+      console.error('Failed to fetch user locations:', error);
+      Alert.alert('Error', 'Failed to load group members');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchGroupMembersLocation();
+    setRefreshing(false);
+  };
 
   const generateInitials = (name) => {
     return name
@@ -239,4 +273,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default MapTab;
+export default MapTabsss;
