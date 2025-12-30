@@ -1,23 +1,23 @@
 import React, { useRef } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useGlobalSearchParams, useRouter } from 'expo-router';
-import GroupHeader from '@/src/components/groups/GroupHeader';
-import VoiceRecorder from '@/src/components/groups/VoiceRecorder';
-import { useGroupData } from '@/src/hooks/useGroupData';
+import OrganizationHeader from '@/src/components/organizations/OrganizationHeader';
+import VoiceRecorder from '@/src/components/organizations/VoiceRecorder';
+import { useOrganizationData } from '@/src/hooks/useOrganizationData';
 
 export default function VoiceRecorderScreen() {
   const { id } = useGlobalSearchParams();
-  const { group, loading } = useGroupData(id);
+  const { organization, loading } = useOrganizationData(id);
   const router = useRouter();
 
   const handleSendAudio = (audioUri, duration) => {
     console.log('Sending audio message:', audioUri, duration);
     // Handle audio sending logic here
     // After sending, navigate back to messages
-    router.push(`/group/${id}`);
+    router.push(`/(main)/organization/${id}`);
   };
 
-  if (loading || !group) {
+  if (loading || !organization) {
     return (
       <View style={styles.loadingContainer}>
         <Text style={styles.loadingText}>Loading...</Text>
@@ -27,13 +27,13 @@ export default function VoiceRecorderScreen() {
 
   return (
     <View style={styles.container}>
-      <GroupHeader group={group} />
+      <OrganizationHeader organization={organization} />
       <View style={styles.content}>
         <Text style={styles.title}>Voice Message</Text>
         <Text style={styles.subtitle}>Hold the button below to record your voice message</Text>
       </View>
-      <VoiceRecorder 
-        group={group}
+      <VoiceRecorder
+        organization={organization}
         onSendAudio={handleSendAudio}
       />
     </View>

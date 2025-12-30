@@ -1,6 +1,15 @@
 import API from "@/src/apis/axios";
 import { getAccessToken } from "@/src/utils/token";
 
+export const googleLogin = async (idToken) => {
+    return await API.post("/v1/auth/google", { token: idToken })
+        .then((response) => response)
+        .catch((error) => {
+            console.error("Google Login Error:", error);
+            throw error.response?.data || error;
+        });
+}
+
 export const requestOTP = async (payload) => {
     console.log("payload in requestOTP", payload);
     return await API.post("/v1/auth/request-otp", payload)
@@ -28,13 +37,13 @@ export const verifyOTP = async (payload) => {
 export const isAuthenticated = async () => {
     try {
         const token = await getAccessToken();
-        
+
         console.log("isAuthenticated here", token)
         // If no token exists, user is not authenticated
         if (!token) {
             return false;
         }
-        
+
         console.log("Requesting for new token from backend...")
         // Validate token with backend
         const response = await API.post("/v1/auth/verify");
@@ -49,7 +58,8 @@ export const isAuthenticated = async () => {
 const AuthService = {
     requestOTP,
     verifyOTP,
-    isAuthenticated
+    isAuthenticated,
+    googleLogin
 };
 
 export default AuthService;

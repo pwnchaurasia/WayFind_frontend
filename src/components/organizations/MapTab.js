@@ -15,7 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { globalStyles, getAvatarColor, generateInitials, getTimeSince } from '@/src/styles/globalStyles';
 import { theme } from '@/src/styles/theme';
-import GroupService from '@/src/apis/groupService';
+import OrganizationService from '@/src/apis/organizationService';
 import LocationTrackingService from '@/src/services/locationService';
 
 const { width, height } = Dimensions.get('window');
@@ -126,7 +126,7 @@ const MapTab = ({ group }) => {
     try {
       // Request location permissions
       const { status } = await Location.requestForegroundPermissionsAsync();
-      
+
       if (status !== 'granted') {
         Alert.alert(
           'Permission Required',
@@ -173,8 +173,8 @@ const MapTab = ({ group }) => {
     try {
       setLoading(true);
       const response = await GroupService.getGroupUsersLocation(group.id)
-      
-      if(!response || !response.users_location) {
+
+      if (!response || !response.users_location) {
         Alert.alert('Error', 'Failed to load group members');
         throw new Error('No user locations found');
       }
@@ -216,7 +216,7 @@ const MapTab = ({ group }) => {
         latitude: user.latitude,
         longitude: user.longitude,
       }));
-      
+
       if (currentLocation) {
         coordinates.push(currentLocation);
       }
@@ -241,16 +241,16 @@ const MapTab = ({ group }) => {
       <View style={globalStyles.markerContainer}>
         {/* User Avatar */}
         {user.avatar ? (
-          <Image 
-            source={{ uri: user.avatar }} 
+          <Image
+            source={{ uri: user.avatar }}
             style={[
               globalStyles.markerImage,
               !user.isOnline && globalStyles.offlineMarker
-            ]} 
+            ]}
           />
         ) : (
           <View style={[
-            globalStyles.markerPlaceholder, 
+            globalStyles.markerPlaceholder,
             { backgroundColor: getAvatarColor(user.name) },
             !user.isOnline && globalStyles.offlineMarker
           ]}>
@@ -259,14 +259,14 @@ const MapTab = ({ group }) => {
             </Text>
           </View>
         )}
-        
+
         {/* Online Status Indicator */}
         {user.isOnline && (
           <View style={globalStyles.onlineIndicator}>
             <View style={globalStyles.onlineDot} />
           </View>
         )}
-        
+
         {/* User Name Label */}
         <View style={globalStyles.nameLabel}>
           <Text style={globalStyles.nameLabelText}>{user.name}</Text>
@@ -320,21 +320,21 @@ const MapTab = ({ group }) => {
         >
           {/* Render user markers */}
           {userLocations.map(renderMarker)}
-          
+
           {/* Render current location marker */}
           {renderCurrentLocationMarker()}
         </MapView>
 
         {/* Map Controls */}
         <View style={globalStyles.mapControls}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={globalStyles.controlButton}
             onPress={centerOnMyLocation}
           >
             <Ionicons name="locate" size={theme.fontSize.lg} color={theme.colors.textPrimary} />
           </TouchableOpacity>
-          
-          <TouchableOpacity 
+
+          <TouchableOpacity
             style={globalStyles.controlButton}
             onPress={fitAllMarkers}
           >
@@ -345,19 +345,19 @@ const MapTab = ({ group }) => {
         {/* Selected User Info */}
         {selectedUser && (
           <View style={globalStyles.userInfoCard}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={globalStyles.closeButton}
               onPress={() => setSelectedUser(null)}
             >
               <Ionicons name="close" size={theme.fontSize.lg} color={theme.colors.textSecondary} />
             </TouchableOpacity>
-            
+
             <View style={globalStyles.userInfoContent}>
               {selectedUser.avatar ? (
                 <Image source={{ uri: selectedUser.avatar }} style={globalStyles.userInfoAvatar} />
               ) : (
                 <View style={[
-                  globalStyles.userInfoAvatarPlaceholder, 
+                  globalStyles.userInfoAvatarPlaceholder,
                   { backgroundColor: getAvatarColor(selectedUser.name) }
                 ]}>
                   <Text style={globalStyles.userInfoAvatarText}>
@@ -365,7 +365,7 @@ const MapTab = ({ group }) => {
                   </Text>
                 </View>
               )}
-              
+
               <View style={globalStyles.userInfoDetails}>
                 <Text style={globalStyles.userInfoName}>{selectedUser.name}</Text>
                 <Text style={globalStyles.userInfoStatus}>
@@ -389,9 +389,9 @@ const MapTab = ({ group }) => {
         <Text style={globalStyles.sectionTitle}>
           Active Users ({userLocations.filter(u => u.isOnline).length}/{userLocations.length})
         </Text>
-        
-        <ScrollView 
-          horizontal 
+
+        <ScrollView
+          horizontal
           showsHorizontalScrollIndicator={false}
           style={globalStyles.usersList}
           contentContainerStyle={globalStyles.usersListContent}
@@ -409,7 +409,7 @@ const MapTab = ({ group }) => {
                 <Image source={{ uri: user.avatar }} style={globalStyles.userCardAvatar} />
               ) : (
                 <View style={[
-                  globalStyles.userCardAvatarPlaceholder, 
+                  globalStyles.userCardAvatarPlaceholder,
                   { backgroundColor: getAvatarColor(user.name) }
                 ]}>
                   <Text style={globalStyles.userCardAvatarText}>
@@ -417,14 +417,14 @@ const MapTab = ({ group }) => {
                   </Text>
                 </View>
               )}
-              
+
               <Text style={globalStyles.userCardName} numberOfLines={1}>
                 {user.name}
               </Text>
-              
+
               <View style={globalStyles.userCardStatus}>
                 <View style={[
-                  globalStyles.statusDot, 
+                  globalStyles.statusDot,
                   { backgroundColor: user.isOnline ? theme.colors.primary : theme.colors.textSecondary }
                 ]} />
                 <Text style={globalStyles.userCardStatusText}>

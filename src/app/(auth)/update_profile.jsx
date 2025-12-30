@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  StatusBar, 
-  Image, 
-  TouchableOpacity, 
-  StyleSheet, 
+import {
+  View,
+  Text,
+  StatusBar,
+  Image,
+  TouchableOpacity,
+  StyleSheet,
   Dimensions,
   TextInput,
   KeyboardAvoidingView,
@@ -32,6 +32,13 @@ const UpdateProfile = () => {
   const [email, setEmail] = useState("");
   const [nameCount, setNameCount] = useState(0);
   const [profileImage, setProfileImage] = useState(null);
+
+  // Vehicle State
+  const [hasVehicle, setHasVehicle] = useState(true);
+  const [vehicleMake, setVehicleMake] = useState("");
+  const [vehicleModel, setVehicleModel] = useState("");
+  const [vehicleNumber, setVehicleNumber] = useState("");
+
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const animatedValue = useRef(new Animated.Value(0)).current;
   const [isLoading, setIsLoading] = useState(false);
@@ -40,29 +47,45 @@ const UpdateProfile = () => {
 
   const handleSubmit = async () => {
     setIsLoading(true);
-    console.log("Name:", name);
-    console.log("Email:", email);
-    console.log("Profile Image:", profileImage);
 
     try {
-      const payload = {
+      // 1. Update Basic Profile
+      const profilePayload = {
         name,
         email
       };
-      const response = await UserService.updateCurrentUserProfile(payload);
-      console.log("Response:", response);
-      if (response.status !== 202) {
+
+      const response = await UserService.updateCurrentUserProfile(profilePayload);
+      if (response.status !== 202 && response.status !== 200) {
         throw new Error('Failed to update profile');
-      }else{
-        // Update profile completion status
-        updateProfileCompletion(true);
-        
-        console.log("Success! Navigating now...");
-        router.push("/(main)"); // Navigate to groups page
       }
+
+      // 2. Add Vehicle if applicable
+      if (hasVehicle) {
+        if (!vehicleMake || !vehicleModel || !vehicleNumber) {
+          Alert.alert('Missing Info', 'Please fill in all vehicle details or uncheck "I have a motorcycle".');
+          setIsLoading(false);
+          return;
+        }
+
+        const vehiclePayload = {
+          make: vehicleMake,
+          model: vehicleModel,
+          license_plate: vehicleNumber,
+          is_primary: true,
+          is_pillion: false
+        };
+        await UserService.addVehicle(vehiclePayload);
+      }
+
+      // Success
+      updateProfileCompletion(true);
+      console.log("Success! Navigating now...");
+      router.push("/(main)");
+
     } catch (error) {
-      console.error("Profile update failed:", error);
-      Alert.alert('Error', 'Failed to update profile. Please try again.');
+      console.error("Profile/Vehicle update failed:", error);
+      Alert.alert('Error', 'Failed to complete profile setup. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -77,7 +100,7 @@ const UpdateProfile = () => {
     const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', (event) => {
       const keyboardHeight = event.endCoordinates.height;
       setKeyboardHeight(keyboardHeight);
-      
+
       Animated.timing(animatedValue, {
         toValue: -keyboardHeight * 0.3, // Move up by 30% of keyboard height
         duration: 250,
@@ -87,7 +110,7 @@ const UpdateProfile = () => {
 
     const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
       setKeyboardHeight(0);
-      
+
       Animated.timing(animatedValue, {
         toValue: 0,
         duration: 250,
@@ -105,7 +128,7 @@ const UpdateProfile = () => {
     try {
       // Request permission
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      
+
       if (status !== 'granted') {
         Alert.alert(
           'Permission Required',
@@ -136,8 +159,8 @@ const UpdateProfile = () => {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
-      
-      <Animated.View 
+
+      <Animated.View
         style={[
           styles.animatedContainer,
           {
@@ -145,93 +168,171 @@ const UpdateProfile = () => {
           }
         ]}
       >
-          {/* Logo Section */}
-          <LogoSection />
-          
-          {/* Middle Content */}
-          <View style={styles.contentContainer}>
-            <Text style={styles.title}>Update Profile</Text>
-            
-            {/* Profile Avatar */}
-            <View style={styles.avatarContainer}>
-              <View style={styles.avatar}>
-                {profileImage ? (
-                  <Image 
-                    source={{ uri: profileImage }} 
-                    style={styles.avatarImage}
-                    resizeMode="cover"
-                  />
-                ) : (
-                  <Text style={styles.avatarText}>M</Text>
-                )}
-              </View>
-              <TouchableOpacity style={styles.editIcon} onPress={selectImage}>
-                <Feather name="edit-2" size={18} color="white" />
-              </TouchableOpacity>
+        {/* Logo Section */}
+        <LogoSection />
+
+        {/* Middle Content */}
+        <View style={styles.contentContainer}>
+          <Text style={styles.title}>Update Profile</Text>
+
+          {/* Profile Avatar */}
+          <View style={styles.avatarContainer}>
+            <View style={styles.avatar}>
+              {profileImage ? (
+                <Image
+                  source={{ uri: profileImage }}
+                  style={styles.avatarImage}
+                  resizeMode="cover"
+                />
+              ) : (
+                <Text style={styles.avatarText}>M</Text>
+              )}
             </View>
-            
-            {/* Profile Fields */}
-            <View style={styles.fieldsContainer}>
-              {/* Name Field */}
-              <View style={styles.fieldWrapper}>
-                <View style={styles.iconContainer}>
-                  <Feather name="more-horizontal" size={24} color="#00C853" />
+            <TouchableOpacity style={styles.editIcon} onPress={selectImage}>
+              <Feather name="edit-2" size={18} color="white" />
+            </TouchableOpacity>
+          </View>
+
+          {/* Profile Fields */}
+          <View style={styles.fieldsContainer}>
+            {/* Name Field */}
+            <View style={styles.fieldWrapper}>
+              <View style={styles.iconContainer}>
+                <Feather name="more-horizontal" size={24} color="#00C853" />
+              </View>
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.input}
+                  value={name}
+                  onChangeText={handleTextChange}
+                  placeholderTextColor="#666"
+                  placeholder="You'r Good Name"
+                  maxLength={20}
+                  onChange={(event) => {
+                    setNameCount(event.nativeEvent.text.length);
+                  }}
+                />
+                <Text style={styles.fieldLabel}>Name</Text>
+                <View style={styles.counterContainer}>
+                  <Text style={styles.counter}> {nameCount} <Text style={styles.maxCount}>/ 20</Text></Text>
                 </View>
-                <View style={styles.inputContainer}>
-                  <TextInput
-                    style={styles.input}
-                    value={name}
-                    onChangeText={handleTextChange}
-                    placeholderTextColor="#666"
-                    placeholder="You'r Good Name"
-                    maxLength={20}
-                    onChange={(event) => {
-                      setNameCount(event.nativeEvent.text.length);
-                    }}
-                  />
-                  <Text style={styles.fieldLabel}>Name</Text>
-                  <View style={styles.counterContainer}>
-                    <Text style={styles.counter}> {nameCount} <Text style={styles.maxCount}>/ 20</Text></Text>
+              </View>
+            </View>
+
+            <View style={styles.separator} />
+
+            {/* Email Field */}
+            <View style={styles.fieldWrapper}>
+              <View style={styles.iconContainer}>
+                <Feather name="at-sign" size={24} color="#00C853" />
+              </View>
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.input}
+                  value={email}
+                  onChangeText={setEmail}
+                  placeholderTextColor="#666"
+                  keyboardType="email-address"
+                  placeholder="youremail@example.com"
+                />
+                <Text style={styles.fieldLabel}>Email</Text>
+              </View>
+            </View>
+
+            <View style={styles.separator} />
+
+            {/* Vehicle Section Header */}
+            <TouchableOpacity
+              style={{ flexDirection: 'row', alignItems: 'center', padding: 15 }}
+              onPress={() => setHasVehicle(!hasVehicle)}
+            >
+              <View style={{
+                width: 20, height: 20, borderRadius: 4, borderWidth: 1, borderColor: '#00C853',
+                justifyContent: 'center', alignItems: 'center', marginRight: 10,
+                backgroundColor: hasVehicle ? '#00C853' : 'transparent'
+              }}>
+                {hasVehicle && <Feather name="check" size={14} color="white" />}
+              </View>
+              <Text style={{ color: 'white', fontSize: 16 }}>I have a motorcycle</Text>
+            </TouchableOpacity>
+
+            {hasVehicle && (
+              <>
+                <View style={styles.separator} />
+
+                {/* Make Field */}
+                <View style={styles.fieldWrapper}>
+                  <View style={styles.iconContainer}>
+                    <Feather name="tool" size={24} color="#00C853" />
+                  </View>
+                  <View style={styles.inputContainer}>
+                    <TextInput
+                      style={styles.input}
+                      value={vehicleMake}
+                      onChangeText={setVehicleMake}
+                      placeholderTextColor="#666"
+                      placeholder="Vehicle Make (e.g. Royal Enfield)"
+                    />
+                    <Text style={styles.fieldLabel}>Make</Text>
                   </View>
                 </View>
-              </View>
-              
-              <View style={styles.separator} />
-              
-              {/* Email Field */}
-              <View style={styles.fieldWrapper}>
-                <View style={styles.iconContainer}>
-                  <Feather name="at-sign" size={24} color="#00C853" />
+
+                <View style={styles.separator} />
+
+                {/* Model Field */}
+                <View style={styles.fieldWrapper}>
+                  <View style={styles.iconContainer}>
+                    <Feather name="activity" size={24} color="#00C853" />
+                  </View>
+                  <View style={styles.inputContainer}>
+                    <TextInput
+                      style={styles.input}
+                      value={vehicleModel}
+                      onChangeText={setVehicleModel}
+                      placeholderTextColor="#666"
+                      placeholder="Vehicle Model (e.g. Himalayan 450)"
+                    />
+                    <Text style={styles.fieldLabel}>Model</Text>
+                  </View>
                 </View>
-                <View style={styles.inputContainer}>
-                  <TextInput
-                    style={styles.input}
-                    value={email}
-                    onChangeText={setEmail}
-                    placeholderTextColor="#666"
-                    keyboardType="email-address"
-                    placeholder="youremail@example.com"
-                  />
-                  <Text style={styles.fieldLabel}>Email</Text>
+
+                <View style={styles.separator} />
+
+                {/* Number Plate Field */}
+                <View style={styles.fieldWrapper}>
+                  <View style={styles.iconContainer}>
+                    <Feather name="hash" size={24} color="#00C853" />
+                  </View>
+                  <View style={styles.inputContainer}>
+                    <TextInput
+                      style={styles.input}
+                      value={vehicleNumber}
+                      onChangeText={setVehicleNumber}
+                      placeholderTextColor="#666"
+                      placeholder="License Plate (e.g. KA 01 AB 1234)"
+                    />
+                    <Text style={styles.fieldLabel}>License Plate</Text>
+                  </View>
                 </View>
-              </View>
-            </View>
+              </>
+            )}
           </View>
-          
-          {/* Button */}
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity 
+        </View>
+
+        {/* Button */}
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
             style={[styles.button, styles.otpButton, isLoading && styles.buttonDisabled]}
             disabled={isLoading}
             onPress={handleSubmit}>
-              <Text style={styles.buttonText}>Done</Text>
-            </TouchableOpacity>
-          </View>
-          
-          {/* Footer */}
-          <Text style={styles.footer}>Made with love in India by rjsnh1522</Text>
+            <Text style={styles.buttonText}>Done</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Footer */}
+        <Text style={styles.footer}>Made with love in India by rjsnh1522</Text>
       </Animated.View>
-    </SafeAreaView>
+    </SafeAreaView >
   );
 }
 
@@ -243,7 +344,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
-  
+
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,

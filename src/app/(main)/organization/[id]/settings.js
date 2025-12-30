@@ -2,27 +2,27 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { useGlobalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import GroupHeader from '@/src/components/groups/GroupHeader';
-import { useGroupData } from '@/src/hooks/useGroupData';
+import OrganizationHeader from '@/src/components/organizations/OrganizationHeader';
+import { useOrganizationData } from '@/src/hooks/useOrganizationData';
 import { globalStyles } from '@/src/styles/globalStyles';
 
 export default function SettingsScreen() {
   const { id } = useGlobalSearchParams();
-  const { group, loading } = useGroupData(id);
+  const { organization, loading } = useOrganizationData(id);
 
-  if (loading || !group) {
-       return (
-         <View style={globalStyles.loadingContainer}>
-           <Text style={globalStyles.loadingText}>Loading...</Text>
-         </View>
-       );
-    }
+  if (loading || !organization) {
+    return (
+      <View style={globalStyles.loadingContainer}>
+        <Text style={globalStyles.loadingText}>Loading...</Text>
+      </View>
+    );
+  }
 
   const settingsOptions = [
     {
-      title: 'Group Info',
+      title: 'Organization Info',
       icon: 'information-circle-outline',
-      onPress: () => console.log('Group Info pressed'),
+      onPress: () => console.log('Org Info pressed'),
     },
     {
       title: 'Notifications',
@@ -35,34 +35,19 @@ export default function SettingsScreen() {
       onPress: () => console.log('Privacy pressed'),
     },
     {
-      title: 'Location Sharing',
-      icon: 'location-outline',
-      onPress: () => console.log('Location Sharing pressed'),
-    },
-    {
-      title: 'Media & Files',
-      icon: 'folder-outline',
-      onPress: () => console.log('Media & Files pressed'),
-    },
-    {
-      title: 'Export Chat',
-      icon: 'download-outline',
-      onPress: () => console.log('Export Chat pressed'),
-    },
-    {
-      title: 'Leave Group',
+      title: 'Leave Organization',
       icon: 'exit-outline',
-      onPress: () => console.log('Leave Group pressed'),
+      onPress: () => console.log('Leave Org pressed'),
       danger: true,
     },
   ];
 
   return (
     <View style={styles.container}>
-      <GroupHeader group={group} />
+      <OrganizationHeader organization={organization} />
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>Group Settings</Text>
-        
+        <Text style={styles.title}>Organization Settings</Text>
+
         <View style={styles.settingsContainer}>
           {settingsOptions.map((option, index) => (
             <TouchableOpacity
@@ -94,13 +79,13 @@ export default function SettingsScreen() {
             </TouchableOpacity>
           ))}
         </View>
-        
+
         <View style={styles.infoContainer}>
           <Text style={styles.infoText}>
-            Group ID: {group.id}
+            Organization ID: {organization.id}
           </Text>
           <Text style={styles.infoText}>
-            Created: {new Date().toLocaleDateString()}
+            Established: {new Date(organization.created_at || Date.now()).toLocaleDateString()}
           </Text>
         </View>
       </ScrollView>

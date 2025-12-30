@@ -85,6 +85,56 @@ const UserService = {
         }
     },
 
+    // Vehicle Management
+    getUserVehicles: async () => {
+        try {
+            const response = await API.get('/v1/users/me/vehicles');
+            if (response.status !== 200) {
+                throw new Error('Failed to fetch user vehicles');
+            }
+            return response.data;
+        } catch (error) {
+            console.error('Failed to get user vehicles:', error);
+            throw error.response?.data || error;
+        }
+    },
+    addVehicle: async (vehicleData) => {
+        try {
+            const response = await API.post('/v1/users/me/vehicles', vehicleData);
+            if (response.status !== 200 && response.status !== 201) {
+                throw new Error('Failed to add vehicle');
+            }
+            return response.data;
+        } catch (error) {
+            console.error('Failed to add vehicle:', error);
+            throw error.response?.data || error;
+        }
+    },
+    updateVehicle: async (vehicleId, vehicleData) => {
+        try {
+            const response = await API.put(`/v1/users/me/vehicles/${vehicleId}`, vehicleData);
+            if (response.status !== 200) {
+                throw new Error('Failed to update vehicle');
+            }
+            return response.data;
+        } catch (error) {
+            console.error('Failed to update vehicle:', error);
+            throw error.response?.data || error;
+        }
+    },
+    deleteVehicle: async (vehicleId) => {
+        try {
+            const response = await API.delete(`/v1/users/me/vehicles/${vehicleId}`);
+            if (response.status !== 200 && response.status !== 204) {
+                throw new Error('Failed to delete vehicle');
+            }
+            return response.data;
+        } catch (error) {
+            console.error('Failed to delete vehicle:', error);
+            throw error.response?.data || error;
+        }
+    },
+
 };
 
 export default UserService;

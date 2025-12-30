@@ -15,7 +15,7 @@ import * as Clipboard from 'expo-clipboard';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { colors } from '@/src/constants/colors';
 import * as ImagePicker from 'expo-image-picker';
-import GroupService from '@/src/apis/groupService';
+import OrganizationService from '@/src/apis/organizationService';
 
 const CreateJoinGroupModal = ({ visible, onClose, onCreateGroup, onJoinGroup }) => {
   const [activeTab, setActiveTab] = useState('create');
@@ -23,11 +23,11 @@ const CreateJoinGroupModal = ({ visible, onClose, onCreateGroup, onJoinGroup }) 
   const [groupImage, setGroupImage] = useState(null);
   const [groupCode, setGroupCode] = useState('');
   const [generatedLink, setGeneratedLink] = useState('');
-  
+
 
   const handleCreateGroup = async () => {
     if (!groupName.trim()) {
-      Alert.alert('Error', 'Please enter a group name');
+      Alert.alert('Error', 'Please enter an organization name');
       return;
     }
 
@@ -36,26 +36,18 @@ const CreateJoinGroupModal = ({ visible, onClose, onCreateGroup, onJoinGroup }) 
       image: groupImage,
     };
 
-    // Simulate API call and generate link
     try {
-      const createGroupResponse = await GroupService.createGroup(payload);
+      const createResponse = await OrganizationService.createOrganization(payload);
 
-      // Success - everything worked
-      console.log('Group created successfully:', createGroupResponse);
-      onCreateGroup(createGroupResponse.group);
-      setGeneratedLink(createGroupResponse.group.join_url);
-      // Parent will close modal via onCreateGroup
+      console.log('Organization created successfully:', createResponse);
+      onCreateGroup(createResponse.organization); // Assuming API returns { organization: ... }
+      setGeneratedLink(createResponse.organization.join_url || "Link generation pending");
     } catch (error) {
-      // All errors come here - show user the error message
-      console.log('Create group error:', error);
-      Alert.alert('Error', error.message);
-      // Modal stays open for retry
-    }finally {
+      console.log('Create organization error:', error);
+      Alert.alert('Error', error.message || "Failed to create organization");
+    } finally {
       resetForm();
     }
-
-    
-    
   };
 
   const handleJoinGroup = () => {
@@ -86,36 +78,36 @@ const CreateJoinGroupModal = ({ visible, onClose, onCreateGroup, onJoinGroup }) 
   };
 
   const selectImage = async () => {
-      try {
-        // Request permission
-        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        
-        if (status !== 'granted') {
-          Alert.alert(
-            'Permission Required',
-            'We need access to your photo library to select a profile picture.',
-            [{ text: 'OK' }]
-          );
-          return;
-        }
-  
-        // Launch image picker
-        const result = await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: ImagePicker.mediaTypes,
-          allowsEditing: true,
-          aspect: [1, 1], // Square aspect ratio
-          quality: 0.8,
-          allowsMultipleSelection: false,
-        });
-  
-        if (!result.canceled && result.assets && result.assets.length > 0) {
-          setGroupImage(result.assets[0].uri);
-        }
-      } catch (error) {
-        console.error('Error selecting image:', error);
-        Alert.alert('Error', 'Failed to select image. Please try again.');
+    try {
+      // Request permission
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permission Required',
+          'We need access to your photo library to select a profile picture.',
+          [{ text: 'OK' }]
+        );
+        return;
       }
-    };
+
+      // Launch image picker
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.mediaTypes,
+        allowsEditing: true,
+        aspect: [1, 1], // Square aspect ratio
+        quality: 0.8,
+        allowsMultipleSelection: false,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setGroupImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Error selecting image:', error);
+      Alert.alert('Error', 'Failed to select image. Please try again.');
+    }
+  };
 
   return (
     <Modal
@@ -165,7 +157,7 @@ const CreateJoinGroupModal = ({ visible, onClose, onCreateGroup, onJoinGroup }) 
                   {groupImage ? (
                     <Image source={{ uri: groupImage }} style={styles.groupImage} />
                   ) : (
-                    
+
                     <View style={styles.imagePlaceholder}>
                       <Icon name="camera-alt" size={24} color={colors.textSecondary} />
                       <Text style={styles.imageText}>Add Group Photo</Text>

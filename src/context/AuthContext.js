@@ -18,7 +18,7 @@ export const AuthProvider = ({ children }) => {
     try {
       setUser(userData);
       setIsAuthenticated(true);
-      
+
       // Optionally fetch fresh user data
       if (!userData) {
         const currentUser = await AuthService.getCurrentUser();
@@ -37,18 +37,18 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       setIsLoading(true);
-      
+
       // Call logout service (handles backend logout and token cleanup)
       await AuthService.logout();
-      
+
       // Clear local state
       setUser(null);
       setIsAuthenticated(false);
-      
+
       console.log('User logged out successfully');
     } catch (error) {
       console.error('Logout failed:', error);
-      
+
       // Still clear local state even if service call fails
       setUser(null);
       setIsAuthenticated(false);
@@ -59,30 +59,30 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     let isMounted = true;
-    
+
     const initializeAuth = async () => {
       try {
         const isValid = await AuthService.isAuthenticated();
-        
+
         if (isMounted) {
           console.log('AuthContext: Authentication status:', isValid);
           setIsAuthenticated(isValid);
-          
+
           if (isValid) {
             // If authenticated, check profile completion
             try {
               const response = await AuthService.getCurrentUser();
 
-              if(response.status !== 200) {
+              if (response.status !== 200) {
                 throw new Error(`Failed to fetch user profile: ${response.statusText}`);
               }
               const currentUser = response.data?.user
               console.log('new Current User:', currentUser);
               setUser(currentUser);
-              
+
               const profileComplete = currentUser?.is_profile_complete ? currentUser.is_profile_complete : false;
               setIsProfileComplete(profileComplete);
-              
+
             } catch (error) {
               console.error('AuthContext: Failed to get user profile:', error);
               // If we can't get profile, assume it's incomplete
@@ -120,13 +120,13 @@ export const AuthProvider = ({ children }) => {
     try {
       console.log('AuthContext: Manual auth status check...');
       setIsLoading(true);
-      
+
       // Check if user is authenticated (this will handle token validation)
       const isValid = await AuthService.isAuthenticated();
-      
+
       console.log('AuthContext: Manual check - Authentication status:', isValid);
       setIsAuthenticated(isValid);
-      
+
       if (!isValid) {
         // Clear user data if not authenticated
         setUser(null);
@@ -149,10 +149,29 @@ export const AuthProvider = ({ children }) => {
     setIsProfileComplete(isComplete);
   };
 
+  /**
+   * Manually refresh user profile data
+   */
+  const refreshUserProfile = async () => {
+    try {
+      const response = await AuthService.getCurrentUser();
+
+      if (response.status === 200) {
+        const currentUser = response.data?.user;
+        console.log('Refreshed User Profile:', currentUser);
+        setUser(currentUser);
+
+        const profileComplete = currentUser?.is_profile_complete ? currentUser.is_profile_complete : false;
+        setIsProfileComplete(profileComplete);
+      }
+    } catch (error) {
+      console.error('Failed to refresh user profile:', error);
+    }
+  };
 
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, isLoading, user, isProfileComplete, login, logout, checkAuthStatus, updateProfileCompletion }}>
+    <AuthContext.Provider value={{ isAuthenticated, isLoading, user, isProfileComplete, login, logout, checkAuthStatus, updateProfileCompletion, refreshUserProfile }}>
       {children}
     </AuthContext.Provider>
   );

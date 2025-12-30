@@ -5,14 +5,14 @@ import { router } from 'expo-router';
 import { globalStyles, getAvatarColor, generateInitials } from '@/src/styles/globalStyles';
 import { theme } from '@/src/styles/theme';
 
-const GroupHeader = ({ group, showBackButton = true }) => {
+const OrganizationHeader = ({ organization, showBackButton = true }) => {
   const [showDropdown, setShowDropdown] = useState(false);
 
   const handleBack = () => {
     router.back();
   };
-  
-  if (!group) {
+
+  if (!organization) {
     return <View style={globalStyles.header} />;
   }
 
@@ -24,25 +24,25 @@ const GroupHeader = ({ group, showBackButton = true }) => {
             <Ionicons name="arrow-back" size={theme.fontSize.xl} color={theme.colors.textPrimary} />
           </TouchableOpacity>
         )}
-        
-        <View style={styles.groupInfo}>
-          {group.image ? (
-            <Image source={{ uri: group.image }} style={globalStyles.avatarMedium} />
+
+        <View style={styles.orgInfo}>
+          {organization.image ? (
+            <Image source={{ uri: organization.image }} style={globalStyles.avatarMedium} />
           ) : (
-            <View style={[globalStyles.avatar, globalStyles.avatarPlaceholder, { backgroundColor: getAvatarColor(group.name) }]}>
-              <Text style={[globalStyles.avatarText, globalStyles.avatarTextMedium]}>{generateInitials(group.name)}</Text>
+            <View style={[globalStyles.avatar, globalStyles.avatarPlaceholder, { backgroundColor: getAvatarColor(organization.name) }]}>
+              <Text style={[globalStyles.avatarText, globalStyles.avatarTextMedium]}>{generateInitials(organization.name)}</Text>
             </View>
           )}
-          
-          <View style={styles.groupDetails}>
-            <Text style={styles.groupName}>{group.name}</Text>
-            <Text style={styles.groupStatus}>
-              {group.members_count || 0} online, {group.members_count || 0} members
+
+          <View style={styles.orgDetails}>
+            <Text style={styles.orgName}>{organization.name}</Text>
+            <Text style={styles.orgStatus}>
+              {organization.member_count || organization.members?.length || 0} members
             </Text>
           </View>
         </View>
 
-        <TouchableOpacity 
+        <TouchableOpacity
           style={globalStyles.headerButton}
           onPress={() => setShowDropdown(true)}
         >
@@ -56,14 +56,14 @@ const GroupHeader = ({ group, showBackButton = true }) => {
         animationType="fade"
         onRequestClose={() => setShowDropdown(false)}
       >
-        <TouchableOpacity 
+        <TouchableOpacity
           style={globalStyles.modalOverlay}
           onPress={() => setShowDropdown(false)}
         >
           <View style={globalStyles.dropdown}>
             <TouchableOpacity style={globalStyles.dropdownItem}>
               <Ionicons name="information-circle-outline" size={theme.fontSize.lg} color={theme.colors.textPrimary} />
-              <Text style={globalStyles.dropdownText}>Group Info</Text>
+              <Text style={globalStyles.dropdownText}>Organization Info</Text>
             </TouchableOpacity>
             <TouchableOpacity style={globalStyles.dropdownItem}>
               <Ionicons name="notifications-outline" size={theme.fontSize.lg} color={theme.colors.textPrimary} />
@@ -71,7 +71,7 @@ const GroupHeader = ({ group, showBackButton = true }) => {
             </TouchableOpacity>
             <TouchableOpacity style={globalStyles.dropdownItem}>
               <Ionicons name="exit-outline" size={theme.fontSize.lg} color={theme.colors.error} />
-              <Text style={[globalStyles.dropdownText, { color: theme.colors.error }]}>Leave Group</Text>
+              <Text style={[globalStyles.dropdownText, { color: theme.colors.error }]}>Leave Organization</Text>
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
@@ -81,25 +81,25 @@ const GroupHeader = ({ group, showBackButton = true }) => {
 };
 
 const styles = StyleSheet.create({
-  groupInfo: {
+  orgInfo: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
   },
-  groupDetails: {
+  orgDetails: {
     marginLeft: theme.spacing.md,
     flex: 1,
   },
-  groupName: {
+  orgName: {
     fontSize: theme.fontSize.xl,
     fontWeight: theme.fontWeight.semibold,
     color: theme.colors.textPrimary,
     marginBottom: 2,
   },
-  groupStatus: {
+  orgStatus: {
     fontSize: theme.fontSize.md,
     color: theme.colors.textSecondary,
   },
 });
 
-export default GroupHeader;
+export default OrganizationHeader;

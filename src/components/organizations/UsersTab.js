@@ -17,10 +17,10 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import SearchBar from './SearchBar';
 import { colors } from '@/src/constants/colors';
-import GroupService from '@/src/apis/groupService';
+import OrganizationService from '@/src/apis/organizationService';
 import { useGlobalSearchParams, useRouter } from 'expo-router';
 
-const UsersTab = ({ group, isAdmin = false }) => {
+const UsersTab = ({ organization, isAdmin = false }) => {
   const { id } = useGlobalSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
   const [members, setMembers] = useState([]);
@@ -30,26 +30,27 @@ const UsersTab = ({ group, isAdmin = false }) => {
   const [showUserModal, setShowUserModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteLink, setInviteLink] = useState('');
-  
+
   useEffect(() => {
     fetchGroupMembers();
-  }, [group.id]);
+  }, [id]);
 
   const fetchGroupMembers = async () => {
     try {
       setLoading(true);
 
-      const response = await GroupService.getGroupUsers(id)
-      console.log("Fetched group user", response)
-      if(!response || !response.users) {
-        throw new Error('No members found');
+      const response = await OrganizationService.getMembers(id)
+      console.log("Fetched org members", response)
+      if (!response || !response.members) {
+        // Fallback or empty
+        setMembers([]);
+      } else {
+        setMembers(response.members);
       }
-      const membersData = response?.users || []; 
-      setMembers(membersData);
-      
+
     } catch (error) {
-      console.error('Error fetching group members:', error);
-      Alert.alert('Error', 'Failed to load group members');
+      console.error('Error fetching org members:', error);
+      Alert.alert('Error', 'Failed to load members');
     } finally {
       setLoading(false);
     }
@@ -89,13 +90,13 @@ const UsersTab = ({ group, isAdmin = false }) => {
     const now = new Date();
     const diff = now - new Date(date);
     const minutes = Math.floor(diff / 60000);
-    
+
     if (minutes < 1) return 'Just now';
     if (minutes < 60) return `${minutes}m ago`;
-    
+
     const hours = Math.floor(minutes / 60);
     if (hours < 24) return `${hours}h ago`;
-    
+
     const days = Math.floor(hours / 24);
     return `${days}d ago`;
   };
@@ -194,8 +195,8 @@ const UsersTab = ({ group, isAdmin = false }) => {
       `Are you sure you want to remove ${user.name} from the group?`,
       [
         { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Remove', 
+        {
+          text: 'Remove',
           style: 'destructive',
           onPress: () => removeUserFromGroup(user)
         }
@@ -234,8 +235,8 @@ const UsersTab = ({ group, isAdmin = false }) => {
       `Make ${user.name} an admin of this group?`,
       [
         { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Make Admin', 
+        {
+          text: 'Make Admin',
           onPress: () => changeUserRole(user, 'admin')
         }
       ]
@@ -256,7 +257,7 @@ const UsersTab = ({ group, isAdmin = false }) => {
       });
 
       if (response.ok) {
-        setMembers(prev => prev.map(member => 
+        setMembers(prev => prev.map(member =>
           member.id === user.id ? { ...member, role: newRole } : member
         ));
         setShowUserModal(false);
@@ -271,7 +272,7 @@ const UsersTab = ({ group, isAdmin = false }) => {
   };
 
   const renderMemberItem = ({ item }) => (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={styles.memberItem}
       onPress={() => handleUserPress(item)}
     >
@@ -280,7 +281,7 @@ const UsersTab = ({ group, isAdmin = false }) => {
           <Image source={{ uri: item.image }} style={styles.memberAvatar} />
         ) : (
           <View style={[
-            styles.memberAvatarPlaceholder, 
+            styles.memberAvatarPlaceholder,
             { backgroundColor: getInitialsColor(item.name) }
           ]}>
             <Text style={styles.memberAvatarText}>
@@ -288,7 +289,7 @@ const UsersTab = ({ group, isAdmin = false }) => {
             </Text>
           </View>
         )}
-        
+
         <View style={styles.memberDetails}>
           <View style={styles.memberHeader}>
             <Text style={styles.memberName}>{item.name}</Text>
@@ -297,30 +298,30 @@ const UsersTab = ({ group, isAdmin = false }) => {
             )}
             {item.isOnline && <View style={styles.onlineIndicator} />}
           </View>
-          
+
           <Text style={styles.memberPhone}>{item?.phone_number}</Text>
           {/* <Text style={styles.memberEmail}>{item?.email}</Text> */}
-          
+
           <View style={styles.memberMeta}>
             <View style={styles.roleContainer}>
-              <Ionicons 
-                name={getRoleIcon(item?.role)} 
-                size={12} 
-                color={getRoleColor(item?.role)} 
+              <Ionicons
+                name={getRoleIcon(item?.role)}
+                size={12}
+                color={getRoleColor(item?.role)}
               />
               <Text style={[styles.roleText, { color: getRoleColor(item?.role) }]}>
                 {item?.role.charAt(0).toUpperCase() + item.role.slice(1)}
               </Text>
             </View>
-            
+
             <Text style={styles.lastSeenText}>
               {item.isOnline ? 'Online' : `Last seen ${getTimeSince(item.last_seen)}`}
             </Text>
           </View>
         </View>
       </View>
-      
-      <TouchableOpacity 
+
+      <TouchableOpacity
         style={styles.micButton}
         onPress={() => handleMicPress(item)}
       >
@@ -345,9 +346,9 @@ const UsersTab = ({ group, isAdmin = false }) => {
           <Text style={styles.statLabel}>Admins</Text>
         </View>
       </View>
-      
+
       {isAdmin && (
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.inviteButton}
           onPress={handleInvitePress}
         >
@@ -374,7 +375,7 @@ const UsersTab = ({ group, isAdmin = false }) => {
         onChangeText={setSearchQuery}
         placeholder="Search members..."
       />
-      
+
       <FlatList
         data={filteredMembers}
         renderItem={renderMemberItem}
@@ -421,7 +422,7 @@ const UsersTab = ({ group, isAdmin = false }) => {
                     <Image source={{ uri: selectedUser.image }} style={styles.modalAvatar} />
                   ) : (
                     <View style={[
-                      styles.modalAvatarPlaceholder, 
+                      styles.modalAvatarPlaceholder,
                       { backgroundColor: getInitialsColor(selectedUser.name) }
                     ]}>
                       <Text style={styles.modalAvatarText}>
@@ -429,7 +430,7 @@ const UsersTab = ({ group, isAdmin = false }) => {
                       </Text>
                     </View>
                   )}
-                  
+
                   <Text style={styles.modalUserName}>{selectedUser.name}</Text>
                   <Text style={styles.modalUserRole}>
                     {selectedUser.role.charAt(0).toUpperCase() + selectedUser.role.slice(1)}
@@ -441,24 +442,24 @@ const UsersTab = ({ group, isAdmin = false }) => {
                     <Ionicons name="call" size={20} color={colors.textSecondary} />
                     <Text style={styles.infoText}>{selectedUser.phone_number}</Text>
                   </View>
-                  
+
                   <View style={styles.infoItem}>
                     <Ionicons name="mail" size={20} color={colors.textSecondary} />
                     <Text style={styles.infoText}>{selectedUser.email}</Text>
                   </View>
-                  
+
                   <View style={styles.infoItem}>
                     <Ionicons name="calendar" size={20} color={colors.textSecondary} />
                     <Text style={styles.infoText}>
                       Joined {new Date(selectedUser.joinedAt).toLocaleDateString()}
                     </Text>
                   </View>
-                  
+
                   <View style={styles.infoItem}>
-                    <Ionicons 
-                      name={selectedUser.isOnline ? "radio-button-on" : "radio-button-off"} 
-                      size={20} 
-                      color={selectedUser.isOnline ? colors.primary : colors.textSecondary} 
+                    <Ionicons
+                      name={selectedUser.isOnline ? "radio-button-on" : "radio-button-off"}
+                      size={20}
+                      color={selectedUser.isOnline ? colors.primary : colors.textSecondary}
                     />
                     <Text style={styles.infoText}>
                       {selectedUser.isOnline ? 'Online' : `Last seen ${getTimeSince(selectedUser.last_seen)}`}
@@ -469,16 +470,16 @@ const UsersTab = ({ group, isAdmin = false }) => {
                 {/* Admin Actions */}
                 {isAdmin && !selectedUser.isCurrentUser && (
                   <View style={styles.adminActions}>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       style={styles.actionButton}
                       onPress={() => handleMicPress(selectedUser)}
                     >
                       <Ionicons name="call" size={20} color={colors.primary} />
                       <Text style={styles.actionButtonText}>Voice Call</Text>
                     </TouchableOpacity>
-                    
+
                     {selectedUser.role !== 'admin' && (
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         style={styles.actionButton}
                         onPress={() => handleMakeAdmin(selectedUser)}
                       >
@@ -486,8 +487,8 @@ const UsersTab = ({ group, isAdmin = false }) => {
                         <Text style={styles.actionButtonText}>Make Admin</Text>
                       </TouchableOpacity>
                     )}
-                    
-                    <TouchableOpacity 
+
+                    <TouchableOpacity
                       style={[styles.actionButton, styles.dangerButton]}
                       onPress={() => handleRemoveUser(selectedUser)}
                     >
@@ -524,7 +525,7 @@ const UsersTab = ({ group, isAdmin = false }) => {
               <Text style={styles.inviteDescription}>
                 Share this link to invite new members to {group.name}
               </Text>
-              
+
               <View style={styles.linkContainer}>
                 <TextInput
                   style={styles.linkInput}
@@ -536,7 +537,7 @@ const UsersTab = ({ group, isAdmin = false }) => {
                   <Ionicons name="copy" size={20} color={colors.primary} />
                 </TouchableOpacity>
               </View>
-              
+
               <TouchableOpacity style={styles.shareButton} onPress={shareInviteLink}>
                 <Ionicons name="share" size={20} color="#FFFFFF" />
                 <Text style={styles.shareButtonText}>Share Link</Text>

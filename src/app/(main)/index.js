@@ -1,11 +1,5 @@
-import React from 'react';
-import { router } from 'expo-router';
-import GroupListScreen from '@/src/screens/groups/GroupListScreen';
+import { Redirect } from 'expo-router';
 
 export default function MainIndex() {
-  const handleGroupPress = (group) => {
-    router.push(`/group/${group.id}`);
-  };
-
-  return <GroupListScreen onGroupPress={handleGroupPress} />;
+  return <Redirect href="/(main)/(tabs)/organizations" />;
 }
