@@ -144,7 +144,7 @@ const UsersTab = ({ organization, isAdmin = false }) => {
     try {
       // Replace with your actual API endpoint
       const your_auth_token = 'your_auth_token_here'; // Replace with your auth token
-      const response = await fetch(`https://your-api.com/groups/${group.id}/invite`, {
+      const response = await fetch(`https://your-api.com/groups/${organization?.id}/invite`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${your_auth_token}`,
@@ -157,12 +157,12 @@ const UsersTab = ({ organization, isAdmin = false }) => {
         setInviteLink(data.inviteLink);
       } else {
         // Fallback for development
-        const mockLink = `https://yourapp.com/join/${group.id}/${Date.now()}`;
+        const mockLink = `https://yourapp.com/join/${organization?.id}/${Date.now()}`;
         setInviteLink(mockLink);
       }
     } catch (error) {
       console.error('Error generating invite link:', error);
-      const mockLink = `https://yourapp.com/join/${group.id}/${Date.now()}`;
+      const mockLink = `https://yourapp.com/join/${organization?.id}/${Date.now()}`;
       setInviteLink(mockLink);
     }
   };
@@ -208,7 +208,7 @@ const UsersTab = ({ organization, isAdmin = false }) => {
     try {
       // Replace with your actual API endpoint
       const your_auth_token = 'your_auth_token_here'; // Replace with your auth token
-      const response = await fetch(`https://your-api.com/groups/${group.id}/members/${user.id}`, {
+      const response = await fetch(`https://your-api.com/groups/${organization?.id}/members/${user.id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${your_auth_token}`,
@@ -247,7 +247,7 @@ const UsersTab = ({ organization, isAdmin = false }) => {
     try {
       // Replace with your actual API endpoint
       const your_auth_token = 'your_auth_token_here'; // Replace with your auth token
-      const response = await fetch(`https://your-api.com/groups/${group.id}/members/${user.id}/role`, {
+      const response = await fetch(`https://your-api.com/groups/${organization?.id}/members/${user.id}/role`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${your_auth_token}`,
@@ -523,7 +523,7 @@ const UsersTab = ({ organization, isAdmin = false }) => {
 
             <View style={styles.modalContent}>
               <Text style={styles.inviteDescription}>
-                Share this link to invite new members to {group.name}
+                Share this link to invite new members to {organization?.name}
               </Text>
 
               <View style={styles.linkContainer}>

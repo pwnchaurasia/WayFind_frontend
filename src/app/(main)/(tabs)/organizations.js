@@ -5,16 +5,20 @@ import { theme } from '@/src/styles/theme'
 import OrganizationService from '@/src/apis/organizationService'
 import { router } from 'expo-router'
 import { Feather } from '@expo/vector-icons'
+import { useAuth } from '@/src/context/AuthContext'
 
 const OrganizationsScreen = () => {
+    const { user } = useAuth();
     const [organizations, setOrganizations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
     const fetchOrganizations = async () => {
         try {
             const data = await OrganizationService.getAllOrganizations();
-            setOrganizations(data.organizations || []); // Adjust based on actual API response structure
+            setOrganizations(data.organizations || []);
+            setIsSuperAdmin(data.is_super_admin || false);
         } catch (error) {
             console.error("Failed to fetch organizations", error);
         } finally {
@@ -32,30 +36,56 @@ const OrganizationsScreen = () => {
         fetchOrganizations();
     };
 
-    const renderItem = ({ item }) => (
-        <TouchableOpacity
-            style={styles.card}
-            onPress={() => router.push(`/(main)/organization/${item.id}`)}
-        >
-            <View style={styles.cardHeader}>
-                <Text style={styles.orgName}>{item.name}</Text>
-                <Feather name="chevron-right" size={24} color="#00C853" />
-            </View>
-            <Text style={styles.orgDesc}>{item.description || "No description provided."}</Text>
-            <View style={styles.statsRow}>
-                <Text style={styles.statsText}>{item.member_count || 0} Members</Text>
-                <Text style={styles.statsText}>{item.active_rides || 0} Active Rides</Text>
-            </View>
-        </TouchableOpacity>
-    )
+    const getRoleBadge = (role) => {
+        const roleStyles = {
+            founder: { bg: '#00C853', text: 'Founder' },
+            co_founder: { bg: '#2196F3', text: 'Co-Founder' },
+            admin: { bg: '#FF9800', text: 'Admin' },
+            super_admin: { bg: '#9C27B0', text: 'Super Admin' }
+        };
+        return roleStyles[role] || { bg: '#666', text: role || 'Member' };
+    };
+
+    const renderItem = ({ item }) => {
+        const roleInfo = getRoleBadge(item.user_role);
+
+        return (
+            <TouchableOpacity
+                style={styles.card}
+                onPress={() => router.push(`/(main)/organization/${item.id}`)}
+            >
+                <View style={styles.cardHeader}>
+                    <View style={styles.nameSection}>
+                        <Text style={styles.orgName}>{item.name}</Text>
+                        <View style={[styles.roleBadge, { backgroundColor: roleInfo.bg }]}>
+                            <Text style={styles.roleText}>{roleInfo.text}</Text>
+                        </View>
+                    </View>
+                    <Feather name="chevron-right" size={24} color="#00C853" />
+                </View>
+                <Text style={styles.orgDesc} numberOfLines={2}>
+                    {item.description || "No description provided."}
+                </Text>
+                <View style={styles.statsRow}>
+                    <View style={styles.statItem}>
+                        <Feather name="users" size={14} color="#00C853" />
+                        <Text style={styles.statsText}>{item.members_count || 0} Members</Text>
+                    </View>
+                </View>
+            </TouchableOpacity>
+        );
+    }
 
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
-                <Text style={styles.title}>Organizations</Text>
-                <TouchableOpacity onPress={() => router.push('/(main)/organization/create')}>
-                    <Feather name="plus-circle" size={28} color="#00C853" />
-                </TouchableOpacity>
+                <Text style={styles.title}>My Communities</Text>
+                {/* Only Super Admin can create organizations */}
+                {isSuperAdmin && (
+                    <TouchableOpacity onPress={() => router.push('/(main)/organization/create')}>
+                        <Feather name="plus-circle" size={28} color="#00C853" />
+                    </TouchableOpacity>
+                )}
             </View>
 
             <FlatList
@@ -69,7 +99,9 @@ const OrganizationsScreen = () => {
                 ListEmptyComponent={
                     !loading && (
                         <View style={styles.emptyContainer}>
-                            <Text style={styles.emptyText}>You haven't joined any organizations yet.</Text>
+                            <Feather name="users" size={48} color="#666" />
+                            <Text style={styles.emptyText}>You haven't joined any communities yet.</Text>
+                            <Text style={styles.emptySubtext}>Join a ride to become part of a community!</Text>
                         </View>
                     )
                 }
@@ -102,7 +134,7 @@ const styles = StyleSheet.create({
     },
     card: {
         backgroundColor: '#1E1E1E',
-        borderRadius: 12,
+        borderRadius: 16,
         padding: 16,
         marginBottom: 16,
         borderWidth: 1,
@@ -111,33 +143,62 @@ const styles = StyleSheet.create({
     cardHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'center',
+        alignItems: 'flex-start',
         marginBottom: 8
+    },
+    nameSection: {
+        flex: 1,
+        marginRight: 12
     },
     orgName: {
         fontSize: 18,
         fontWeight: 'bold',
+        color: 'white',
+        marginBottom: 6
+    },
+    roleBadge: {
+        alignSelf: 'flex-start',
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 12
+    },
+    roleText: {
+        fontSize: 11,
+        fontWeight: '600',
         color: 'white'
     },
     orgDesc: {
         fontSize: 14,
         color: '#AAA',
-        marginBottom: 12
+        marginBottom: 12,
+        lineHeight: 20
     },
     statsRow: {
         flexDirection: 'row',
         gap: 16
     },
+    statItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6
+    },
     statsText: {
-        fontSize: 12,
+        fontSize: 13,
         color: '#00C853'
     },
     emptyContainer: {
-        padding: 20,
-        alignItems: 'center'
+        padding: 40,
+        alignItems: 'center',
+        gap: 12
     },
     emptyText: {
         color: '#AAA',
-        fontSize: 16
+        fontSize: 16,
+        textAlign: 'center'
+    },
+    emptySubtext: {
+        color: '#666',
+        fontSize: 14,
+        textAlign: 'center'
     }
 })

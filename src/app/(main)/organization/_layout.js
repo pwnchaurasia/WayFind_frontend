@@ -31,8 +31,8 @@ export default function OrganizationLayout() {
         name="[id]/index"
         options={{
           title: 'Overview',
-          tabBarIcon: ({ color, focused }) => (
-            <Feather name={focused ? "grid" : "grid"} size={24} color={color} />
+          tabBarIcon: ({ color }) => (
+            <Feather name="grid" size={24} color={color} />
           ),
         }}
       />
@@ -40,31 +40,25 @@ export default function OrganizationLayout() {
         name="[id]/members"
         options={{
           title: 'Members',
-          tabBarIcon: ({ color, focused }) => (
-            <Feather name={focused ? "users" : "users"} size={24} color={color} />
+          tabBarIcon: ({ color }) => (
+            <Feather name="users" size={24} color={color} />
           ),
         }}
       />
-      {/* 
-      <Tabs.Screen
-        name="[id]/map"
-        options={{
-            href: null, // Hide if not implemented yet
-        }}
-      /> 
-      */}
       <Tabs.Screen
         name="[id]/settings"
         options={{
           title: 'Settings',
-          tabBarIcon: ({ color, focused }) => (
-            <Feather name={focused ? "settings" : "settings"} size={24} color={color} />
+          tabBarIcon: ({ color }) => (
+            <Feather name="settings" size={24} color={color} />
           ),
         }}
       />
 
       {/* Hide unused screens from tab bar */}
+      <Tabs.Screen name="[id]/map" options={{ href: null }} />
       <Tabs.Screen name="voice-recorder" options={{ href: null }} />
+      <Tabs.Screen name="create" options={{ href: null }} />
     </Tabs>
   );
 }

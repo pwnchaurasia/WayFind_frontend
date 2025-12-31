@@ -101,6 +101,20 @@ const OrganizationService = {
             console.error('Failed to fetch organization rides:', error);
             throw error.response?.data || error;
         }
+    },
+
+    // Dashboard API for mobile
+    getDashboard: async () => {
+        try {
+            const response = await API.get('/v1/dashboard/mobile');
+            if (response.status !== 200) {
+                throw new Error('Failed to fetch dashboard');
+            }
+            return response.data;
+        } catch (error) {
+            console.error('Failed to fetch dashboard:', error);
+            throw error.response?.data || error;
+        }
     }
 };
 

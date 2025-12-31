@@ -68,7 +68,7 @@ const LoginPage = () => {
 
       console.log("Requesting OTP for:", payload);
       const response = await requestOTP(payload);
-      console.log("OTP Request Response:", response);
+      console.log("OTP Request Response:", response?.data);
 
       if (response && (response.status === 200 || response.status === 201)) {
         // Navigate to OTP verification screen

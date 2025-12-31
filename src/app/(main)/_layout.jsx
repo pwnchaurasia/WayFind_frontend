@@ -4,10 +4,10 @@ import { Stack } from 'expo-router'
 
 const MainStackLayout = () => {
   return (
-    <Stack screenOptions={{ headerShown: false }}> 
-      {/* <Stack.Screen name="(tabs)" options={{ headerShown: false }} /> */}
-      <Stack.Screen name="index" />
-      <Stack.Screen name="group" />
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="organization" />
+      <Stack.Screen name="rides" />
     </Stack>
   )
 }

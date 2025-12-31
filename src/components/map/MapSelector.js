@@ -9,7 +9,7 @@ const { width, height } = Dimensions.get('window');
 const OSM_URL_TEMPLATE = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 
 const MapSelector = ({ onLocationSelect, initialRegion }) => {
-    const [useOSM, setUseOSM] = useState(false); // Default to Google
+    const [useOSM, setUseOSM] = useState(true); // Default to OSM
     const [region, setRegion] = useState(initialRegion || {
         latitude: 12.9716,
         longitude: 77.5946,
