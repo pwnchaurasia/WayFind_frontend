@@ -5,9 +5,9 @@ import { getAccessToken } from '@/src/utils/token';
 const ENV = Constants.expoConfig?.extra?.env || 'dev';
 
 const baseURLs = {
-  dev: 'https://8ad0805c097d.ngrok-free.app',
-  sit: 'https://sit-api.example.com',
-  prod: 'https://api.example.com',
+  dev: process.env.EXPO_PUBLIC_API_BASE_URL_DEV,
+  sit: process.env.EXPO_PUBLIC_API_BASE_URL_SIT,
+  prod: process.env.EXPO_PUBLIC_API_BASE_URL_PROD,
 };
 
 console.log(baseURLs[ENV], 'baseURL for axios');

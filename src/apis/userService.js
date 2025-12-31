@@ -3,8 +3,8 @@ import API from "@/src/apis/axios";
 
 const UserService = {
     updateCurrentUserProfile: async (payload) => {
-        
-        try{
+
+        try {
             const response = await API.put("/v1/users/me", payload)
             console.log('Updating user profile with payload:', response);
             if (response.status !== 200) {
@@ -15,12 +15,13 @@ const UserService = {
             return response.data
 
         } catch (error) {
+            debugger
             console.error('Failed to update user profile:', error);
             throw error.response?.data || error;
         }
     },
     getCurrentUserProfile: async () => {
-        
+
         try {
             const response = await API.get("/v1/users/me");
             if (response.status !== 200) {
@@ -35,16 +36,16 @@ const UserService = {
     getCurrentUserGroups: async () => {
         try {
             const response = await API.get("/v1/users/me/groups");
-            
+
             if (response.status !== 200) {
                 throw new Error('Failed to fetch user groups');
             }
             return response.data;
-            
+
         } catch (error) {
             console.error('Failed to get user groups:', error);
             throw error.response?.data || error;
-            
+
         }
 
     },
@@ -99,6 +100,7 @@ const UserService = {
         }
     },
     addVehicle: async (vehicleData) => {
+        console.log('Adding vehicle with data:', vehicleData);
         try {
             const response = await API.post('/v1/users/me/vehicles', vehicleData);
             if (response.status !== 200 && response.status !== 201) {
