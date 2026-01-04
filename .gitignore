@@ -5,6 +5,7 @@ node_modules/
 
 # Expo
 .expo
+.vscode
 .idea
 .expo/
 dist/
@@ -42,3 +43,4 @@ android
 ios
 .env
 release.*
+*.code-workspace

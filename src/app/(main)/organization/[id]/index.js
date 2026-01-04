@@ -30,7 +30,6 @@ export default function OrganizationOverview() {
           return new Date(b.scheduled_date) - new Date(a.scheduled_date);
         });
         setRides(ridesArray);
-
         // Fetch members for count
         const membersData = await OrganizationService.getMembers(id);
         console.log('Members data:', membersData);

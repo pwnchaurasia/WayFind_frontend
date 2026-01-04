@@ -16,12 +16,14 @@ const OrganizationService = {
     },
     getAllOrganizations: async () => {
         try {
+            debugger
             const response = await API.get("/v1/organizations");
             if (response.status !== 200) {
                 throw new Error('Failed to fetch organizations');
             }
             return response.data;
         } catch (error) {
+            debugger
             console.error('Failed to fetch organizations:', error);
             throw error.response?.data || error;
         }
@@ -54,6 +56,7 @@ const OrganizationService = {
     // Member Management
     addMember: async (orgId, payload) => {
         try {
+            debugger
             const response = await API.post(`/v1/organizations/${orgId}/members`, payload);
             if (response.status !== 200 && response.status !== 201) {
                 throw new Error('Failed to add member');
