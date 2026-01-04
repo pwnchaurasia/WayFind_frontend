@@ -118,6 +118,34 @@ const OrganizationService = {
             console.error('Failed to fetch dashboard:', error);
             throw error.response?.data || error;
         }
+    },
+
+    // Toggle member active status
+    toggleMemberStatus: async (orgId, memberId) => {
+        try {
+            const response = await API.post(`/v1/organizations/${orgId}/members/${memberId}/toggle-status`);
+            if (response.status !== 200) {
+                throw new Error('Failed to toggle member status');
+            }
+            return response.data;
+        } catch (error) {
+            console.error('Failed to toggle member status:', error);
+            throw error.response?.data || error;
+        }
+    },
+
+    // Remove member (soft delete)
+    removeMember: async (orgId, memberId) => {
+        try {
+            const response = await API.delete(`/v1/organizations/${orgId}/members/${memberId}`);
+            if (response.status !== 200) {
+                throw new Error('Failed to remove member');
+            }
+            return response.data;
+        } catch (error) {
+            console.error('Failed to remove member:', error);
+            throw error.response?.data || error;
+        }
     }
 };
 
