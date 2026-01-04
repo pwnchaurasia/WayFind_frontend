@@ -36,7 +36,7 @@ const RootLayout = () => {
     Poppins_400Regular,
     Poppins_500Medium,
   });
-  
+
 
   useEffect(() => {
     async function hideSplash() {
@@ -54,11 +54,12 @@ const RootLayout = () => {
 
   return (
     <SafeAreaProvider>
-      <AuthProvider> 
+      <AuthProvider>
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="index" />
           <Stack.Screen name="(auth)" />
           <Stack.Screen name="(main)" />
+          <Stack.Screen name="join/[code]" options={{ presentation: 'modal' }} />
         </Stack>
       </AuthProvider>
     </SafeAreaProvider>

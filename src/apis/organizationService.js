@@ -146,6 +146,54 @@ const OrganizationService = {
             console.error('Failed to remove member:', error);
             throw error.response?.data || error;
         }
+    },
+
+    // ============================================
+    // JOIN CODE / INVITE LINK METHODS
+    // ============================================
+
+    // Get join code for organization (admins only)
+    getJoinCode: async (orgId) => {
+        try {
+            const response = await API.get(`/v1/organizations/${orgId}/join-code`);
+            return response.data;
+        } catch (error) {
+            console.error('Failed to get join code:', error);
+            throw error.response?.data || error;
+        }
+    },
+
+    // Refresh/regenerate join code (admins only)
+    refreshJoinCode: async (orgId) => {
+        try {
+            const response = await API.post(`/v1/organizations/${orgId}/join-code/refresh`);
+            return response.data;
+        } catch (error) {
+            console.error('Failed to refresh join code:', error);
+            throw error.response?.data || error;
+        }
+    },
+
+    // Get organization info by join code (public - no auth required)
+    getOrgByJoinCode: async (joinCode) => {
+        try {
+            const response = await API.get(`/v1/organizations/join/${joinCode}`);
+            return response.data;
+        } catch (error) {
+            console.error('Failed to get org by join code:', error);
+            throw error.response?.data || error;
+        }
+    },
+
+    // Join organization using join code (authenticated)
+    joinOrganization: async (joinCode) => {
+        try {
+            const response = await API.post(`/v1/organizations/join/${joinCode}`);
+            return response.data;
+        } catch (error) {
+            console.error('Failed to join organization:', error);
+            throw error.response?.data || error;
+        }
     }
 };
 

@@ -1,14 +1,109 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  Alert,
+  ActivityIndicator,
+  Share
+} from 'react-native';
 import { useGlobalSearchParams } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, Feather } from '@expo/vector-icons';
+import * as Clipboard from 'expo-clipboard';
 import OrganizationHeader from '@/src/components/organizations/OrganizationHeader';
 import { useOrganizationData } from '@/src/hooks/useOrganizationData';
+import OrganizationService from '@/src/apis/organizationService';
 import { globalStyles } from '@/src/styles/globalStyles';
 
 export default function SettingsScreen() {
   const { id } = useGlobalSearchParams();
   const { organization, loading } = useOrganizationData(id);
+
+  // Join code state
+  const [joinCode, setJoinCode] = useState(null);
+  const [joinUrl, setJoinUrl] = useState(null);
+  const [joinCodeLoading, setJoinCodeLoading] = useState(false);
+  const [refreshLoading, setRefreshLoading] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // Fetch join code on mount
+  useEffect(() => {
+    if (id) {
+      fetchJoinCode();
+    }
+  }, [id]);
+
+  const fetchJoinCode = async () => {
+    setJoinCodeLoading(true);
+    try {
+      const response = await OrganizationService.getJoinCode(id);
+      if (response.status === 'success') {
+        setJoinCode(response.join_code);
+        setJoinUrl(response.join_url);
+        setIsAdmin(true);
+      } else {
+        setIsAdmin(false);
+      }
+    } catch (error) {
+      console.log('Not an admin or error fetching join code');
+      setIsAdmin(false);
+    } finally {
+      setJoinCodeLoading(false);
+    }
+  };
+
+  const handleRefreshJoinCode = async () => {
+    Alert.alert(
+      'Refresh Join Link',
+      'This will invalidate the current link. Anyone with the old link won\'t be able to join. Continue?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Refresh',
+          style: 'destructive',
+          onPress: async () => {
+            setRefreshLoading(true);
+            try {
+              const response = await OrganizationService.refreshJoinCode(id);
+              if (response.status === 'success') {
+                setJoinCode(response.join_code);
+                setJoinUrl(response.join_url);
+                Alert.alert('Success', 'Join link refreshed successfully');
+              } else {
+                Alert.alert('Error', response.message || 'Failed to refresh');
+              }
+            } catch (error) {
+              Alert.alert('Error', 'Failed to refresh join link');
+            } finally {
+              setRefreshLoading(false);
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleCopyLink = async () => {
+    if (joinUrl) {
+      await Clipboard.setStringAsync(joinUrl);
+      Alert.alert('Copied!', 'Join link copied to clipboard');
+    }
+  };
+
+  const handleShareLink = async () => {
+    if (joinUrl) {
+      try {
+        await Share.share({
+          message: `Join ${organization?.name} on SQUADRA!\n\n${joinUrl}`,
+          title: `Join ${organization?.name}`
+        });
+      } catch (error) {
+        console.error('Error sharing:', error);
+      }
+    }
+  };
 
   if (loading || !organization) {
     return (
@@ -48,6 +143,71 @@ export default function SettingsScreen() {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>Organization Settings</Text>
 
+        {/* Invite Link Section (Admin Only) */}
+        {isAdmin && (
+          <View style={styles.inviteSection}>
+            <View style={styles.sectionHeader}>
+              <Feather name="link" size={20} color="#00C853" />
+              <Text style={styles.sectionTitle}>Invite Link</Text>
+            </View>
+
+            {joinCodeLoading ? (
+              <View style={styles.loadingBox}>
+                <ActivityIndicator size="small" color="#00C853" />
+              </View>
+            ) : (
+              <>
+                <View style={styles.codeBox}>
+                  <Text style={styles.codeLabel}>Join Code</Text>
+                  <Text style={styles.codeText}>{joinCode || 'N/A'}</Text>
+                </View>
+
+                <View style={styles.linkBox}>
+                  <Text style={styles.linkText} numberOfLines={1}>{joinUrl}</Text>
+                </View>
+
+                <View style={styles.buttonRow}>
+                  <TouchableOpacity
+                    style={styles.actionBtn}
+                    onPress={handleCopyLink}
+                  >
+                    <Feather name="copy" size={18} color="#fff" />
+                    <Text style={styles.actionBtnText}>Copy</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.actionBtn, styles.shareBtn]}
+                    onPress={handleShareLink}
+                  >
+                    <Feather name="share-2" size={18} color="#fff" />
+                    <Text style={styles.actionBtnText}>Share</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.actionBtn, styles.refreshBtn]}
+                    onPress={handleRefreshJoinCode}
+                    disabled={refreshLoading}
+                  >
+                    {refreshLoading ? (
+                      <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                      <>
+                        <Feather name="refresh-cw" size={18} color="#fff" />
+                        <Text style={styles.actionBtnText}>Refresh</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                </View>
+
+                <Text style={styles.hintText}>
+                  Share this link to let people join your organization
+                </Text>
+              </>
+            )}
+          </View>
+        )}
+
+        {/* Settings Options */}
         <View style={styles.settingsContainer}>
           {settingsOptions.map((option, index) => (
             <TouchableOpacity
@@ -98,16 +258,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#121212',
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#121212',
-  },
-  loadingText: {
-    color: 'white',
-    fontSize: 16,
-  },
   content: {
     flex: 1,
     paddingHorizontal: 20,
@@ -117,8 +267,95 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     marginTop: 20,
-    marginBottom: 30,
+    marginBottom: 20,
   },
+
+  // Invite Section Styles
+  inviteSection: {
+    backgroundColor: '#1E1E1E',
+    borderRadius: 15,
+    padding: 20,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#00C853',
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    color: '#00C853',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  loadingBox: {
+    paddingVertical: 30,
+    alignItems: 'center',
+  },
+  codeBox: {
+    backgroundColor: '#2A2A2A',
+    borderRadius: 10,
+    padding: 16,
+    marginBottom: 12,
+    alignItems: 'center',
+  },
+  codeLabel: {
+    color: '#888',
+    fontSize: 12,
+    marginBottom: 4,
+  },
+  codeText: {
+    color: '#00C853',
+    fontSize: 28,
+    fontWeight: 'bold',
+    letterSpacing: 4,
+  },
+  linkBox: {
+    backgroundColor: '#2A2A2A',
+    borderRadius: 10,
+    padding: 14,
+    marginBottom: 16,
+  },
+  linkText: {
+    color: '#999',
+    fontSize: 14,
+    fontFamily: 'monospace',
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 12,
+  },
+  actionBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#00C853',
+    paddingVertical: 12,
+    borderRadius: 10,
+    gap: 6,
+  },
+  shareBtn: {
+    backgroundColor: '#2196F3',
+  },
+  refreshBtn: {
+    backgroundColor: '#FF9800',
+  },
+  actionBtnText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  hintText: {
+    color: '#666',
+    fontSize: 12,
+    textAlign: 'center',
+  },
+
+  // Settings Options Styles
   settingsContainer: {
     backgroundColor: '#1E1E1E',
     borderRadius: 15,

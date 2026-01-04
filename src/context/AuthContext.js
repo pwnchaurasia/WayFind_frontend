@@ -110,9 +110,21 @@ export const AuthProvider = ({ children }) => {
 
     initializeAuth();
 
+    // Check for session expiry from axios interceptor
+    const sessionCheckInterval = setInterval(() => {
+      if (typeof global !== 'undefined' && global.authSessionExpired) {
+        console.log('Session expired detected, logging out...');
+        global.authSessionExpired = false;
+        setUser(null);
+        setIsAuthenticated(false);
+        setIsLoading(false);
+      }
+    }, 1000);
+
     // Cleanup function to prevent state updates on unmounted component
     return () => {
       isMounted = false;
+      clearInterval(sessionCheckInterval);
     };
   }, []);
 
