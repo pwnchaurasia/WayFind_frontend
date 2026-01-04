@@ -19,7 +19,22 @@
         "resizeMode": "cover"
       },
       "softwareKeyboardLayoutMode": "pan",
-      "package": "com.luciferthelight.squadra"
+      "package": "com.luciferthelight.squadra",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "squadra"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ]
     },
     "web": {
       "bundler": "metro",

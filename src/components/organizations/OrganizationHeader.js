@@ -37,7 +37,7 @@ const OrganizationHeader = ({ organization, showBackButton = true }) => {
           <View style={styles.orgDetails}>
             <Text style={styles.orgName}>{organization.name}</Text>
             <Text style={styles.orgStatus}>
-              {organization.member_count || organization.members?.length || 0} members
+              {organization.members_count || organization.member_count || organization.members?.length || 0} members
             </Text>
           </View>
         </View>

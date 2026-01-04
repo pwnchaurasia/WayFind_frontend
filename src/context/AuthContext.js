@@ -80,7 +80,10 @@ export const AuthProvider = ({ children }) => {
               console.log('new Current User:', currentUser);
               setUser(currentUser);
 
-              const profileComplete = currentUser?.is_profile_complete ? currentUser.is_profile_complete : false;
+              // Check if profile is complete by looking at actual fields
+              // User has filled profile if they have a name
+              const hasName = currentUser?.name && currentUser.name.trim().length > 0;
+              const profileComplete = hasName || currentUser?.is_profile_complete;
               setIsProfileComplete(profileComplete);
 
             } catch (error) {
