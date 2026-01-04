@@ -2,187 +2,132 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
-  FlatList,
   StyleSheet,
   TouchableOpacity,
-  ActivityIndicator,
-  RefreshControl,
+  FlatList,
   TextInput,
-  Modal,
+  ActivityIndicator,
   Alert,
-  Dimensions
+  Modal,
+  ScrollView
 } from 'react-native';
-import { useGlobalSearchParams } from 'expo-router';
-import { Feather } from '@expo/vector-icons';
-import { theme } from '@/src/styles/theme';
-import OrganizationService from '@/src/apis/organizationService';
-import { useOrganizationData } from '@/src/hooks/useOrganizationData';
+import { useGlobalSearchParams, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import OrganizationService from '@/src/apis/organizationService';
 
-const { width } = Dimensions.get('window');
+const TABS = {
+  MEMBERS: 'members',
+  PARTICIPANTS: 'participants'
+};
 
-export default function MembersTabScreen() {
+export default function MembersScreen() {
   const { id } = useGlobalSearchParams();
-  const { organization } = useOrganizationData(id);
+
+  const [activeTab, setActiveTab] = useState(TABS.MEMBERS);
   const [members, setMembers] = useState([]);
+  const [rideParticipants, setRideParticipants] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedMember, setSelectedMember] = useState(null);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [toggleLoading, setToggleLoading] = useState(false);
-  const [removeLoading, setRemoveLoading] = useState(false);
-
-  // Permission data from API
-  const [currentUserRole, setCurrentUserRole] = useState(null);
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-
-  const fetchMembers = async () => {
-    try {
-      const response = await OrganizationService.getMembers(id);
-      setMembers(response?.members || []);
-      setCurrentUserRole(response?.current_user_role || null);
-      setIsSuperAdmin(response?.is_super_admin || false);
-      setIsAdmin(response?.is_admin || false);
-    } catch (error) {
-      console.error('Error fetching members:', error);
-      setMembers([]);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
+  const [selectedPerson, setSelectedPerson] = useState(null);
+  const [userRole, setUserRole] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [organization, setOrganization] = useState(null);
 
   useEffect(() => {
-    if (id) {
-      fetchMembers();
-    }
+    if (id) fetchAllPeople();
   }, [id]);
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    fetchMembers();
+  const fetchAllPeople = async () => {
+    try {
+      setLoading(true);
+      const response = await OrganizationService.getAllPeople(id);
+
+      if (response.status === 'success') {
+        setMembers(response.org_members || []);
+        setRideParticipants(response.ride_participants || []);
+        setUserRole(response.user_role);
+        setOrganization(response.organization);
+      } else {
+        Alert.alert('Error', response.message || 'Failed to load data');
+      }
+    } catch (error) {
+      console.error('Error fetching people:', error);
+      Alert.alert('Error', 'Failed to load people');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Role hierarchy for permission checks
-  const roleHierarchy = { founder: 3, co_founder: 2, admin: 1 };
+  const currentList = activeTab === TABS.MEMBERS ? members : rideParticipants;
 
-  const canManageMember = (targetRole) => {
-    if (isSuperAdmin) return true;
-    if (!currentUserRole) return false;
-    const myLevel = roleHierarchy[currentUserRole] || 0;
-    const targetLevel = roleHierarchy[targetRole] || 0;
-    return myLevel > targetLevel;
-  };
+  const filteredList = useMemo(() => {
+    if (!searchQuery.trim()) return currentList;
+    const query = searchQuery.toLowerCase();
+    return currentList.filter(person =>
+      person.name?.toLowerCase().includes(query) ||
+      person.phone?.toLowerCase().includes(query) ||
+      person.email?.toLowerCase().includes(query)
+    );
+  }, [currentList, searchQuery]);
 
   const getRoleBadge = (role) => {
-    const roleStyles = {
-      founder: { bg: '#00C853', text: 'Founder' },
-      co_founder: { bg: '#2196F3', text: 'Co-Founder' },
-      admin: { bg: '#FF9800', text: 'Admin' },
+    const roles = {
+      'founder': { label: 'Founder', color: '#FFD700', bg: '#3D3500' },
+      'co_founder': { label: 'Co-Founder', color: '#C0C0C0', bg: '#2D2D2D' },
+      'admin': { label: 'Admin', color: '#00C853', bg: '#003D19' },
+      'member': { label: 'Member', color: '#2196F3', bg: '#0D2E4D' }
     };
-    return roleStyles[role] || { bg: '#666', text: 'Member' };
+    return roles[role?.toLowerCase()] || { label: role || 'Member', color: '#888', bg: '#2A2A2A' };
   };
 
   const generateInitials = (name) => {
-    if (!name) return 'U';
-    return name
-      .split(' ')
-      .map(word => word.charAt(0))
-      .join('')
-      .substring(0, 2)
-      .toUpperCase();
+    if (!name) return '?';
+    return name.split(' ').map(w => w.charAt(0)).join('').substring(0, 2).toUpperCase();
   };
 
-  const getInitialsColor = (name) => {
-    const colors = ['#7B68EE', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FECA57'];
-    if (!name) return colors[0];
-    let hash = 0;
-    for (let i = 0; i < name.length; i++) {
-      hash = name.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    return colors[Math.abs(hash) % colors.length];
+  const getAvatarColor = (name) => {
+    const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F'];
+    const index = name ? name.charCodeAt(0) % colors.length : 0;
+    return colors[index];
   };
 
-  const getAttendanceColor = (rate) => {
-    if (rate >= 80) return '#00C853';
-    if (rate >= 50) return '#FF9800';
-    return '#F44336';
-  };
+  const isAdmin = ['founder', 'co_founder', 'admin'].includes(userRole?.toLowerCase());
 
-  // Filter and sort members
-  const filteredMembers = useMemo(() => {
-    let sorted = [...members].sort((a, b) => {
-      const rolePriority = { founder: 0, co_founder: 1, admin: 2 };
-      const aPriority = rolePriority[a.role] ?? 99;
-      const bPriority = rolePriority[b.role] ?? 99;
-      if (aPriority !== bPriority) return aPriority - bPriority;
-      return (a.name || '').localeCompare(b.name || '');
-    });
-
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      sorted = sorted.filter(m =>
-        (m.name || '').toLowerCase().includes(query) ||
-        (m.phone_number || '').includes(query) ||
-        (m.email || '').toLowerCase().includes(query)
-      );
-    }
-
-    return sorted;
-  }, [members, searchQuery]);
-
-  // Handle toggle member status
-  const handleToggleStatus = async () => {
-    if (!selectedMember) return;
-
-    setToggleLoading(true);
+  const handleToggleStatus = async (personId) => {
+    if (!isAdmin) return;
+    setActionLoading(true);
     try {
-      const response = await OrganizationService.toggleMemberStatus(id, selectedMember.id);
-      if (response.status === 'success') {
-        Alert.alert('Success', response.message);
-        setModalVisible(false);
-        setSelectedMember(null);
-        fetchMembers();
-      } else {
-        Alert.alert('Error', response.message || 'Failed to toggle status');
-      }
+      await OrganizationService.toggleMemberStatus(id, personId);
+      fetchAllPeople();
+      setSelectedPerson(null);
     } catch (error) {
-      Alert.alert('Error', error.message || 'Failed to toggle status');
+      Alert.alert('Error', 'Failed to update status');
     } finally {
-      setToggleLoading(false);
+      setActionLoading(false);
     }
   };
 
-  // Handle remove member
-  const handleRemoveMember = async () => {
-    if (!selectedMember) return;
-
+  const handleRemovePerson = async (personId) => {
+    if (!isAdmin) return;
     Alert.alert(
-      'Remove Member',
-      `Are you sure you want to remove ${selectedMember.name} from the organization?`,
+      'Remove Person',
+      'Are you sure you want to remove this person from the organization?',
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Remove',
           style: 'destructive',
           onPress: async () => {
-            setRemoveLoading(true);
+            setActionLoading(true);
             try {
-              const response = await OrganizationService.removeMember(id, selectedMember.id);
-              if (response.status === 'success') {
-                Alert.alert('Success', response.message);
-                setModalVisible(false);
-                setSelectedMember(null);
-                fetchMembers();
-              } else {
-                Alert.alert('Error', response.message || 'Failed to remove member');
-              }
+              await OrganizationService.removeMember(id, personId);
+              fetchAllPeople();
+              setSelectedPerson(null);
             } catch (error) {
-              Alert.alert('Error', error.message || 'Failed to remove member');
+              Alert.alert('Error', 'Failed to remove person');
             } finally {
-              setRemoveLoading(false);
+              setActionLoading(false);
             }
           }
         }
@@ -190,263 +135,322 @@ export default function MembersTabScreen() {
     );
   };
 
-  // Open member profile modal
-  const openMemberModal = (member) => {
-    setSelectedMember(member);
-    setModalVisible(true);
+  const getAttendanceColor = (rate) => {
+    if (rate >= 80) return '#00C853';
+    if (rate >= 50) return '#FFB300';
+    return '#FF5252';
   };
 
-  const renderMemberItem = ({ item }) => {
-    const roleInfo = getRoleBadge(item.role);
-    const name = item.name || 'Unknown';
-    const attendanceRate = item.attendance_rate || 0;
+  const renderPerson = ({ item }) => {
+    const roleBadge = getRoleBadge(item.role);
+    const isOrgMember = activeTab === TABS.MEMBERS;
+    const attendance = item.attendance || { total_rides: 0, attended: 0, attendance_rate: 0 };
 
     return (
-      <TouchableOpacity style={styles.memberCard} onPress={() => openMemberModal(item)}>
-        <View style={[styles.avatar, { backgroundColor: getInitialsColor(name) }]}>
-          <Text style={styles.avatarText}>{generateInitials(name)}</Text>
+      <TouchableOpacity
+        style={[styles.personCard, !item.is_active && styles.inactiveCard]}
+        onPress={() => setSelectedPerson(item)}
+        activeOpacity={0.7}
+      >
+        <View style={[styles.avatar, { backgroundColor: getAvatarColor(item.name) }]}>
+          <Text style={styles.avatarText}>{generateInitials(item.name)}</Text>
         </View>
 
-        <View style={styles.memberInfo}>
+        <View style={styles.personInfo}>
           <View style={styles.nameRow}>
-            <Text style={styles.memberName} numberOfLines={1}>{name}</Text>
-            <View style={[styles.roleBadge, { backgroundColor: roleInfo.bg }]}>
-              <Text style={styles.roleText}>{roleInfo.text}</Text>
-            </View>
+            <Text style={styles.personName} numberOfLines={1}>{item.name}</Text>
             {!item.is_active && (
               <View style={styles.inactiveBadge}>
-                <Text style={styles.inactiveText}>Inactive</Text>
+                <Text style={styles.inactiveBadgeText}>Inactive</Text>
               </View>
             )}
           </View>
 
-          <View style={styles.statsRow}>
-            {item.email && (
-              <View style={styles.infoRow}>
-                <Feather name="mail" size={11} color="#666" />
-                <Text style={styles.infoText} numberOfLines={1}>{item.email}</Text>
+          <View style={styles.metaRow}>
+            {isOrgMember && item.role && (
+              <View style={[styles.roleBadge, { backgroundColor: roleBadge.bg }]}>
+                <Text style={[styles.roleText, { color: roleBadge.color }]}>{roleBadge.label}</Text>
               </View>
             )}
-          </View>
+            {!isOrgMember && (
+              <View style={styles.participantBadge}>
+                <MaterialCommunityIcons name="motorbike" size={12} color="#888" />
+                <Text style={styles.participantText}>Participant</Text>
+              </View>
+            )}
 
-          {/* Attendance Progress */}
-          <View style={styles.attendanceContainer}>
-            <View style={styles.attendanceHeader}>
-              <Feather name="check-circle" size={12} color="#888" />
-              <Text style={styles.attendanceLabel}>Attendance</Text>
-              <Text style={[styles.attendanceValue, { color: getAttendanceColor(attendanceRate) }]}>
-                {attendanceRate}%
-              </Text>
-            </View>
-            <View style={styles.progressBar}>
-              <View
-                style={[
-                  styles.progressFill,
-                  {
-                    width: `${Math.min(attendanceRate, 100)}%`,
-                    backgroundColor: getAttendanceColor(attendanceRate)
-                  }
-                ]}
-              />
-            </View>
+            {attendance.total_rides > 0 && (
+              <View style={styles.attendanceIndicator}>
+                <Text style={[styles.attendanceText, { color: getAttendanceColor(attendance.attendance_rate) }]}>
+                  {attendance.attended}/{attendance.total_rides}
+                </Text>
+              </View>
+            )}
           </View>
         </View>
 
-        <Feather name="chevron-right" size={20} color="#666" />
+        <Feather name="chevron-right" size={20} color="#555" />
       </TouchableOpacity>
     );
   };
 
-  // Member Profile Modal
-  const renderMemberModal = () => {
-    if (!selectedMember) return null;
-
-    const roleInfo = getRoleBadge(selectedMember.role);
-    const canManage = canManageMember(selectedMember.role);
-
-    return (
-      <Modal
-        visible={modalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            {/* Header */}
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Member Profile</Text>
-              <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <Feather name="x" size={24} color="#fff" />
-              </TouchableOpacity>
-            </View>
-
-            {/* Profile Section */}
-            <View style={styles.profileSection}>
-              <View style={[styles.modalAvatar, { backgroundColor: getInitialsColor(selectedMember.name) }]}>
-                <Text style={styles.modalAvatarText}>{generateInitials(selectedMember.name)}</Text>
-              </View>
-              <Text style={styles.profileName}>{selectedMember.name || 'Unknown'}</Text>
-              <View style={styles.badgeRow}>
-                <View style={[styles.roleBadge, { backgroundColor: roleInfo.bg }]}>
-                  <Text style={styles.roleText}>{roleInfo.text}</Text>
-                </View>
-                {!selectedMember.is_active && (
-                  <View style={styles.inactiveBadge}>
-                    <Text style={styles.inactiveText}>Inactive</Text>
-                  </View>
-                )}
-              </View>
-            </View>
-
-            {/* Details Section */}
-            <View style={styles.detailsSection}>
-              {selectedMember.email && (
-                <View style={styles.detailRow}>
-                  <Feather name="mail" size={16} color="#888" />
-                  <Text style={styles.detailText}>{selectedMember.email}</Text>
-                </View>
-              )}
-              {selectedMember.phone_number && (
-                <View style={styles.detailRow}>
-                  <Feather name="phone" size={16} color="#888" />
-                  <Text style={styles.detailText}>{selectedMember.phone_number}</Text>
-                </View>
-              )}
-              {selectedMember.created_at && (
-                <View style={styles.detailRow}>
-                  <Feather name="calendar" size={16} color="#888" />
-                  <Text style={styles.detailText}>
-                    Joined {new Date(selectedMember.created_at).toLocaleDateString()}
-                  </Text>
-                </View>
-              )}
-            </View>
-
-            {/* Attendance Stats */}
-            <View style={styles.statsSection}>
-              <Text style={styles.statsSectionTitle}>Attendance Statistics</Text>
-              <View style={styles.statsGrid}>
-                <View style={styles.statBox}>
-                  <Text style={styles.statNumber}>{selectedMember.total_rides_registered || 0}</Text>
-                  <Text style={styles.statLabel}>Rides Registered</Text>
-                </View>
-                <View style={styles.statBox}>
-                  <Text style={styles.statNumber}>{selectedMember.total_rides_attended || 0}</Text>
-                  <Text style={styles.statLabel}>Rides Attended</Text>
-                </View>
-                <View style={styles.statBox}>
-                  <Text style={[styles.statNumber, { color: getAttendanceColor(selectedMember.attendance_rate || 0) }]}>
-                    {selectedMember.attendance_rate || 0}%
-                  </Text>
-                  <Text style={styles.statLabel}>Attendance Rate</Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Action Buttons (only for admins who can manage this member) */}
-            {canManage && (
-              <View style={styles.actionsSection}>
-                <TouchableOpacity
-                  style={[styles.actionButton, styles.toggleButton]}
-                  onPress={handleToggleStatus}
-                  disabled={toggleLoading || removeLoading}
-                >
-                  {toggleLoading ? (
-                    <ActivityIndicator size="small" color="#fff" />
-                  ) : (
-                    <>
-                      <Feather
-                        name={selectedMember.is_active ? "user-x" : "user-check"}
-                        size={18}
-                        color="#fff"
-                      />
-                      <Text style={styles.actionButtonText}>
-                        {selectedMember.is_active ? 'Deactivate' : 'Activate'}
-                      </Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.actionButton, styles.removeButton]}
-                  onPress={handleRemoveMember}
-                  disabled={toggleLoading || removeLoading}
-                >
-                  {removeLoading ? (
-                    <ActivityIndicator size="small" color="#fff" />
-                  ) : (
-                    <>
-                      <Feather name="trash-2" size={18} color="#fff" />
-                      <Text style={styles.actionButtonText}>Remove</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-        </View>
-      </Modal>
-    );
-  };
+  const renderEmptyState = () => (
+    <View style={styles.emptyState}>
+      <Feather
+        name={activeTab === TABS.MEMBERS ? "users" : "user-plus"}
+        size={48}
+        color="#444"
+      />
+      <Text style={styles.emptyTitle}>
+        {activeTab === TABS.MEMBERS ? 'No Members Yet' : 'No Ride Participants'}
+      </Text>
+      <Text style={styles.emptySubtitle}>
+        {activeTab === TABS.MEMBERS
+          ? 'Organization members will appear here'
+          : 'People who join rides will appear here'}
+      </Text>
+    </View>
+  );
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#00C853" />
-        <Text style={styles.loadingText}>Loading members...</Text>
-      </View>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#00C853" />
+          <Text style={styles.loadingText}>Loading...</Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
+    <SafeAreaView style={styles.container}>
+      {/* Clean Professional Header */}
       <View style={styles.header}>
-        <Text style={styles.title} numberOfLines={2}>{organization?.name || 'Organization'}</Text>
-        <Text style={styles.subtitle}>{members.length} Members</Text>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Feather name="arrow-left" size={22} color="#fff" />
+        </TouchableOpacity>
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}>
+            {organization?.name || 'Organization'}
+          </Text>
+          <Text style={styles.headerSubtitle}>
+            {members.length + rideParticipants.length} People
+          </Text>
+        </View>
+        <View style={styles.headerRight} />
+      </View>
+
+      {/* Segmented Control */}
+      <View style={styles.segmentContainer}>
+        <TouchableOpacity
+          style={[styles.segment, activeTab === TABS.MEMBERS && styles.activeSegment]}
+          onPress={() => setActiveTab(TABS.MEMBERS)}
+        >
+          <Feather name="users" size={16} color={activeTab === TABS.MEMBERS ? '#00C853' : '#888'} />
+          <Text style={[styles.segmentText, activeTab === TABS.MEMBERS && styles.activeSegmentText]}>
+            Members ({members.length})
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.segment, activeTab === TABS.PARTICIPANTS && styles.activeSegment]}
+          onPress={() => setActiveTab(TABS.PARTICIPANTS)}
+        >
+          <MaterialCommunityIcons
+            name="motorbike"
+            size={18}
+            color={activeTab === TABS.PARTICIPANTS ? '#00C853' : '#888'}
+          />
+          <Text style={[styles.segmentText, activeTab === TABS.PARTICIPANTS && styles.activeSegmentText]}>
+            Participants ({rideParticipants.length})
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {/* Search Bar */}
       <View style={styles.searchContainer}>
-        <View style={styles.searchInputWrapper}>
-          <Feather name="search" size={18} color="#888" style={styles.searchIcon} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search by name or phone..."
-            placeholderTextColor="#666"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Feather name="x-circle" size={18} color="#888" />
-            </TouchableOpacity>
-          )}
-        </View>
+        <Feather name="search" size={18} color="#888" />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search by name, phone, email..."
+          placeholderTextColor="#666"
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+        {searchQuery.length > 0 && (
+          <TouchableOpacity onPress={() => setSearchQuery('')}>
+            <Feather name="x" size={18} color="#888" />
+          </TouchableOpacity>
+        )}
       </View>
 
-      {/* Members List */}
+      {/* List */}
       <FlatList
-        data={filteredMembers}
-        renderItem={renderMemberItem}
-        keyExtractor={(item) => item.id || item.user_id || Math.random().toString()}
+        data={filteredList}
+        keyExtractor={(item) => item.id}
+        renderItem={renderPerson}
         contentContainerStyle={styles.listContent}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#00C853" />
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Feather name="users" size={48} color="#666" />
-            <Text style={styles.emptyText}>
-              {searchQuery ? 'No members match your search' : 'No members found'}
-            </Text>
-          </View>
-        }
+        ListEmptyComponent={renderEmptyState}
+        showsVerticalScrollIndicator={false}
+        refreshing={loading}
+        onRefresh={fetchAllPeople}
       />
 
-      {/* Member Profile Modal */}
-      {renderMemberModal()}
+      {/* Person Detail Modal */}
+      <Modal
+        visible={!!selectedPerson}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setSelectedPerson(null)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {selectedPerson && (
+                <>
+                  <View style={styles.modalHeader}>
+                    <View style={[styles.modalAvatar, { backgroundColor: getAvatarColor(selectedPerson.name) }]}>
+                      <Text style={styles.modalAvatarText}>{generateInitials(selectedPerson.name)}</Text>
+                    </View>
+                    <TouchableOpacity style={styles.closeBtn} onPress={() => setSelectedPerson(null)}>
+                      <Feather name="x" size={24} color="#888" />
+                    </TouchableOpacity>
+                  </View>
+
+                  <Text style={styles.modalName}>{selectedPerson.name}</Text>
+
+                  {selectedPerson.role && (
+                    <View style={[styles.modalRoleBadge, { backgroundColor: getRoleBadge(selectedPerson.role).bg }]}>
+                      <Text style={[styles.modalRoleText, { color: getRoleBadge(selectedPerson.role).color }]}>
+                        {getRoleBadge(selectedPerson.role).label}
+                      </Text>
+                    </View>
+                  )}
+
+                  {/* Ride Stats */}
+                  {selectedPerson.attendance && (
+                    <View style={styles.statsCard}>
+                      <Text style={styles.sectionTitle}>Ride Stats</Text>
+                      <View style={styles.statsRow}>
+                        <View style={styles.statBox}>
+                          <Text style={styles.statValue}>{selectedPerson.attendance.total_rides}</Text>
+                          <Text style={styles.statLabel}>Registered</Text>
+                        </View>
+                        <View style={styles.statDivider} />
+                        <View style={styles.statBox}>
+                          <Text style={styles.statValue}>{selectedPerson.attendance.completed_rides || 0}</Text>
+                          <Text style={styles.statLabel}>Completed</Text>
+                        </View>
+                        <View style={styles.statDivider} />
+                        <View style={styles.statBox}>
+                          <Text style={styles.statValue}>{selectedPerson.attendance.attended}</Text>
+                          <Text style={styles.statLabel}>Attended</Text>
+                        </View>
+                        <View style={styles.statDivider} />
+                        <View style={styles.statBox}>
+                          <Text style={[styles.statValue, { color: getAttendanceColor(selectedPerson.attendance.attendance_rate) }]}>
+                            {selectedPerson.attendance.attendance_rate}%
+                          </Text>
+                          <Text style={styles.statLabel}>Rate</Text>
+                        </View>
+                      </View>
+                    </View>
+                  )}
+
+                  {/* Contact Info */}
+                  <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Details</Text>
+                    {selectedPerson.phone && (
+                      <View style={styles.detailRow}>
+                        <Feather name="phone" size={16} color="#00C853" />
+                        <Text style={styles.detailText}>{selectedPerson.phone}</Text>
+                      </View>
+                    )}
+                    {selectedPerson.email && (
+                      <View style={styles.detailRow}>
+                        <Feather name="mail" size={16} color="#00C853" />
+                        <Text style={styles.detailText}>{selectedPerson.email}</Text>
+                      </View>
+                    )}
+                    <View style={styles.detailRow}>
+                      <Feather name="calendar" size={16} color="#00C853" />
+                      <Text style={styles.detailText}>Joined: {selectedPerson.created_at}</Text>
+                    </View>
+                    <View style={styles.detailRow}>
+                      <Feather
+                        name={selectedPerson.is_active ? "check-circle" : "x-circle"}
+                        size={16}
+                        color={selectedPerson.is_active ? "#00C853" : "#FF5252"}
+                      />
+                      <Text style={styles.detailText}>
+                        {selectedPerson.is_active ? 'Active' : 'Inactive'}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Vehicles */}
+                  {selectedPerson.vehicles && selectedPerson.vehicles.length > 0 && (
+                    <View style={styles.section}>
+                      <Text style={styles.sectionTitle}>Vehicles ({selectedPerson.vehicles.length})</Text>
+                      {selectedPerson.vehicles.map((vehicle, index) => (
+                        <View key={vehicle.id || index} style={styles.vehicleCard}>
+                          <MaterialCommunityIcons name="motorbike" size={20} color="#00C853" />
+                          <View style={styles.vehicleInfo}>
+                            <Text style={styles.vehicleName}>
+                              {vehicle.make} {vehicle.model}
+                              {vehicle.year && ` (${vehicle.year})`}
+                            </Text>
+                            {vehicle.license_plate && (
+                              <Text style={styles.vehiclePlate}>{vehicle.license_plate}</Text>
+                            )}
+                          </View>
+                          {vehicle.is_primary && (
+                            <View style={styles.primaryBadge}>
+                              <Text style={styles.primaryText}>Primary</Text>
+                            </View>
+                          )}
+                        </View>
+                      ))}
+                    </View>
+                  )}
+
+                  {/* Admin Actions */}
+                  {isAdmin && (
+                    <View style={styles.actionButtons}>
+                      <TouchableOpacity
+                        style={[styles.actionBtn, styles.toggleBtn]}
+                        onPress={() => handleToggleStatus(selectedPerson.id)}
+                        disabled={actionLoading}
+                      >
+                        {actionLoading ? (
+                          <ActivityIndicator size="small" color="#fff" />
+                        ) : (
+                          <>
+                            <Feather name={selectedPerson.is_active ? "user-x" : "user-check"} size={18} color="#fff" />
+                            <Text style={styles.actionBtnText}>
+                              {selectedPerson.is_active ? 'Deactivate' : 'Activate'}
+                            </Text>
+                          </>
+                        )}
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={[styles.actionBtn, styles.removeBtn]}
+                        onPress={() => handleRemovePerson(selectedPerson.id)}
+                        disabled={actionLoading}
+                      >
+                        <Feather name="trash-2" size={18} color="#fff" />
+                        <Text style={styles.actionBtnText}>Remove</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </>
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -454,296 +458,351 @@ export default function MembersTabScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors?.background || '#121212',
+    backgroundColor: '#121212',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: theme.colors?.background || '#121212',
+    gap: 12,
   },
   loadingText: {
-    color: '#999',
-    marginTop: 12,
-    fontSize: 16,
+    color: '#888',
+    fontSize: 14,
   },
   header: {
-    padding: 20,
-    paddingTop: 10,
-    backgroundColor: '#1E1E1E',
-    borderBottomWidth: 1,
-    borderBottomColor: '#333',
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: 'white',
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#999',
-  },
-  searchContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#1E1E1E',
-    borderBottomWidth: 1,
-    borderBottomColor: '#333',
-  },
-  searchInputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#2A2A2A',
-    borderRadius: 10,
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#2A2A2A',
   },
-  searchIcon: {
-    marginRight: 8,
+  backBtn: {
+    padding: 6,
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  headerTitle: {
+    color: '#fff',
+    fontSize: 17,
+    fontWeight: '600',
+  },
+  headerSubtitle: {
+    color: '#888',
+    fontSize: 12,
+    marginTop: 2,
+  },
+  headerRight: {
+    width: 34,
+  },
+  segmentContainer: {
+    flexDirection: 'row',
+    marginHorizontal: 16,
+    marginTop: 12,
+    backgroundColor: '#1E1E1E',
+    borderRadius: 12,
+    padding: 4,
+  },
+  segment: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  activeSegment: {
+    backgroundColor: '#2A2A2A',
+  },
+  segmentText: {
+    color: '#888',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  activeSegmentText: {
+    color: '#00C853',
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1E1E1E',
+    marginHorizontal: 16,
+    marginTop: 12,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    gap: 10,
   },
   searchInput: {
     flex: 1,
-    height: 42,
     color: '#fff',
-    fontSize: 15,
+    fontSize: 14,
+    paddingVertical: 12,
   },
   listContent: {
     padding: 16,
-    paddingBottom: 30,
+    paddingBottom: 40,
   },
-  memberCard: {
+  personCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#1E1E1E',
     borderRadius: 12,
     padding: 14,
     marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#333',
+  },
+  inactiveCard: {
+    opacity: 0.6,
   },
   avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
   },
   avatarText: {
-    color: 'white',
-    fontSize: 16,
+    color: '#fff',
     fontWeight: 'bold',
+    fontSize: 16,
   },
-  memberInfo: {
+  personInfo: {
     flex: 1,
+    marginLeft: 12,
   },
   nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 6,
+    gap: 8,
     marginBottom: 4,
   },
-  memberName: {
-    fontSize: 15,
+  personName: {
+    color: '#fff',
+    fontSize: 16,
     fontWeight: '600',
-    color: 'white',
-    maxWidth: 140,
+    flex: 1,
   },
-  roleBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
-  },
-  roleText: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: 'white',
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   inactiveBadge: {
+    backgroundColor: '#3D0000',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 6,
-    backgroundColor: '#555',
   },
-  inactiveText: {
-    fontSize: 9,
+  inactiveBadgeText: {
+    color: '#FF5252',
+    fontSize: 10,
     fontWeight: '600',
-    color: '#aaa',
   },
-  statsRow: {
-    marginBottom: 6,
+  roleBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
   },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
+  roleText: {
+    fontSize: 11,
+    fontWeight: '600',
   },
-  infoText: {
-    fontSize: 12,
-    color: '#888',
-    flex: 1,
-  },
-  attendanceContainer: {
-    marginTop: 4,
-  },
-  attendanceHeader: {
+  participantBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    marginBottom: 4,
   },
-  attendanceLabel: {
-    fontSize: 11,
+  participantText: {
     color: '#888',
-    flex: 1,
-  },
-  attendanceValue: {
     fontSize: 12,
+  },
+  attendanceIndicator: {
+    backgroundColor: '#2A2A2A',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  attendanceText: {
+    fontSize: 11,
     fontWeight: '600',
   },
-  progressBar: {
-    height: 4,
-    backgroundColor: '#333',
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: 2,
-  },
-  emptyContainer: {
+  emptyState: {
     alignItems: 'center',
     paddingVertical: 60,
     gap: 12,
   },
-  emptyText: {
-    color: '#666',
-    fontSize: 16,
+  emptyTitle: {
+    color: '#888',
+    fontSize: 18,
+    fontWeight: '600',
   },
-
-  // Modal Styles
+  emptySubtitle: {
+    color: '#555',
+    fontSize: 14,
+  },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.8)',
+    backgroundColor: 'rgba(0,0,0,0.85)',
     justifyContent: 'flex-end',
   },
   modalContent: {
     backgroundColor: '#1E1E1E',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
+    padding: 24,
+    paddingBottom: 40,
     maxHeight: '85%',
   },
   modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#333',
+    marginBottom: 16,
   },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: 'white',
-  },
-  profileSection: {
-    alignItems: 'center',
-    paddingVertical: 24,
-    borderBottomWidth: 1,
-    borderBottomColor: '#333',
+  closeBtn: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    padding: 8,
   },
   modalAvatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
   },
   modalAvatarText: {
-    color: 'white',
+    color: '#fff',
     fontSize: 28,
     fontWeight: 'bold',
   },
-  profileName: {
+  modalName: {
+    color: '#fff',
     fontSize: 22,
     fontWeight: 'bold',
-    color: 'white',
+    textAlign: 'center',
     marginBottom: 8,
   },
-  badgeRow: {
-    flexDirection: 'row',
-    gap: 8,
+  modalRoleBadge: {
+    alignSelf: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginBottom: 16,
   },
-  detailsSection: {
-    padding: 20,
-    gap: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#333',
+  modalRoleText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  sectionTitle: {
+    color: '#00C853',
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 10,
+  },
+  statsCard: {
+    backgroundColor: '#2A2A2A',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 16,
+  },
+  statsRow: {
+    flexDirection: 'row',
+  },
+  statBox: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  statValue: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  statLabel: {
+    color: '#888',
+    fontSize: 10,
+    marginTop: 2,
+  },
+  statDivider: {
+    width: 1,
+    backgroundColor: '#444',
+  },
+  section: {
+    marginBottom: 16,
   },
   detailRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    backgroundColor: '#2A2A2A',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 10,
+    marginBottom: 8,
   },
   detailText: {
-    fontSize: 15,
-    color: '#ccc',
-  },
-  statsSection: {
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#333',
-  },
-  statsSectionTitle: {
+    color: '#CCC',
     fontSize: 14,
-    fontWeight: '600',
-    color: '#888',
-    marginBottom: 14,
   },
-  statsGrid: {
+  vehicleCard: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  statBox: {
     alignItems: 'center',
-    flex: 1,
-  },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: 'white',
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 11,
-    color: '#888',
-    textAlign: 'center',
-  },
-  actionsSection: {
-    flexDirection: 'row',
-    padding: 20,
+    backgroundColor: '#2A2A2A',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 10,
+    marginBottom: 8,
     gap: 12,
   },
-  actionButton: {
+  vehicleInfo: {
+    flex: 1,
+  },
+  vehicleName: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  vehiclePlate: {
+    color: '#888',
+    fontSize: 12,
+    marginTop: 2,
+  },
+  primaryBadge: {
+    backgroundColor: '#003D19',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  primaryText: {
+    color: '#00C853',
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
+  },
+  actionBtn: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 8,
     paddingVertical: 14,
     borderRadius: 12,
-    gap: 8,
   },
-  toggleButton: {
+  toggleBtn: {
     backgroundColor: '#FF9800',
   },
-  removeButton: {
-    backgroundColor: '#F44336',
+  removeBtn: {
+    backgroundColor: '#FF5252',
   },
-  actionButtonText: {
-    color: 'white',
+  actionBtnText: {
+    color: '#fff',
+    fontSize: 14,
     fontWeight: '600',
-    fontSize: 15,
   },
 });

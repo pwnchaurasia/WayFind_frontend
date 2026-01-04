@@ -1,21 +1,12 @@
 import { Tabs } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { View, StyleSheet, ActivityIndicator } from 'react-native';
-import { useGlobalSearchParams } from 'expo-router';
-import { useOrganizationData } from '@/src/hooks/useOrganizationData';
 import { theme } from '@/src/styles/theme';
 
 export default function OrganizationLayout() {
-  const { id } = useGlobalSearchParams();
-  const { organization, loading } = useOrganizationData(id);
-
-  if (loading && !organization) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#00C853" />
-      </View>
-    )
-  }
+  // Don't fetch organization data at layout level
+  // Let individual pages handle their own data fetching
+  // This prevents the bug where ride ID gets sent to organization API
 
   return (
     <Tabs

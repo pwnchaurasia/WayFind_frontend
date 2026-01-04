@@ -18,9 +18,14 @@ export default function OrganizationOverview() {
   const fetchData = async () => {
     try {
       if (id) {
-        // Fetch rides
-        const ridesData = await OrganizationService.getOrganizationRides(id);
+        // Fetch rides and members in parallel for faster loading
+        const [ridesData, membersData] = await Promise.all([
+          OrganizationService.getOrganizationRides(id),
+          OrganizationService.getMembers(id)
+        ]);
+
         console.log('Rides data:', ridesData);
+        console.log('Members data:', membersData);
 
         // API returns rides array - sort by scheduled_date
         const ridesArray = ridesData?.rides || [];
@@ -30,9 +35,6 @@ export default function OrganizationOverview() {
           return new Date(b.scheduled_date) - new Date(a.scheduled_date);
         });
         setRides(ridesArray);
-        // Fetch members for count
-        const membersData = await OrganizationService.getMembers(id);
-        console.log('Members data:', membersData);
         setMembers(membersData?.members || []);
       }
     } catch (error) {
