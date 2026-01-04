@@ -1,5 +1,5 @@
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, Platform, ScrollView } from 'react-native'
-import React, { useState } from 'react'
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, Platform, ScrollView, Switch } from 'react-native'
+import React, { useState, useCallback } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { theme } from '@/src/styles/theme'
 import RideService from '@/src/apis/rideService'
@@ -8,86 +8,131 @@ import { Feather } from '@expo/vector-icons'
 import DateTimePicker from '@react-native-community/datetimepicker';
 import MapSelector from '@/src/components/map/MapSelector';
 
+const RIDE_TYPES = [
+    { value: 'One Day', label: 'Day Ride', icon: '🏍️' },
+    { value: 'Multi Day', label: 'Multi-Day', icon: '🏕️' },
+    { value: 'Quick Ride', label: 'Quick', icon: '⚡' },
+];
+
 const CreateRide = () => {
     const { orgId } = useLocalSearchParams();
+
+    // Ride details
     const [name, setName] = useState('');
-    const [description, setDescription] = useState('');
     const [date, setDate] = useState(new Date());
     const [showDatePicker, setShowDatePicker] = useState(false);
+    const [rideType, setRideType] = useState('One Day');
+    const [maxRiders, setMaxRiders] = useState('30');
+    const [requiresPayment, setRequiresPayment] = useState(false);
+    const [amount, setAmount] = useState('0');
+
+    // All checkpoints from map
+    const [checkpoints, setCheckpoints] = useState({
+        start: null,
+        destination: null,
+        end: null,
+    });
+
     const [loading, setLoading] = useState(false);
 
-    // Checkpoint States
-    const [meetup, setMeetup] = useState(null);
-    const [destination, setDestination] = useState(null);
-    const [checkpoints, setCheckpoints] = useState([]);
+    // Handle locations from MapSelector
+    const handleLocationsChange = useCallback((locations) => {
+        setCheckpoints(locations);
+    }, []);
 
-    const addCheckpoint = () => {
-        setCheckpoints([...checkpoints, { latitude: 0, longitude: 0 }]); // Placeholder, map will update
-    };
-
-    const updateCheckpoint = (index, coords) => {
-        const newCheckpoints = [...checkpoints];
-        newCheckpoints[index] = coords;
-        setCheckpoints(newCheckpoints);
-    };
-
-    const removeCheckpoint = (index) => {
-        const newCheckpoints = checkpoints.filter((_, i) => i !== index);
-        setCheckpoints(newCheckpoints);
-    }
+    // Count set checkpoints
+    const checkpointCount = Object.values(checkpoints).filter(cp => cp !== null).length;
 
     const handleCreate = async () => {
+        // Validation
         if (!name.trim()) {
-            Alert.alert('Error', 'Ride name is required');
+            Alert.alert('Error', 'Please enter a ride name');
+            return;
+        }
+        if (!checkpoints.start) {
+            Alert.alert('Error', 'Please set a Start point on the map');
+            return;
+        }
+        if (!checkpoints.destination) {
+            Alert.alert('Error', 'Please set a Destination on the map');
             return;
         }
 
         setLoading(true);
         try {
-            const payload = {
-                name,
-                description,
-                start_time: date.toISOString(),
-                organization_id: orgId,
-                checkpoints: [
-                    { type: 'meetup', ...meetup },
-                    { type: 'destination', ...destination },
-                    ...checkpoints.map(cp => ({ type: 'refreshment', ...cp })) // Default to refreshment for intermediate
-                ].filter(cp => cp.latitude && cp.longitude) // Filter valid
-            };
-            const response = await RideService.createRide(payload);
+            // Build checkpoints array for API
+            const checkpointsArray = [];
 
+            if (checkpoints.start) {
+                checkpointsArray.push({
+                    type: 'meetup',
+                    latitude: checkpoints.start.latitude,
+                    longitude: checkpoints.start.longitude,
+                });
+            }
+            if (checkpoints.destination) {
+                checkpointsArray.push({
+                    type: 'destination',
+                    latitude: checkpoints.destination.latitude,
+                    longitude: checkpoints.destination.longitude,
+                });
+            }
+            if (checkpoints.end) {
+                checkpointsArray.push({
+                    type: 'disbursement',
+                    latitude: checkpoints.end.latitude,
+                    longitude: checkpoints.end.longitude,
+                });
+            }
+
+            const payload = {
+                name: name.trim(),
+                organization_id: orgId,
+                max_riders: parseInt(maxRiders) || 30,
+                requires_payment: requiresPayment,
+                amount: parseFloat(amount) || 0,
+                checkpoints: checkpointsArray
+            };
+
+            console.log('Creating ride with payload:', payload);
+
+            const response = await RideService.createRide(payload);
             console.log("Ride Created:", response);
-            Alert.alert('Success', 'Ride created successfully!', [
-                { text: 'OK', onPress: () => router.back() }
+
+            Alert.alert('Success! 🎉', 'Your ride has been created.', [
+                { text: 'View Rides', onPress: () => router.back() }
             ]);
 
         } catch (error) {
             console.error('Create Ride Failed:', error);
-            Alert.alert('Error', error.message || 'Failed to create ride');
+            Alert.alert('Error', error.detail || error.message || 'Failed to create ride');
         } finally {
             setLoading(false);
         }
-    }
+    };
 
     const onChangeDate = (event, selectedDate) => {
-        const currentDate = selectedDate || date;
         setShowDatePicker(Platform.OS === 'ios');
-        setDate(currentDate);
+        if (selectedDate) {
+            setDate(selectedDate);
+        }
     };
 
     return (
         <SafeAreaView style={styles.container}>
+            {/* Header */}
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                    <Feather name="arrow-left" size={24} color="white" />
+                    <Feather name="x" size={24} color="white" />
                 </TouchableOpacity>
-                <Text style={styles.title}>Create New Ride</Text>
+                <Text style={styles.title}>Create Ride</Text>
+                <View style={{ width: 40 }} />
             </View>
 
-            <ScrollView contentContainerStyle={styles.form}>
+            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+                {/* Ride Name */}
                 <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Ride Name</Text>
+                    <Text style={styles.label}>Ride Name *</Text>
                     <TextInput
                         style={styles.input}
                         placeholder="e.g. Sunday Breakfast Run"
@@ -97,93 +142,149 @@ const CreateRide = () => {
                     />
                 </View>
 
-                <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Start Date & Time</Text>
-                    <TouchableOpacity
-                        style={styles.dateButton}
-                        onPress={() => setShowDatePicker(true)}
-                    >
-                        <Text style={styles.dateText}>{date.toLocaleString()}</Text>
-                        <Feather name="calendar" size={20} color="#00C853" />
-                    </TouchableOpacity>
-                    {showDatePicker && (
-                        <DateTimePicker
-                            value={date}
-                            mode="datetime"
-                            display="default"
-                            onChange={onChangeDate}
-                            themeVariant="dark"
-                        />
-                    )}
-                </View>
-
-                <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Description</Text>
-                    <TextInput
-                        style={[styles.input, styles.textArea]}
-                        placeholder="Route details, meeting point, etc."
-                        placeholderTextColor="#666"
-                        value={description}
-                        onChangeText={setDescription}
-                        multiline
-                        numberOfLines={4}
-                        textAlignVertical="top"
-                    />
-                </View>
-
-                <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Starting Point (Meetup)</Text>
-                    <MapSelector
-                        onLocationSelect={(coords) => {
-                            setMeetup(coords);
-                        }}
-                        initialRegion={null}
-                    />
-                </View>
-
-                <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Destination</Text>
-                    <MapSelector
-                        onLocationSelect={(coords) => {
-                            setDestination(coords);
-                        }}
-                    />
-                </View>
-
-                {/* Intermediate Checkpoints */}
-                <View style={styles.inputGroup}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Text style={styles.label}>Checkpoints (Optional)</Text>
-                        <TouchableOpacity onPress={addCheckpoint} style={styles.addBtn}>
-                            <Feather name="plus" size={20} color="#00C853" />
+                {/* Date & Type Row */}
+                <View style={styles.row}>
+                    <View style={[styles.inputGroup, { flex: 1 }]}>
+                        <Text style={styles.label}>Date & Time</Text>
+                        <TouchableOpacity style={styles.dateButton} onPress={() => setShowDatePicker(true)}>
+                            <Text style={styles.dateText}>{date.toLocaleDateString()}</Text>
+                            <Feather name="calendar" size={18} color="#00C853" />
                         </TouchableOpacity>
                     </View>
-
-                    {checkpoints.map((cp, index) => (
-                        <View key={index} style={styles.checkpointItem}>
-                            <Text style={{ color: '#CCC', marginBottom: 5 }}>Checkpoint #{index + 1}</Text>
-                            <MapSelector
-                                onLocationSelect={(coords) => {
-                                    updateCheckpoint(index, coords);
-                                }}
-                            />
-                            <TouchableOpacity
-                                style={styles.removeBtn}
-                                onPress={() => removeCheckpoint(index)}
-                            >
-                                <Text style={{ color: '#FF4444' }}>Remove</Text>
-                            </TouchableOpacity>
-                        </View>
-                    ))}
+                    <View style={[styles.inputGroup, { flex: 1 }]}>
+                        <Text style={styles.label}>Max Riders</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="30"
+                            placeholderTextColor="#666"
+                            value={maxRiders}
+                            onChangeText={setMaxRiders}
+                            keyboardType="number-pad"
+                        />
+                    </View>
                 </View>
 
+                {showDatePicker && (
+                    <DateTimePicker
+                        value={date}
+                        mode="datetime"
+                        display="default"
+                        onChange={onChangeDate}
+                        themeVariant="dark"
+                    />
+                )}
+
+                {/* Ride Type */}
+                <View style={styles.inputGroup}>
+                    <Text style={styles.label}>Ride Type</Text>
+                    <View style={styles.typeContainer}>
+                        {RIDE_TYPES.map(type => (
+                            <TouchableOpacity
+                                key={type.value}
+                                style={[styles.typeButton, rideType === type.value && styles.typeButtonActive]}
+                                onPress={() => setRideType(type.value)}
+                            >
+                                <Text style={styles.typeIcon}>{type.icon}</Text>
+                                <Text style={[styles.typeLabel, rideType === type.value && styles.typeLabelActive]}>
+                                    {type.label}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                </View>
+
+                {/* Payment Toggle */}
+                <View style={styles.paymentRow}>
+                    <View>
+                        <Text style={styles.label}>Paid Ride</Text>
+                        <Text style={styles.sublabel}>Require payment to join</Text>
+                    </View>
+                    <Switch
+                        value={requiresPayment}
+                        onValueChange={setRequiresPayment}
+                        trackColor={{ false: '#333', true: '#00C853' }}
+                        thumbColor="white"
+                    />
+                </View>
+
+                {requiresPayment && (
+                    <View style={styles.inputGroup}>
+                        <Text style={styles.label}>Amount (₹)</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="0"
+                            placeholderTextColor="#666"
+                            value={amount}
+                            onChangeText={setAmount}
+                            keyboardType="numeric"
+                        />
+                    </View>
+                )}
+
+                {/* Map Section */}
+                <View style={styles.mapSection}>
+                    <View style={styles.mapHeader}>
+                        <Text style={styles.sectionTitle}>📍 Set Route Checkpoints</Text>
+                        <Text style={styles.checkpointCount}>{checkpointCount}/3 set</Text>
+                    </View>
+                    <Text style={styles.mapHint}>
+                        Tap buttons to switch marker type, then tap map to place
+                    </Text>
+
+                    <MapSelector
+                        onLocationsSelect={handleLocationsChange}
+                        singleMarkerMode={false}
+                    />
+
+                    {/* Checkpoint Status */}
+                    <View style={styles.checkpointStatus}>
+                        <View style={[styles.statusItem, checkpoints.start && styles.statusItemComplete]}>
+                            <Text style={styles.statusIcon}>🏁</Text>
+                            <Text style={styles.statusText}>Start</Text>
+                            {checkpoints.start ? (
+                                <Feather name="check-circle" size={16} color="#22c55e" />
+                            ) : (
+                                <Feather name="circle" size={16} color="#666" />
+                            )}
+                        </View>
+                        <View style={[styles.statusItem, checkpoints.destination && styles.statusItemComplete]}>
+                            <Text style={styles.statusIcon}>🎯</Text>
+                            <Text style={styles.statusText}>Destination</Text>
+                            {checkpoints.destination ? (
+                                <Feather name="check-circle" size={16} color="#ef4444" />
+                            ) : (
+                                <Feather name="circle" size={16} color="#666" />
+                            )}
+                        </View>
+                        <View style={[styles.statusItem, checkpoints.end && styles.statusItemComplete]}>
+                            <Text style={styles.statusIcon}>🏠</Text>
+                            <Text style={styles.statusText}>End</Text>
+                            {checkpoints.end ? (
+                                <Feather name="check-circle" size={16} color="#f97316" />
+                            ) : (
+                                <Text style={styles.optionalText}>(optional)</Text>
+                            )}
+                        </View>
+                    </View>
+                </View>
+
+                {/* Create Button */}
                 <TouchableOpacity
-                    style={[styles.button, loading && styles.buttonDisabled]}
+                    style={[styles.createButton, loading && styles.buttonDisabled]}
                     onPress={handleCreate}
                     disabled={loading}
                 >
-                    <Text style={styles.buttonText}>{loading ? 'Creating...' : 'Schedule Ride'}</Text>
+                    {loading ? (
+                        <Text style={styles.createButtonText}>Creating...</Text>
+                    ) : (
+                        <>
+                            <Feather name="plus-circle" size={20} color="white" />
+                            <Text style={styles.createButtonText}>Create Ride</Text>
+                        </>
+                    )}
                 </TouchableOpacity>
+
+                <View style={{ height: 40 }} />
             </ScrollView>
         </SafeAreaView>
     )
@@ -194,88 +295,179 @@ export default CreateRide
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: theme.colors.background,
+        backgroundColor: theme.colors?.background || '#121212',
     },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 20,
+        justifyContent: 'space-between',
+        padding: 16,
         borderBottomWidth: 1,
         borderBottomColor: '#333'
     },
     backButton: {
-        marginRight: 16
+        padding: 4
     },
     title: {
-        fontSize: 20,
+        fontSize: 18,
         fontWeight: 'bold',
         color: 'white'
     },
-    form: {
-        padding: 20,
-        gap: 20
+    content: {
+        flex: 1,
+        padding: 16,
     },
     inputGroup: {
-        gap: 8
+        marginBottom: 16
     },
     label: {
         color: 'white',
-        fontSize: 16,
-        fontWeight: '500'
+        fontSize: 14,
+        fontWeight: '600',
+        marginBottom: 8
+    },
+    sublabel: {
+        color: '#888',
+        fontSize: 12,
     },
     input: {
         backgroundColor: '#1E1E1E',
-        borderRadius: 8,
-        padding: 12,
+        borderRadius: 10,
+        padding: 14,
         color: 'white',
         fontSize: 16,
         borderWidth: 1,
         borderColor: '#333'
     },
-    textArea: {
-        height: 100
+    row: {
+        flexDirection: 'row',
+        gap: 12,
     },
     dateButton: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         backgroundColor: '#1E1E1E',
-        borderRadius: 8,
-        padding: 12,
+        borderRadius: 10,
+        padding: 14,
         borderWidth: 1,
         borderColor: '#333'
     },
     dateText: {
         color: 'white',
-        fontSize: 16
+        fontSize: 14
     },
-    button: {
+    typeContainer: {
+        flexDirection: 'row',
+        gap: 10,
+    },
+    typeButton: {
+        flex: 1,
+        alignItems: 'center',
+        backgroundColor: '#1E1E1E',
+        paddingVertical: 12,
+        borderRadius: 10,
+        borderWidth: 2,
+        borderColor: '#333'
+    },
+    typeButtonActive: {
+        borderColor: '#00C853',
+        backgroundColor: '#0a2a1a'
+    },
+    typeIcon: {
+        fontSize: 20,
+        marginBottom: 4
+    },
+    typeLabel: {
+        color: '#888',
+        fontSize: 12,
+        fontWeight: '500'
+    },
+    typeLabelActive: {
+        color: '#00C853'
+    },
+    paymentRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        backgroundColor: '#1E1E1E',
+        padding: 14,
+        borderRadius: 10,
+        marginBottom: 16,
+        borderWidth: 1,
+        borderColor: '#333'
+    },
+    mapSection: {
+        marginBottom: 20
+    },
+    mapHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 4
+    },
+    sectionTitle: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: 'bold'
+    },
+    checkpointCount: {
+        color: '#00C853',
+        fontSize: 13,
+        fontWeight: '600'
+    },
+    mapHint: {
+        color: '#888',
+        fontSize: 12,
+        marginBottom: 12
+    },
+    checkpointStatus: {
+        flexDirection: 'row',
+        marginTop: 12,
+        gap: 8
+    },
+    statusItem: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#1E1E1E',
+        padding: 10,
+        borderRadius: 8,
+        gap: 6
+    },
+    statusItemComplete: {
+        backgroundColor: '#1a2a1a'
+    },
+    statusIcon: {
+        fontSize: 14
+    },
+    statusText: {
+        flex: 1,
+        color: '#CCC',
+        fontSize: 11,
+        fontWeight: '500'
+    },
+    optionalText: {
+        color: '#666',
+        fontSize: 9
+    },
+    createButton: {
+        flexDirection: 'row',
         backgroundColor: '#00C853',
         padding: 16,
-        borderRadius: 8,
+        borderRadius: 12,
         alignItems: 'center',
-        marginTop: 20
+        justifyContent: 'center',
+        gap: 10,
+        marginTop: 8
     },
     buttonDisabled: {
         backgroundColor: '#006429',
         opacity: 0.7
     },
-    buttonText: {
+    createButtonText: {
         color: 'white',
         fontSize: 18,
         fontWeight: 'bold'
-    },
-    addBtn: {
-        padding: 5
-    },
-    checkpointItem: {
-        marginBottom: 15,
-        backgroundColor: '#252525',
-        padding: 10,
-        borderRadius: 8
-    },
-    removeBtn: {
-        marginTop: 5,
-        alignSelf: 'flex-end'
     }
-})
+});

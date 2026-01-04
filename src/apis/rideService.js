@@ -4,7 +4,7 @@ const RideService = {
     // Ride CRUD
     createRide: async (payload) => {
         try {
-            const response = await API.post("/v1/rides", payload);
+            const response = await API.post("/v1/rides/create", payload);
             if (response.status !== 201) {
                 throw new Error(response.data?.message || 'Failed to create ride');
             }
@@ -125,6 +125,21 @@ const RideService = {
             return response.data;
         } catch (error) {
             console.error('Failed to check in:', error);
+            throw error.response?.data || error;
+        }
+    },
+
+    // Add single checkpoint to a ride
+    addCheckpoint: async (rideId, payload) => {
+        // payload: { type, latitude, longitude, address }
+        try {
+            const response = await API.post(`/v1/rides/${rideId}/checkpoints/add`, payload);
+            if (response.status !== 200 && response.status !== 201) {
+                throw new Error('Failed to add checkpoint');
+            }
+            return response.data;
+        } catch (error) {
+            console.error('Failed to add checkpoint:', error);
             throw error.response?.data || error;
         }
     }

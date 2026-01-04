@@ -147,6 +147,15 @@ const RideDetails = () => {
                 </TouchableOpacity>
                 <Text style={styles.headerTitle} numberOfLines={1}>Ride Details</Text>
                 <View style={styles.headerActions}>
+                    {/* Edit button - only for admins and non-completed rides */}
+                    {ride.is_admin && ride.status !== 'COMPLETED' && ride.status !== 'completed' && (
+                        <TouchableOpacity
+                            onPress={() => router.push(`/(main)/rides/${id}/edit`)}
+                            style={styles.headerBtn}
+                        >
+                            <Feather name="edit-2" size={20} color="#00C853" />
+                        </TouchableOpacity>
+                    )}
                     {ride.is_admin && (
                         <TouchableOpacity onPress={handleCopyLink} style={styles.headerBtn}>
                             <Feather name="link" size={20} color="white" />
