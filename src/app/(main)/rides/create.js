@@ -324,60 +324,10 @@ const CreateRide = () => {
                                 }}
                                 timePicker={true}
                                 minDate={dayjs().startOf('day')}
-                                styles={{
-                                    // Days grid
-                                    days: { backgroundColor: '#1C1C23' },
-                                    day: { backgroundColor: 'transparent' },
-                                    day_cell: { backgroundColor: 'transparent' },
-                                    day_label: { color: '#FFFFFF' },
-                                    // Header
-                                    header: { backgroundColor: '#1C1C23' },
-                                    month_selector: { backgroundColor: 'transparent' },
-                                    month_selector_label: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 16 },
-                                    year_selector: { backgroundColor: 'transparent' },
-                                    year_selector_label: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 16 },
-                                    time_selector: { backgroundColor: '#2A2A2A', borderRadius: 8 },
-                                    time_selector_label: { color: '#FFFFFF' },
-                                    // Weekdays
-                                    weekdays: { backgroundColor: '#1C1C23' },
-                                    weekday: { backgroundColor: 'transparent' },
-                                    weekday_label: { color: '#9E9E9E' },
-                                    // Today
-                                    today: { borderColor: '#00C851', borderWidth: 1, borderRadius: 20 },
-                                    today_label: { color: '#00C851' },
-                                    // Selected
-                                    selected: { backgroundColor: '#00C851', borderRadius: 20 },
-                                    selected_label: { color: '#FFFFFF', fontWeight: 'bold' },
-                                    // Months grid
-                                    months: { backgroundColor: '#1C1C23' },
-                                    month: { backgroundColor: 'transparent' },
-                                    month_label: { color: '#FFFFFF' },
-                                    selected_month: { backgroundColor: '#00C851', borderRadius: 8 },
-                                    selected_month_label: { color: '#FFFFFF', fontWeight: 'bold' },
-                                    // Years grid
-                                    years: { backgroundColor: '#1C1C23' },
-                                    year: { backgroundColor: 'transparent' },
-                                    year_label: { color: '#FFFFFF' },
-                                    selected_year: { backgroundColor: '#00C851', borderRadius: 8 },
-                                    selected_year_label: { color: '#FFFFFF', fontWeight: 'bold' },
-                                    active_year: { backgroundColor: 'transparent', borderColor: '#00C851', borderWidth: 1, borderRadius: 8 },
-                                    active_year_label: { color: '#00C851' },
-                                    // Time picker
-                                    time_label: { color: '#FFFFFF' },
-                                    time_selected_indicator: { backgroundColor: 'rgba(0, 200, 81, 0.2)' },
-                                    // Outside days
-                                    outside: { backgroundColor: 'transparent' },
-                                    outside_label: { color: '#666666' },
-                                    // Disabled
-                                    disabled: { backgroundColor: 'transparent' },
-                                    disabled_label: { color: '#444444' },
-                                    // Navigation buttons
-                                    button_prev: { backgroundColor: 'transparent' },
-                                    button_next: { backgroundColor: 'transparent' },
-                                }}
+                                styles={theme.datePickerStyles}
                                 components={{
-                                    IconPrev: <Feather name="chevron-left" size={24} color="#00C851" />,
-                                    IconNext: <Feather name="chevron-right" size={24} color="#00C851" />,
+                                    IconPrev: <Feather name="chevron-left" size={24} color={theme.colors.primary} />,
+                                    IconNext: <Feather name="chevron-right" size={24} color={theme.colors.primary} />,
                                 }}
                             />
                         </View>
@@ -579,42 +529,42 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: 'rgba(0,0,0,0.8)',
         justifyContent: 'center',
-        padding: 20,
+        padding: theme.spacing.lg,
     },
     datePickerModal: {
-        backgroundColor: '#1E1E1E',
-        borderRadius: 16,
+        backgroundColor: theme.colors.background,
+        borderRadius: theme.borderRadius.lg,
         overflow: 'hidden',
         maxHeight: '85%',
     },
     datePickerContainer: {
-        padding: 16,
-        backgroundColor: '#1E1E1E',
+        padding: theme.spacing.md,
+        backgroundColor: theme.colors.background,
     },
     modalHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: 16,
+        padding: theme.spacing.md,
         borderBottomWidth: 1,
-        borderBottomColor: '#333',
+        borderBottomColor: theme.colors.border,
     },
     modalTitle: {
-        color: 'white',
-        fontSize: 18,
-        fontWeight: 'bold',
+        color: theme.colors.textPrimary,
+        fontSize: theme.fontSize.xl,
+        fontWeight: theme.fontWeight.bold,
     },
     confirmDateButton: {
-        backgroundColor: '#00C853',
-        margin: 16,
-        marginTop: 8,
-        padding: 14,
-        borderRadius: 12,
+        backgroundColor: theme.colors.primary,
+        margin: theme.spacing.md,
+        marginTop: theme.spacing.sm,
+        padding: theme.spacing.md,
+        borderRadius: theme.borderRadius.md,
         alignItems: 'center',
     },
     confirmDateText: {
-        color: 'white',
-        fontSize: 16,
-        fontWeight: 'bold',
+        color: theme.colors.textPrimary,
+        fontSize: theme.fontSize.lg,
+        fontWeight: theme.fontWeight.bold,
     },
 });
