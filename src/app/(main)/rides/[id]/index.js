@@ -46,7 +46,8 @@ const RideDetails = () => {
             }
         } catch (error) {
             console.error("Failed to fetch ride details", error);
-            Alert.alert('Error', 'Could not load ride details');
+            // Show specific error if available to debug "Organization not found" reports
+            Alert.alert('Error', error.detail || error.message || 'Could not load ride details');
         } finally {
             setLoading(false);
         }
@@ -555,6 +556,19 @@ const RideDetails = () => {
                                     )}
                                 </>
                             )}
+
+                            {/* Open Map - Active Only */}
+                            {(ride.status === 'ACTIVE' || ride.status === 'active') && (
+                                <TouchableOpacity
+                                    style={[styles.headerActionButton, { backgroundColor: '#2196F3' }]}
+                                    onPress={() => {
+                                        Alert.alert("Open Map", "Navigating to live map...");
+                                    }}
+                                >
+                                    <Feather name="map" size={14} color="white" />
+                                    <Text style={styles.headerActionText}>Open Map</Text>
+                                </TouchableOpacity>
+                            )}
                         </View>
                     </View>
 
@@ -844,12 +858,7 @@ const RideDetails = () => {
 
 
 
-                        {(ride.status === 'ACTIVE' || ride.status === 'active') && (
-                            <TouchableOpacity style={styles.trackButton}>
-                                <Feather name="navigation" size={18} color="white" />
-                                <Text style={styles.trackButtonText}>Open Map</Text>
-                            </TouchableOpacity>
-                        )}
+
                     </View>
                 )}
             </View>

@@ -34,6 +34,10 @@ export default function MembersScreen() {
   const [actionLoading, setActionLoading] = useState(false);
   const [organization, setOrganization] = useState(null);
 
+  // Filters & Sort
+  const [showActiveOnly, setShowActiveOnly] = useState(true);
+  const [sortAscending, setSortAscending] = useState(false);
+
   useEffect(() => {
     if (id) fetchAllPeople();
   }, [id]);
@@ -62,14 +66,30 @@ export default function MembersScreen() {
   const currentList = activeTab === TABS.MEMBERS ? members : rideParticipants;
 
   const filteredList = useMemo(() => {
-    if (!searchQuery.trim()) return currentList;
-    const query = searchQuery.toLowerCase();
-    return currentList.filter(person =>
-      person.name?.toLowerCase().includes(query) ||
-      person.phone?.toLowerCase().includes(query) ||
-      person.email?.toLowerCase().includes(query)
-    );
-  }, [currentList, searchQuery]);
+    let result = currentList;
+
+    // Filter by Active Status (Default: True)
+    if (showActiveOnly) {
+      result = result.filter(p => p.is_active !== false); // specific check if is_active is boolean
+    }
+
+    // Filter by Search
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(person =>
+        person.name?.toLowerCase().includes(query) ||
+        person.phone?.toLowerCase().includes(query) ||
+        person.email?.toLowerCase().includes(query)
+      );
+    }
+
+    // Sort A-Z
+    if (sortAscending) {
+      result = [...result].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    }
+
+    return result;
+  }, [currentList, searchQuery, showActiveOnly, sortAscending]);
 
   const getRoleBadge = (role) => {
     const roles = {
@@ -283,6 +303,25 @@ export default function MembersScreen() {
             <Feather name="x" size={18} color="#888" />
           </TouchableOpacity>
         )}
+      </View>
+
+      {/* Filter Chips */}
+      <View style={styles.filterContainer}>
+        <TouchableOpacity
+          style={[styles.filterChip, showActiveOnly && styles.activeFilterChip]}
+          onPress={() => setShowActiveOnly(!showActiveOnly)}
+        >
+          {showActiveOnly && <Feather name="check" size={14} color="#00C853" />}
+          <Text style={[styles.filterText, showActiveOnly && styles.activeFilterText]}>Active Only</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.filterChip, sortAscending && styles.activeFilterChip]}
+          onPress={() => setSortAscending(!sortAscending)}
+        >
+          <Feather name={sortAscending ? "arrow-down" : "menu"} size={14} color={sortAscending ? "#00C853" : "#888"} />
+          <Text style={[styles.filterText, sortAscending && styles.activeFilterText]}>A-Z</Text>
+        </TouchableOpacity>
       </View>
 
       {/* List */}
@@ -805,4 +844,34 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
+  filterContainer: {
+    flexDirection: 'row',
+    marginHorizontal: 16,
+    marginBottom: 10,
+    marginTop: 8,
+    gap: 8
+  },
+  filterChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: '#1E1E1E',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#333'
+  },
+  activeFilterChip: {
+    borderColor: '#00C853',
+    backgroundColor: 'rgba(0, 200, 83, 0.1)'
+  },
+  filterText: {
+    color: '#888',
+    fontSize: 12,
+    fontWeight: '600'
+  },
+  activeFilterText: {
+    color: '#00C853'
+  }
 });
