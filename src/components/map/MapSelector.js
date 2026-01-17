@@ -379,6 +379,8 @@ const MapSelector = ({
                                 </TouchableOpacity>
                             )}
                             keyboardShouldPersistTaps="handled"
+                            nestedScrollEnabled={true}
+                            scrollEnabled={true}
                         />
                     </View>
                 )}

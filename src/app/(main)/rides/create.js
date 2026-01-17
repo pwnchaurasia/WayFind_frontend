@@ -1,11 +1,12 @@
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, Platform, ScrollView, Switch } from 'react-native'
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ScrollView, Switch, Modal } from 'react-native'
 import React, { useState, useCallback } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { theme } from '@/src/styles/theme'
 import RideService from '@/src/apis/rideService'
 import { router, useLocalSearchParams } from 'expo-router'
 import { Feather } from '@expo/vector-icons'
-import DateTimePicker from '@react-native-community/datetimepicker';
+import DateTimePicker from 'react-native-ui-datepicker';
+import dayjs from 'dayjs';
 import MapSelector from '@/src/components/map/MapSelector';
 
 const RIDE_TYPES = [
@@ -14,13 +15,17 @@ const RIDE_TYPES = [
     { value: 'Quick Ride', label: 'Quick', icon: '⚡' },
 ];
 
+// Time slots removed - now using unified date-time picker
+
 const CreateRide = () => {
     const { orgId } = useLocalSearchParams();
 
     // Ride details
     const [name, setName] = useState('');
-    const [date, setDate] = useState(new Date());
+    // Initialize with today at 8:00 AM
+    const [selectedDateTime, setSelectedDateTime] = useState(dayjs().hour(8).minute(0).second(0));
     const [showDatePicker, setShowDatePicker] = useState(false);
+
     const [rideType, setRideType] = useState('One Day');
     const [maxRiders, setMaxRiders] = useState('30');
     const [requiresPayment, setRequiresPayment] = useState(false);
@@ -42,6 +47,23 @@ const CreateRide = () => {
 
     // Count set checkpoints
     const checkpointCount = Object.values(checkpoints).filter(cp => cp !== null).length;
+
+    // Format date for display
+    const formatDateDisplay = (date) => {
+        const d = dayjs(date);
+        const today = dayjs().startOf('day');
+        const tomorrow = today.add(1, 'day');
+
+        if (d.isSame(today, 'day')) return 'Today';
+        if (d.isSame(tomorrow, 'day')) return 'Tomorrow';
+
+        return d.format('ddd, MMM D');
+    };
+
+    // Format time for display
+    const formatTimeDisplay = (date) => {
+        return dayjs(date).format('hh:mm A');
+    };
 
     const handleCreate = async () => {
         // Validation
@@ -111,12 +133,7 @@ const CreateRide = () => {
         }
     };
 
-    const onChangeDate = (event, selectedDate) => {
-        setShowDatePicker(Platform.OS === 'ios');
-        if (selectedDate) {
-            setDate(selectedDate);
-        }
-    };
+
 
     return (
         <SafeAreaView style={styles.container}>
@@ -142,37 +159,36 @@ const CreateRide = () => {
                     />
                 </View>
 
-                {/* Date & Type Row */}
+                {/* Date & Time Row */}
                 <View style={styles.row}>
                     <View style={[styles.inputGroup, { flex: 1 }]}>
-                        <Text style={styles.label}>Date & Time</Text>
+                        <Text style={styles.label}>Date</Text>
                         <TouchableOpacity style={styles.dateButton} onPress={() => setShowDatePicker(true)}>
-                            <Text style={styles.dateText}>{date.toLocaleDateString()}</Text>
+                            <Text style={styles.dateText}>{formatDateDisplay(selectedDateTime)}</Text>
                             <Feather name="calendar" size={18} color="#00C853" />
                         </TouchableOpacity>
                     </View>
                     <View style={[styles.inputGroup, { flex: 1 }]}>
-                        <Text style={styles.label}>Max Riders</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="30"
-                            placeholderTextColor="#666"
-                            value={maxRiders}
-                            onChangeText={setMaxRiders}
-                            keyboardType="number-pad"
-                        />
+                        <Text style={styles.label}>Time</Text>
+                        <TouchableOpacity style={styles.dateButton} onPress={() => setShowDatePicker(true)}>
+                            <Text style={styles.dateText}>{formatTimeDisplay(selectedDateTime)}</Text>
+                            <Feather name="clock" size={18} color="#00C853" />
+                        </TouchableOpacity>
                     </View>
                 </View>
 
-                {showDatePicker && (
-                    <DateTimePicker
-                        value={date}
-                        mode="datetime"
-                        display="default"
-                        onChange={onChangeDate}
-                        themeVariant="dark"
+                {/* Max Riders */}
+                <View style={styles.inputGroup}>
+                    <Text style={styles.label}>Max Riders</Text>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="30"
+                        placeholderTextColor="#666"
+                        value={maxRiders}
+                        onChangeText={setMaxRiders}
+                        keyboardType="number-pad"
                     />
-                )}
+                </View>
 
                 {/* Ride Type */}
                 <View style={styles.inputGroup}>
@@ -249,7 +265,7 @@ const CreateRide = () => {
                         </View>
                         <View style={[styles.statusItem, checkpoints.destination && styles.statusItemComplete]}>
                             <Text style={styles.statusIcon}>🎯</Text>
-                            <Text style={styles.statusText}>Destination</Text>
+                            <Text style={styles.statusText}>Dest</Text>
                             {checkpoints.destination ? (
                                 <Feather name="check-circle" size={16} color="#ef4444" />
                             ) : (
@@ -262,7 +278,7 @@ const CreateRide = () => {
                             {checkpoints.end ? (
                                 <Feather name="check-circle" size={16} color="#f97316" />
                             ) : (
-                                <Text style={styles.optionalText}>(optional)</Text>
+                                <Text style={styles.optionalText}>(opt)</Text>
                             )}
                         </View>
                     </View>
@@ -286,6 +302,94 @@ const CreateRide = () => {
 
                 <View style={{ height: 40 }} />
             </ScrollView>
+
+            {/* Date & Time Picker Modal */}
+            <Modal visible={showDatePicker} transparent animationType="slide">
+                <View style={styles.modalOverlay}>
+                    <View style={styles.datePickerModal}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Select Date & Time</Text>
+                            <TouchableOpacity onPress={() => setShowDatePicker(false)}>
+                                <Feather name="x" size={24} color="white" />
+                            </TouchableOpacity>
+                        </View>
+                        <View style={styles.datePickerContainer}>
+                            <DateTimePicker
+                                mode="single"
+                                date={selectedDateTime}
+                                onChange={(params) => {
+                                    if (params.date) {
+                                        setSelectedDateTime(dayjs(params.date));
+                                    }
+                                }}
+                                timePicker={true}
+                                minDate={dayjs().startOf('day')}
+                                styles={{
+                                    // Days grid
+                                    days: { backgroundColor: '#1C1C23' },
+                                    day: { backgroundColor: 'transparent' },
+                                    day_cell: { backgroundColor: 'transparent' },
+                                    day_label: { color: '#FFFFFF' },
+                                    // Header
+                                    header: { backgroundColor: '#1C1C23' },
+                                    month_selector: { backgroundColor: 'transparent' },
+                                    month_selector_label: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 16 },
+                                    year_selector: { backgroundColor: 'transparent' },
+                                    year_selector_label: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 16 },
+                                    time_selector: { backgroundColor: '#2A2A2A', borderRadius: 8 },
+                                    time_selector_label: { color: '#FFFFFF' },
+                                    // Weekdays
+                                    weekdays: { backgroundColor: '#1C1C23' },
+                                    weekday: { backgroundColor: 'transparent' },
+                                    weekday_label: { color: '#9E9E9E' },
+                                    // Today
+                                    today: { borderColor: '#00C851', borderWidth: 1, borderRadius: 20 },
+                                    today_label: { color: '#00C851' },
+                                    // Selected
+                                    selected: { backgroundColor: '#00C851', borderRadius: 20 },
+                                    selected_label: { color: '#FFFFFF', fontWeight: 'bold' },
+                                    // Months grid
+                                    months: { backgroundColor: '#1C1C23' },
+                                    month: { backgroundColor: 'transparent' },
+                                    month_label: { color: '#FFFFFF' },
+                                    selected_month: { backgroundColor: '#00C851', borderRadius: 8 },
+                                    selected_month_label: { color: '#FFFFFF', fontWeight: 'bold' },
+                                    // Years grid
+                                    years: { backgroundColor: '#1C1C23' },
+                                    year: { backgroundColor: 'transparent' },
+                                    year_label: { color: '#FFFFFF' },
+                                    selected_year: { backgroundColor: '#00C851', borderRadius: 8 },
+                                    selected_year_label: { color: '#FFFFFF', fontWeight: 'bold' },
+                                    active_year: { backgroundColor: 'transparent', borderColor: '#00C851', borderWidth: 1, borderRadius: 8 },
+                                    active_year_label: { color: '#00C851' },
+                                    // Time picker
+                                    time_label: { color: '#FFFFFF' },
+                                    time_selected_indicator: { backgroundColor: 'rgba(0, 200, 81, 0.2)' },
+                                    // Outside days
+                                    outside: { backgroundColor: 'transparent' },
+                                    outside_label: { color: '#666666' },
+                                    // Disabled
+                                    disabled: { backgroundColor: 'transparent' },
+                                    disabled_label: { color: '#444444' },
+                                    // Navigation buttons
+                                    button_prev: { backgroundColor: 'transparent' },
+                                    button_next: { backgroundColor: 'transparent' },
+                                }}
+                                components={{
+                                    IconPrev: <Feather name="chevron-left" size={24} color="#00C851" />,
+                                    IconNext: <Feather name="chevron-right" size={24} color="#00C851" />,
+                                }}
+                            />
+                        </View>
+                        <TouchableOpacity
+                            style={styles.confirmDateButton}
+                            onPress={() => setShowDatePicker(false)}
+                        >
+                            <Text style={styles.confirmDateText}>Confirm</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     )
 }
@@ -469,5 +573,48 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 18,
         fontWeight: 'bold'
-    }
+    },
+    // Modal styles
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.8)',
+        justifyContent: 'center',
+        padding: 20,
+    },
+    datePickerModal: {
+        backgroundColor: '#1E1E1E',
+        borderRadius: 16,
+        overflow: 'hidden',
+        maxHeight: '85%',
+    },
+    datePickerContainer: {
+        padding: 16,
+        backgroundColor: '#1E1E1E',
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: '#333',
+    },
+    modalTitle: {
+        color: 'white',
+        fontSize: 18,
+        fontWeight: 'bold',
+    },
+    confirmDateButton: {
+        backgroundColor: '#00C853',
+        margin: 16,
+        marginTop: 8,
+        padding: 14,
+        borderRadius: 12,
+        alignItems: 'center',
+    },
+    confirmDateText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
 });
