@@ -39,28 +39,10 @@ const RideService = {
         }
     },
     startRide: async (rideId) => {
-        try {
-            const response = await API.post(`/v1/rides/${rideId}/start`);
-            if (response.status !== 200) {
-                throw new Error('Failed to start ride');
-            }
-            return response.data;
-        } catch (error) {
-            console.error('Failed to start ride:', error);
-            throw error.response?.data || error;
-        }
+        return RideService.updateRide(rideId, { status: 'active' });
     },
     endRide: async (rideId) => {
-        try {
-            const response = await API.post(`/v1/rides/${rideId}/end`);
-            if (response.status !== 200) {
-                throw new Error('Failed to end ride');
-            }
-            return response.data;
-        } catch (error) {
-            console.error('Failed to end ride:', error);
-            throw error.response?.data || error;
-        }
+        return RideService.updateRide(rideId, { status: 'completed' });
     },
 
     // Participation

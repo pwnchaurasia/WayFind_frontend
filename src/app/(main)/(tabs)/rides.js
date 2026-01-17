@@ -45,7 +45,23 @@ const RidesScreen = () => {
         >
             <View style={styles.cardHeader}>
                 <Text style={styles.rideName}>{item.name}</Text>
-                <View style={[styles.statusBadge, { backgroundColor: item.status === 'ACTIVE' ? '#00C853' : '#FFB300' }]}>
+                <View style={[styles.statusBadge, {
+                    backgroundColor: item.status === 'ACTIVE' || item.status === 'active' ? '#00C853' :
+                        item.status === 'COMPLETED' || item.status === 'completed' ? '#2962FF' : '#FFB300',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 6,
+                    paddingHorizontal: 10,
+                    borderRadius: 12
+                }]}>
+                    <Feather
+                        name={
+                            item.status === 'COMPLETED' || item.status === 'completed' ? 'check-circle' :
+                                item.status === 'ACTIVE' || item.status === 'active' ? 'activity' : 'calendar'
+                        }
+                        size={12}
+                        color="white"
+                    />
                     <Text style={styles.statusText}>{item.status}</Text>
                 </View>
             </View>
@@ -125,7 +141,7 @@ const styles = StyleSheet.create({
         borderRadius: 4
     },
     statusText: {
-        color: 'black',
+        color: 'white',
         fontSize: 12,
         fontWeight: 'bold'
     },

@@ -35,6 +35,7 @@ const RideDetails = () => {
     // Participant filters
     const [participantFilter, setParticipantFilter] = useState('all'); // all, paid, unpaid, banned
     const [sortAZ, setSortAZ] = useState(false);
+    const [statusLoading, setStatusLoading] = useState(false);
 
     const fetchRideDetails = async () => {
         try {
@@ -213,6 +214,58 @@ const RideDetails = () => {
                 setUpdatingVehicle(false);
             }
         }
+    };
+
+    // Status Management
+    const handleStartRide = async () => {
+        Alert.alert(
+            "Start Ride",
+            "Are you sure you want to start this ride? participants will be notified.",
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Start Ride",
+                    onPress: async () => {
+                        setStatusLoading(true);
+                        try {
+                            await RideService.startRide(id);
+                            fetchRideDetails();
+                            Alert.alert("Success", "Ride has started! Safe riding!");
+                        } catch (error) {
+                            Alert.alert("Error", error.message || "Failed to start ride");
+                        } finally {
+                            setStatusLoading(false);
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
+    const handleEndRide = async () => {
+        Alert.alert(
+            "End Ride",
+            "Are you sure you want to end this ride? This will mark it as completed.",
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "End Ride",
+                    style: 'destructive',
+                    onPress: async () => {
+                        setStatusLoading(true);
+                        try {
+                            await RideService.endRide(id);
+                            fetchRideDetails();
+                            Alert.alert("Success", "Ride completed!");
+                        } catch (error) {
+                            Alert.alert("Error", error.message || "Failed to end ride");
+                        } finally {
+                            setStatusLoading(false);
+                        }
+                    }
+                }
+            ]
+        );
     };
 
     const handleShare = async () => {
@@ -450,8 +503,58 @@ const RideDetails = () => {
                             <Text style={styles.rideName}>{ride.name}</Text>
                             <Text style={styles.orgName}>{ride.organization?.name}</Text>
                         </View>
-                        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(ride.status) }]}>
-                            <Text style={styles.statusText}>{ride.status?.toUpperCase()}</Text>
+                        <View style={{ alignItems: 'flex-end', gap: 8 }}>
+                            <View style={[styles.statusBadge, {
+                                backgroundColor: getStatusColor(ride.status),
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                gap: 6
+                            }]}>
+                                <Feather
+                                    name={
+                                        ride.status === 'COMPLETED' || ride.status === 'completed' ? 'check-circle' :
+                                            ride.status === 'ACTIVE' || ride.status === 'active' ? 'activity' : 'calendar'
+                                    }
+                                    size={12}
+                                    color="white"
+                                />
+                                <Text style={styles.statusText}>{ride.status?.toUpperCase()}</Text>
+                            </View>
+
+                            {/* Inline Admin Action Button */}
+                            {ride.is_admin && (
+                                <>
+                                    {(ride.status === 'PLANNED' || ride.status === 'planned') && (
+                                        <TouchableOpacity
+                                            style={styles.headerActionButton}
+                                            onPress={handleStartRide}
+                                            disabled={statusLoading}
+                                        >
+                                            {statusLoading ? <ActivityIndicator size="small" color="white" /> : (
+                                                <>
+                                                    <Feather name="play" size={14} color="white" />
+                                                    <Text style={styles.headerActionText}>Start</Text>
+                                                </>
+                                            )}
+                                        </TouchableOpacity>
+                                    )}
+
+                                    {(ride.status === 'ACTIVE' || ride.status === 'active') && (
+                                        <TouchableOpacity
+                                            style={[styles.headerActionButton, { backgroundColor: '#D50000' }]}
+                                            onPress={handleEndRide}
+                                            disabled={statusLoading}
+                                        >
+                                            {statusLoading ? <ActivityIndicator size="small" color="white" /> : (
+                                                <>
+                                                    <Feather name="square" size={14} color="white" />
+                                                    <Text style={styles.headerActionText}>End</Text>
+                                                </>
+                                            )}
+                                        </TouchableOpacity>
+                                    )}
+                                </>
+                            )}
                         </View>
                     </View>
 
@@ -615,15 +718,25 @@ const RideDetails = () => {
                                             </View>
 
                                             {/* Vehicle info */}
-                                            {p.vehicle && (
+                                            {(p.vehicle || (user && (p.user_id === user.id || p.user?.id === user.id))) && (
                                                 <View style={styles.vehicleRow}>
-                                                    <MaterialCommunityIcons name="motorbike" size={13} color="#888" />
-                                                    <Text style={styles.vehicleText}>
-                                                        {p.vehicle.make} {p.vehicle.model}
-                                                        {p.vehicle.license_plate && ` • ${p.vehicle.license_plate}`}
-                                                    </Text>
+                                                    {p.vehicle ? (
+                                                        <>
+                                                            <MaterialCommunityIcons name="motorbike" size={13} color="#888" />
+                                                            <Text style={styles.vehicleText}>
+                                                                {p.vehicle.make} {p.vehicle.model}
+                                                                {p.vehicle.license_plate && ` • ${p.vehicle.license_plate}`}
+                                                            </Text>
+                                                        </>
+                                                    ) : (
+                                                        <Text style={[styles.vehicleText, { color: '#FFB300', fontStyle: 'italic' }]}>
+                                                            No vehicle info
+                                                        </Text>
+                                                    )}
+
+                                                    {/* Edit/Add button - only if ride is PLANNED (not started/completed) */}
                                                     {user && (p.user_id === user.id || p.user?.id === user.id) &&
-                                                        ride.status !== 'COMPLETED' && ride.status !== 'completed' && !isBanned && (
+                                                        (ride.status === 'PLANNED' || ride.status === 'planned') && !isBanned && (
                                                             <TouchableOpacity
                                                                 style={styles.editVehicleBtn}
                                                                 onPress={(e) => {
@@ -632,7 +745,11 @@ const RideDetails = () => {
                                                                 }}
                                                                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                                                             >
-                                                                <Feather name="edit-2" size={12} color={theme.colors.primary} />
+                                                                <Feather
+                                                                    name={p.vehicle ? "edit-2" : "plus"}
+                                                                    size={14}
+                                                                    color={theme.colors.primary}
+                                                                />
                                                             </TouchableOpacity>
                                                         )}
                                                 </View>
@@ -1422,10 +1539,12 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     editVehicleBtn: {
-        padding: 4,
+        padding: 6,
         backgroundColor: 'rgba(0, 200, 83, 0.1)',
-        borderRadius: 12,
-        marginLeft: 4,
+        borderRadius: 16,
+        marginLeft: 8,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     contactRow: {
         flexDirection: 'row',
@@ -1815,5 +1934,21 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
         color: 'white',
+    },
+    headerActionButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 6,
+        paddingHorizontal: 10,
+        backgroundColor: '#00C853',
+        borderRadius: 20,
+        gap: 6,
+        elevation: 2,
+    },
+    headerActionText: {
+        color: 'white',
+        fontSize: 12,
+        fontWeight: 'bold',
+        textTransform: 'uppercase',
     },
 })

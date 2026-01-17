@@ -107,7 +107,20 @@ export default function OrganizationOverview() {
             <Text style={styles.typeText}>{formatRideType(item.ride_type)}</Text>
           </View>
         </View>
-        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
+        <View style={[styles.statusBadge, {
+          backgroundColor: getStatusColor(item.status),
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 4
+        }]}>
+          <Feather
+            name={
+              item.status === 'COMPLETED' || item.status === 'completed' ? 'check-circle' :
+                item.status === 'ACTIVE' || item.status === 'active' ? 'activity' : 'calendar'
+            }
+            size={10}
+            color="white"
+          />
           <Text style={styles.statusText}>{item.status?.toUpperCase() || 'UNKNOWN'}</Text>
         </View>
       </View>
@@ -418,7 +431,7 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: theme.fontSize.xs,
     fontWeight: theme.fontWeight.bold,
-    color: theme.colors.textPrimary
+    color: 'white'
   },
   rideDetails: {
     flexDirection: 'row',

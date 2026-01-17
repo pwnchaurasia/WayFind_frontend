@@ -113,6 +113,8 @@ const CreateRide = () => {
                 max_riders: parseInt(maxRiders) || 30,
                 requires_payment: requiresPayment,
                 amount: parseFloat(amount) || 0,
+                scheduled_date: selectedDateTime.toISOString(),
+                ride_type: rideType,
                 checkpoints: checkpointsArray
             };
 
