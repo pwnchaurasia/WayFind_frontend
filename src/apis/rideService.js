@@ -77,7 +77,7 @@ const RideService = {
         }
     },
     joinRide: async (rideId, payload) => {
-        // payload: { phone_number, otp_code, vehicle_info_id, is_pillion }
+        // payload: { vehicle_info_id }
         try {
             const response = await API.post(`/v1/rides/${rideId}/join`, payload);
             if (response.status !== 200 && response.status !== 201) {
@@ -86,6 +86,20 @@ const RideService = {
             return response.data;
         } catch (error) {
             console.error('Failed to join ride:', error);
+            throw error.response?.data || error;
+        }
+    },
+
+    // Update vehicle for a ride (after joining)
+    updateMyVehicle: async (rideId, vehicleInfoId) => {
+        try {
+            const response = await API.put(`/v1/rides/${rideId}/my-vehicle`, { vehicle_info_id: vehicleInfoId });
+            if (response.status !== 200) {
+                throw new Error('Failed to update vehicle');
+            }
+            return response.data;
+        } catch (error) {
+            console.error('Failed to update vehicle:', error);
             throw error.response?.data || error;
         }
     },

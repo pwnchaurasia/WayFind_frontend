@@ -16,14 +16,16 @@ const RideDetails = () => {
     const [loading, setLoading] = useState(true);
     const [joining, setJoining] = useState(false);
 
-    // Vehicle selection for joining
+    // Vehicle selection for joining/updating
     const [showVehicleModal, setShowVehicleModal] = useState(false);
+    const [vehicleMode, setVehicleMode] = useState('join'); // 'join' or 'update'
     const [vehicles, setVehicles] = useState([]);
     const [selectedVehicle, setSelectedVehicle] = useState(null);
     const [loadingVehicles, setLoadingVehicles] = useState(false);
     const [showAddVehicle, setShowAddVehicle] = useState(false);
     const [newVehicle, setNewVehicle] = useState({ make: '', model: '', year: '', license_plate: '' });
     const [addingVehicle, setAddingVehicle] = useState(false);
+    const [updatingVehicle, setUpdatingVehicle] = useState(false);
 
     // Admin action modal
     const [selectedParticipant, setSelectedParticipant] = useState(null);
@@ -113,7 +115,24 @@ const RideDetails = () => {
 
     const handleJoinPress = async () => {
         // First, fetch user's vehicles and show selection modal
+        setVehicleMode('join');
         await fetchVehicles();
+        setShowVehicleModal(true);
+    };
+
+    const handleChangeVehiclePress = async () => {
+        // For existing participants to change their vehicle
+        setVehicleMode('update');
+        await fetchVehicles();
+
+        // Pre-select current vehicle if exists
+        if (ride?.my_vehicle) {
+            const currentVehicle = vehicles.find(v => v.id === ride.my_vehicle.id);
+            if (currentVehicle) {
+                setSelectedVehicle(currentVehicle);
+            }
+        }
+
         setShowVehicleModal(true);
     };
 
@@ -153,32 +172,46 @@ const RideDetails = () => {
         }
     };
 
-    const handleConfirmJoin = async () => {
+    const handleVehicleConfirm = async () => {
         if (!selectedVehicle) {
             Alert.alert('Select Vehicle', 'Please select a vehicle or add a new one');
             return;
         }
 
         setShowVehicleModal(false);
-        setJoining(true);
 
-        try {
-            await RideService.joinRide(id, { vehicle_info_id: selectedVehicle.id });
-            Alert.alert('Success', 'You have joined the ride!');
-            fetchRideDetails();
-        } catch (error) {
-            // Check for banned user
-            if (error.detail?.includes('banned')) {
-                Alert.alert(
-                    'Access Denied',
-                    'You are banned from this ride. Please contact the admin.',
-                    [{ text: 'OK' }]
-                );
-            } else {
-                Alert.alert('Error', error.detail || error.message || 'Failed to join ride');
+        if (vehicleMode === 'join') {
+            // Joining a new ride
+            setJoining(true);
+            try {
+                await RideService.joinRide(id, { vehicle_info_id: selectedVehicle.id });
+                Alert.alert('Success', 'You have joined the ride!');
+                fetchRideDetails();
+            } catch (error) {
+                if (error.detail?.includes('banned')) {
+                    Alert.alert(
+                        'Access Denied',
+                        'You are banned from this ride. Please contact the admin.',
+                        [{ text: 'OK' }]
+                    );
+                } else {
+                    Alert.alert('Error', error.detail || error.message || 'Failed to join ride');
+                }
+            } finally {
+                setJoining(false);
             }
-        } finally {
-            setJoining(false);
+        } else {
+            // Updating vehicle for existing participation
+            setUpdatingVehicle(true);
+            try {
+                await RideService.updateMyVehicle(id, selectedVehicle.id);
+                Alert.alert('Success', 'Vehicle updated successfully!');
+                fetchRideDetails();
+            } catch (error) {
+                Alert.alert('Error', error.detail || error.message || 'Failed to update vehicle');
+            } finally {
+                setUpdatingVehicle(false);
+            }
         }
     };
 
@@ -589,21 +622,27 @@ const RideDetails = () => {
                                                         {p.vehicle.make} {p.vehicle.model}
                                                         {p.vehicle.license_plate && ` • ${p.vehicle.license_plate}`}
                                                     </Text>
+                                                    {user && (p.user_id === user.id || p.user?.id === user.id) &&
+                                                        ride.status !== 'COMPLETED' && ride.status !== 'completed' && !isBanned && (
+                                                            <TouchableOpacity
+                                                                style={styles.editVehicleBtn}
+                                                                onPress={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleChangeVehiclePress();
+                                                                }}
+                                                                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                                            >
+                                                                <Feather name="edit-2" size={12} color={theme.colors.primary} />
+                                                            </TouchableOpacity>
+                                                        )}
                                                 </View>
                                             )}
 
-                                            {/* Phone/Email for admins */}
+                                            {/* Phone for admins (email shown in modal) */}
                                             {ride.is_admin && p.user?.phone_number && (
                                                 <View style={styles.contactRow}>
                                                     <Feather name="phone" size={11} color="#666" />
                                                     <Text style={styles.contactText}>{p.user.phone_number}</Text>
-                                                    {p.user.email && (
-                                                        <>
-                                                            <Text style={styles.contactDivider}>•</Text>
-                                                            <Feather name="mail" size={11} color="#666" />
-                                                            <Text style={styles.contactText} numberOfLines={1}>{p.user.email}</Text>
-                                                        </>
-                                                    )}
                                                 </View>
                                             )}
                                         </View>
@@ -683,6 +722,9 @@ const RideDetails = () => {
                             <Feather name="check-circle" size={20} color={theme.colors.primary} />
                             <Text style={styles.joinedText}>You're joined!</Text>
                         </View>
+
+
+
                         {(ride.status === 'ACTIVE' || ride.status === 'active') && (
                             <TouchableOpacity style={styles.trackButton}>
                                 <Feather name="navigation" size={18} color="white" />
@@ -729,6 +771,9 @@ const RideDetails = () => {
                                 {selectedParticipant?.user?.phone_number && (
                                     <Text style={styles.modalContact}>{selectedParticipant.user.phone_number}</Text>
                                 )}
+                                {selectedParticipant?.user?.email && (
+                                    <Text style={styles.modalEmail}>{selectedParticipant.user.email}</Text>
+                                )}
                             </View>
                             <TouchableOpacity onPress={() => setShowActionModal(false)}>
                                 <Feather name="x" size={24} color="#888" />
@@ -770,34 +815,57 @@ const RideDetails = () => {
                                 </TouchableOpacity>
                             )}
 
-                            {/* Attendance Buttons */}
-                            <TouchableOpacity
-                                style={styles.actionButton}
-                                onPress={() => handleMarkAttendance('present')}
-                                disabled={actionLoading}
-                            >
-                                <View style={[styles.actionIcon, { backgroundColor: '#1a3a1a' }]}>
-                                    <Feather name="check" size={20} color={theme.colors.primary} />
-                                </View>
-                                <View style={styles.actionTextContainer}>
-                                    <Text style={styles.actionTitle}>Mark Present</Text>
-                                    <Text style={styles.actionSubtitle}>Arrived at meetup point</Text>
-                                </View>
-                            </TouchableOpacity>
+                            {/* Attendance Buttons - only for non-completed rides */}
+                            {(ride.status !== 'COMPLETED' && ride.status !== 'completed') && (
+                                <>
+                                    <TouchableOpacity
+                                        style={styles.actionButton}
+                                        onPress={() => handleMarkAttendance('present')}
+                                        disabled={actionLoading}
+                                    >
+                                        <View style={[styles.actionIcon, { backgroundColor: '#1a3a1a' }]}>
+                                            <Feather name="check" size={20} color={theme.colors.primary} />
+                                        </View>
+                                        <View style={styles.actionTextContainer}>
+                                            <Text style={styles.actionTitle}>Mark Present</Text>
+                                            <Text style={styles.actionSubtitle}>Arrived at meetup point</Text>
+                                        </View>
+                                    </TouchableOpacity>
 
-                            <TouchableOpacity
-                                style={styles.actionButton}
-                                onPress={() => handleMarkAttendance('absent')}
-                                disabled={actionLoading}
-                            >
-                                <View style={[styles.actionIcon, { backgroundColor: '#3a1a1a' }]}>
-                                    <Feather name="x" size={20} color="#FF5252" />
+                                    <TouchableOpacity
+                                        style={styles.actionButton}
+                                        onPress={() => handleMarkAttendance('absent')}
+                                        disabled={actionLoading}
+                                    >
+                                        <View style={[styles.actionIcon, { backgroundColor: '#3a1a1a' }]}>
+                                            <Feather name="x" size={20} color="#FF5252" />
+                                        </View>
+                                        <View style={styles.actionTextContainer}>
+                                            <Text style={styles.actionTitle}>Mark Absent</Text>
+                                            <Text style={styles.actionSubtitle}>Did not show up</Text>
+                                        </View>
+                                    </TouchableOpacity>
+                                </>
+                            )}
+
+                            {/* Show attendance status if completed */}
+                            {(ride.status === 'COMPLETED' || ride.status === 'completed') && selectedParticipant?.attendance_status && (
+                                <View style={styles.actionButton}>
+                                    <View style={[styles.actionIcon, { backgroundColor: selectedParticipant.attendance_status === 'present' ? '#1a3a1a' : '#3a1a1a' }]}>
+                                        <Feather
+                                            name={selectedParticipant.attendance_status === 'present' ? "check" : "x"}
+                                            size={20}
+                                            color={selectedParticipant.attendance_status === 'present' ? theme.colors.primary : "#FF5252"}
+                                        />
+                                    </View>
+                                    <View style={styles.actionTextContainer}>
+                                        <Text style={styles.actionTitle}>
+                                            Marked {selectedParticipant.attendance_status === 'present' ? 'Present' : 'Absent'}
+                                        </Text>
+                                        <Text style={styles.actionSubtitle}>Ride Completed</Text>
+                                    </View>
                                 </View>
-                                <View style={styles.actionTextContainer}>
-                                    <Text style={styles.actionTitle}>Mark Absent</Text>
-                                    <Text style={styles.actionSubtitle}>Did not show up</Text>
-                                </View>
-                            </TouchableOpacity>
+                            )}
 
                             {/* Ban/Unban */}
                             <TouchableOpacity
@@ -860,14 +928,19 @@ const RideDetails = () => {
                 >
                     <Pressable style={styles.vehicleModalContent} onPress={(e) => e.stopPropagation()}>
                         <View style={styles.vehicleModalHeader}>
-                            <Text style={styles.vehicleModalTitle}>Select Your Vehicle</Text>
+                            <Text style={styles.vehicleModalTitle}>
+                                {vehicleMode === 'join' ? 'Select Your Vehicle' : 'Change Vehicle'}
+                            </Text>
                             <TouchableOpacity onPress={() => setShowVehicleModal(false)}>
                                 <Feather name="x" size={24} color="#888" />
                             </TouchableOpacity>
                         </View>
 
                         <Text style={styles.vehicleModalSubtitle}>
-                            Choose which vehicle you'll be riding
+                            {vehicleMode === 'join'
+                                ? "Choose which vehicle you'll be riding"
+                                : "Select a different vehicle for this ride"
+                            }
                         </Text>
 
                         {loadingVehicles ? (
@@ -991,16 +1064,21 @@ const RideDetails = () => {
                         {/* Confirm Button */}
                         <TouchableOpacity
                             style={[styles.confirmJoinBtn, !selectedVehicle && styles.confirmJoinBtnDisabled]}
-                            onPress={handleConfirmJoin}
-                            disabled={!selectedVehicle || joining}
+                            onPress={handleVehicleConfirm}
+                            disabled={!selectedVehicle || joining || updatingVehicle}
                         >
-                            {joining ? (
+                            {(joining || updatingVehicle) ? (
                                 <ActivityIndicator color="white" />
                             ) : (
                                 <>
                                     <Feather name="check" size={20} color="white" />
                                     <Text style={styles.confirmJoinBtnText}>
-                                        {selectedVehicle ? `Join with ${selectedVehicle.make} ${selectedVehicle.model}` : 'Select a Vehicle'}
+                                        {!selectedVehicle
+                                            ? 'Select a Vehicle'
+                                            : vehicleMode === 'join'
+                                                ? `Join with ${selectedVehicle.make} ${selectedVehicle.model}`
+                                                : `Update to ${selectedVehicle.make} ${selectedVehicle.model}`
+                                        }
                                     </Text>
                                 </>
                             )}
@@ -1341,6 +1419,13 @@ const styles = StyleSheet.create({
     vehicleText: {
         color: theme.colors.textSecondary,
         fontSize: 12,
+        flex: 1,
+    },
+    editVehicleBtn: {
+        padding: 4,
+        backgroundColor: 'rgba(0, 200, 83, 0.1)',
+        borderRadius: 12,
+        marginLeft: 4,
     },
     contactRow: {
         flexDirection: 'row',
@@ -1439,6 +1524,7 @@ const styles = StyleSheet.create({
         fontSize: 15,
         fontWeight: '600',
     },
+
     trackButton: {
         flexDirection: 'row',
         backgroundColor: '#2962FF',
@@ -1503,6 +1589,11 @@ const styles = StyleSheet.create({
         color: '#666',
         fontSize: 12,
         marginTop: 2,
+    },
+    modalEmail: {
+        color: '#2962FF',
+        fontSize: 12,
+        marginTop: 1,
     },
     callButton: {
         flexDirection: 'row',
