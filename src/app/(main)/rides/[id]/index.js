@@ -817,22 +817,24 @@ const RideDetails = () => {
             {/* Footer Actions */}
             <View style={styles.footer}>
                 {!ride.is_participant ? (
-                    <TouchableOpacity
-                        style={[styles.joinButton, ride.spots_left <= 0 && styles.disabledButton]}
-                        onPress={handleJoinPress}
-                        disabled={joining || ride.spots_left <= 0}
-                    >
-                        {joining ? (
-                            <ActivityIndicator color="white" />
-                        ) : (
-                            <>
-                                <Feather name="user-plus" size={20} color="white" />
-                                <Text style={styles.joinButtonText}>
-                                    {ride.spots_left <= 0 ? 'Ride Full' : 'Join This Ride'}
-                                </Text>
-                            </>
-                        )}
-                    </TouchableOpacity>
+                    (ride.status === 'PLANNED' || ride.status === 'planned') ? (
+                        <TouchableOpacity
+                            style={[styles.joinButton, ride.spots_left <= 0 && styles.disabledButton]}
+                            onPress={handleJoinPress}
+                            disabled={joining || ride.spots_left <= 0}
+                        >
+                            {joining ? (
+                                <ActivityIndicator color="white" />
+                            ) : (
+                                <>
+                                    <Feather name="user-plus" size={20} color="white" />
+                                    <Text style={styles.joinButtonText}>
+                                        {ride.spots_left <= 0 ? 'Ride Full' : 'Join This Ride'}
+                                    </Text>
+                                </>
+                            )}
+                        </TouchableOpacity>
+                    ) : null
                 ) : (
                     <View style={styles.joinedFooter}>
                         <View style={styles.joinedBadge}>

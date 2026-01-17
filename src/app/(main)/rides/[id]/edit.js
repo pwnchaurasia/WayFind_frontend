@@ -1,16 +1,17 @@
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, Platform, ScrollView, Switch, ActivityIndicator } from 'react-native'
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ScrollView, Switch, ActivityIndicator, Modal } from 'react-native'
 import React, { useState, useEffect } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { theme } from '@/src/styles/theme'
 import RideService from '@/src/apis/rideService'
 import { router, useLocalSearchParams } from 'expo-router'
 import { Feather } from '@expo/vector-icons'
-import DateTimePicker from '@react-native-community/datetimepicker';
+import DateTimePicker from 'react-native-ui-datepicker';
+import dayjs from 'dayjs';
 
 const RIDE_TYPES = [
-    { value: 'One Day', label: 'Day Ride' },
-    { value: 'Multi Day', label: 'Multi-Day Trip' },
-    { value: 'Quick Ride', label: 'Quick Ride' },
+    { value: 'One Day', label: 'Day Ride', icon: '🏍️' },
+    { value: 'Multi Day', label: 'Multi-Day', icon: '🏕️' },
+    { value: 'Quick Ride', label: 'Quick', icon: '⚡' },
 ];
 
 const EditRide = () => {
@@ -22,8 +23,9 @@ const EditRide = () => {
 
     // Editable fields
     const [name, setName] = useState('');
-    const [date, setDate] = useState(new Date());
+    const [selectedDateTime, setSelectedDateTime] = useState(dayjs());
     const [showDatePicker, setShowDatePicker] = useState(false);
+
     const [rideType, setRideType] = useState('One Day');
     const [maxRiders, setMaxRiders] = useState('30');
     const [requiresPayment, setRequiresPayment] = useState(false);
@@ -42,13 +44,14 @@ const EditRide = () => {
                 const r = data.ride;
                 setRide(r);
                 setName(r.name || '');
-                setDate(r.scheduled_date ? new Date(r.scheduled_date) : new Date());
+                if (r.scheduled_date) {
+                    setSelectedDateTime(dayjs(r.scheduled_date));
+                }
                 setRideType(r.ride_type || 'One Day');
                 setMaxRiders(String(r.max_riders || 30));
                 setRequiresPayment(r.requires_payment || false);
                 setAmount(String(r.amount || 0));
 
-                // Check if ride is completed
                 if (r.status === 'COMPLETED' || r.status === 'completed') {
                     Alert.alert(
                         'Cannot Edit',
@@ -74,10 +77,12 @@ const EditRide = () => {
         setSaving(true);
         try {
             const payload = {
-                name,
+                name: name.trim(),
                 max_riders: parseInt(maxRiders) || 30,
                 requires_payment: requiresPayment,
                 amount: parseFloat(amount) || 0,
+                scheduled_date: selectedDateTime.toISOString(),
+                ride_type: rideType,
             };
 
             await RideService.updateRide(id, payload);
@@ -94,10 +99,19 @@ const EditRide = () => {
         }
     };
 
-    const onChangeDate = (event, selectedDate) => {
-        const currentDate = selectedDate || date;
-        setShowDatePicker(Platform.OS === 'ios');
-        setDate(currentDate);
+    const formatDateDisplay = (date) => {
+        const d = dayjs(date);
+        const today = dayjs().startOf('day');
+        const tomorrow = today.add(1, 'day');
+
+        if (d.isSame(today, 'day')) return 'Today';
+        if (d.isSame(tomorrow, 'day')) return 'Tomorrow';
+
+        return d.format('ddd, MMM D');
+    };
+
+    const formatTimeDisplay = (date) => {
+        return dayjs(date).format('hh:mm A');
     };
 
     const getCheckpointLabel = (type) => {
@@ -118,7 +132,6 @@ const EditRide = () => {
         );
     }
 
-    // Prevent editing completed rides
     if (ride && (ride.status === 'COMPLETED' || ride.status === 'completed')) {
         return (
             <SafeAreaView style={styles.container}>
@@ -159,8 +172,15 @@ const EditRide = () => {
                 {/* Status Badge */}
                 {ride && (
                     <View style={styles.statusContainer}>
-                        <View style={[styles.statusBadge, { backgroundColor: ride.status === 'ACTIVE' ? '#00C853' : '#FFB300' }]}>
-                            <Text style={styles.statusText}>{ride.status}</Text>
+                        <View style={[styles.statusBadge, {
+                            backgroundColor: ride.status === 'ACTIVE' || ride.status === 'active' ? '#00C853' : '#FFB300',
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            gap: 6,
+                            paddingHorizontal: 10
+                        }]}>
+                            <Feather name={ride.status === 'ACTIVE' || ride.status === 'active' ? 'activity' : 'calendar'} size={12} color="white" />
+                            <Text style={styles.statusText}>{ride.status?.toUpperCase()}</Text>
                         </View>
                     </View>
                 )}
@@ -176,36 +196,35 @@ const EditRide = () => {
                     />
                 </View>
 
-                <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Scheduled Date & Time</Text>
-                    <TouchableOpacity
-                        style={styles.dateButton}
-                        onPress={() => setShowDatePicker(true)}
-                    >
-                        <Text style={styles.dateText}>{date.toLocaleString()}</Text>
-                        <Feather name="calendar" size={20} color="#00C853" />
-                    </TouchableOpacity>
-                    {showDatePicker && (
-                        <DateTimePicker
-                            value={date}
-                            mode="datetime"
-                            display="default"
-                            onChange={onChangeDate}
-                            themeVariant="dark"
-                        />
-                    )}
+                {/* Date & Time Row */}
+                <View style={styles.row}>
+                    <View style={[styles.inputGroup, { flex: 1 }]}>
+                        <Text style={styles.label}>Date</Text>
+                        <TouchableOpacity style={styles.dateButton} onPress={() => setShowDatePicker(true)}>
+                            <Text style={styles.dateText}>{formatDateDisplay(selectedDateTime)}</Text>
+                            <Feather name="calendar" size={18} color="#00C853" />
+                        </TouchableOpacity>
+                    </View>
+                    <View style={[styles.inputGroup, { flex: 1 }]}>
+                        <Text style={styles.label}>Time</Text>
+                        <TouchableOpacity style={styles.dateButton} onPress={() => setShowDatePicker(true)}>
+                            <Text style={styles.dateText}>{formatTimeDisplay(selectedDateTime)}</Text>
+                            <Feather name="clock" size={18} color="#00C853" />
+                        </TouchableOpacity>
+                    </View>
                 </View>
 
                 <View style={styles.inputGroup}>
                     <Text style={styles.label}>Ride Type</Text>
-                    <View style={styles.typeSelector}>
+                    <View style={styles.typeContainer}>
                         {RIDE_TYPES.map(type => (
                             <TouchableOpacity
                                 key={type.value}
-                                style={[styles.typeOption, rideType === type.value && styles.typeOptionActive]}
+                                style={[styles.typeButton, rideType === type.value && styles.typeButtonActive]}
                                 onPress={() => setRideType(type.value)}
                             >
-                                <Text style={[styles.typeOptionText, rideType === type.value && styles.typeOptionTextActive]}>
+                                <Text style={styles.typeIcon}>{type.icon}</Text>
+                                <Text style={[styles.typeLabel, rideType === type.value && styles.typeLabelActive]}>
                                     {type.label}
                                 </Text>
                             </TouchableOpacity>
@@ -225,19 +244,17 @@ const EditRide = () => {
                     />
                 </View>
 
-                <View style={styles.inputGroup}>
-                    <View style={styles.switchRow}>
-                        <View>
-                            <Text style={styles.label}>Paid Ride</Text>
-                            <Text style={styles.sublabel}>Require payment to join</Text>
-                        </View>
-                        <Switch
-                            value={requiresPayment}
-                            onValueChange={setRequiresPayment}
-                            trackColor={{ false: '#333', true: '#00C853' }}
-                            thumbColor={requiresPayment ? '#fff' : '#888'}
-                        />
+                <View style={styles.paymentRow}>
+                    <View>
+                        <Text style={styles.label}>Paid Ride</Text>
+                        <Text style={styles.sublabel}>Require payment to join</Text>
                     </View>
+                    <Switch
+                        value={requiresPayment}
+                        onValueChange={setRequiresPayment}
+                        trackColor={{ false: '#333', true: '#00C853' }}
+                        thumbColor="white"
+                    />
                 </View>
 
                 {requiresPayment && (
@@ -278,6 +295,44 @@ const EditRide = () => {
 
                 <View style={{ height: 40 }} />
             </ScrollView>
+
+            {/* Date & Time Picker Modal */}
+            <Modal visible={showDatePicker} transparent animationType="slide">
+                <View style={styles.modalOverlay}>
+                    <View style={styles.datePickerModal}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Select Date & Time</Text>
+                            <TouchableOpacity onPress={() => setShowDatePicker(false)}>
+                                <Feather name="x" size={24} color="white" />
+                            </TouchableOpacity>
+                        </View>
+                        <View style={styles.datePickerContainer}>
+                            <DateTimePicker
+                                mode="single"
+                                date={selectedDateTime}
+                                onChange={(params) => {
+                                    if (params.date) {
+                                        setSelectedDateTime(dayjs(params.date));
+                                    }
+                                }}
+                                timePicker={true}
+                                minDate={dayjs().startOf('day')}
+                                styles={theme.datePickerStyles}
+                                components={{
+                                    IconPrev: <Feather name="chevron-left" size={24} color={theme.colors.primary} />,
+                                    IconNext: <Feather name="chevron-right" size={24} color={theme.colors.primary} />,
+                                }}
+                            />
+                        </View>
+                        <TouchableOpacity
+                            style={styles.confirmDateButton}
+                            onPress={() => setShowDatePicker(false)}
+                        >
+                            <Text style={styles.confirmDateText}>Confirm</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 };
@@ -364,11 +419,11 @@ const styles = StyleSheet.create({
     statusBadge: {
         alignSelf: 'flex-start',
         paddingHorizontal: 12,
-        paddingVertical: 4,
+        paddingVertical: 6,
         borderRadius: 12,
     },
     statusText: {
-        color: 'black',
+        color: 'white',
         fontSize: 12,
         fontWeight: 'bold',
     },
@@ -395,6 +450,10 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#333'
     },
+    row: {
+        flexDirection: 'row',
+        gap: 12,
+    },
     dateButton: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -409,35 +468,45 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 16
     },
-    typeSelector: {
+    typeContainer: {
         flexDirection: 'row',
         gap: 10,
     },
-    typeOption: {
+    typeButton: {
         flex: 1,
-        backgroundColor: '#1E1E1E',
-        padding: 12,
-        borderRadius: 10,
         alignItems: 'center',
-        borderWidth: 1,
+        backgroundColor: '#1E1E1E',
+        paddingVertical: 12,
+        borderRadius: 10,
+        borderWidth: 2,
         borderColor: '#333'
     },
-    typeOptionActive: {
-        backgroundColor: '#00C853',
-        borderColor: '#00C853'
+    typeButtonActive: {
+        borderColor: '#00C853',
+        backgroundColor: '#0a2a1a'
     },
-    typeOptionText: {
+    typeIcon: {
+        fontSize: 20,
+        marginBottom: 4
+    },
+    typeLabel: {
         color: '#888',
-        fontSize: 13,
+        fontSize: 12,
         fontWeight: '500'
     },
-    typeOptionTextActive: {
-        color: 'white'
+    typeLabelActive: {
+        color: '#00C853'
     },
-    switchRow: {
+    paymentRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'center'
+        alignItems: 'center',
+        backgroundColor: '#1E1E1E',
+        padding: 14,
+        borderRadius: 10,
+        marginBottom: 16,
+        borderWidth: 1,
+        borderColor: '#333'
     },
     checkpointsList: {
         backgroundColor: '#1E1E1E',
@@ -464,5 +533,48 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontStyle: 'italic',
         marginTop: 8,
+    },
+    // Modal styles
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.8)',
+        justifyContent: 'center',
+        padding: theme.spacing.lg,
+    },
+    datePickerModal: {
+        backgroundColor: theme.colors.background,
+        borderRadius: theme.borderRadius.lg,
+        overflow: 'hidden',
+        maxHeight: '85%',
+    },
+    datePickerContainer: {
+        padding: theme.spacing.md,
+        backgroundColor: theme.colors.background,
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: theme.spacing.md,
+        borderBottomWidth: 1,
+        borderBottomColor: theme.colors.border,
+    },
+    modalTitle: {
+        color: theme.colors.textPrimary,
+        fontSize: theme.fontSize.xl,
+        fontWeight: theme.fontWeight.bold,
+    },
+    confirmDateButton: {
+        backgroundColor: theme.colors.primary,
+        margin: theme.spacing.md,
+        marginTop: theme.spacing.sm,
+        padding: theme.spacing.md,
+        borderRadius: theme.borderRadius.md,
+        alignItems: 'center',
+    },
+    confirmDateText: {
+        color: theme.colors.textPrimary,
+        fontSize: theme.fontSize.lg,
+        fontWeight: theme.fontWeight.bold,
     },
 });
