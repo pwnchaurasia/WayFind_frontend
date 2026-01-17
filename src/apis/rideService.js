@@ -142,7 +142,66 @@ const RideService = {
             console.error('Failed to add checkpoint:', error);
             throw error.response?.data || error;
         }
+    },
+
+    // ============================================
+    // PARTICIPANT MANAGEMENT (Admin Only)
+    // ============================================
+
+    // Mark/toggle payment for participant
+    markPayment: async (rideId, participantId, amount) => {
+        try {
+            const response = await API.post(
+                `/v1/rides/${rideId}/participants/${participantId}/mark-payment`,
+                { amount }
+            );
+            return response.data;
+        } catch (error) {
+            console.error('Failed to mark payment:', error);
+            throw error.response?.data || error;
+        }
+    },
+
+    // Mark attendance for participant
+    markAttendance: async (rideId, participantId, status, checkpointType = 'meetup') => {
+        try {
+            const response = await API.post(
+                `/v1/rides/${rideId}/participants/${participantId}/mark-attendance`,
+                { status, checkpoint_type: checkpointType }
+            );
+            return response.data;
+        } catch (error) {
+            console.error('Failed to mark attendance:', error);
+            throw error.response?.data || error;
+        }
+    },
+
+    // Remove participant from ride
+    removeParticipant: async (rideId, participantId) => {
+        try {
+            const response = await API.delete(
+                `/v1/rides/${rideId}/participants/${participantId}`
+            );
+            return response.data;
+        } catch (error) {
+            console.error('Failed to remove participant:', error);
+            throw error.response?.data || error;
+        }
+    },
+
+    // Toggle ban status for participant
+    toggleBan: async (rideId, participantId) => {
+        try {
+            const response = await API.post(
+                `/v1/rides/${rideId}/participants/${participantId}/toggle-ban`
+            );
+            return response.data;
+        } catch (error) {
+            console.error('Failed to toggle ban:', error);
+            throw error.response?.data || error;
+        }
     }
 };
 
 export default RideService;
+
