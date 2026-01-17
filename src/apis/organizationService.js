@@ -90,9 +90,15 @@ const OrganizationService = {
     },
 
     // Rides within Org
-    getOrganizationRides: async (orgId) => {
+    getOrganizationRides: async (orgId, includeCompleted = false) => {
         try {
-            const response = await API.get(`/v1/organizations/${orgId}/rides`);
+            const params = new URLSearchParams();
+            if (includeCompleted) {
+                params.append('include_completed', 'true');
+            }
+            const queryString = params.toString();
+            const url = `/v1/organizations/${orgId}/rides${queryString ? `?${queryString}` : ''}`;
+            const response = await API.get(url);
             if (response.status !== 200) {
                 throw new Error('Failed to fetch organization rides');
             }
