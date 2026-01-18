@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  View, 
-  Text, 
-  StatusBar, 
-  Image, 
-  TouchableOpacity, 
-  StyleSheet, 
+import {
+  View,
+  Text,
+  StatusBar,
+  Image,
+  TouchableOpacity,
+  StyleSheet,
   Dimensions,
   TextInput,
   Keyboard,
@@ -43,7 +43,7 @@ const VerifyOtp = () => {
         return prevTimer - 1;
       });
     }, 1000);
-    
+
     return () => clearInterval(interval);
   }, []);
 
@@ -51,7 +51,7 @@ const VerifyOtp = () => {
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', (event) => {
       const keyboardHeight = event.endCoordinates.height;
-      
+
       Animated.timing(animatedValue, {
         toValue: -keyboardHeight * 0.2, // Move up by 20% of keyboard height
         duration: 250,
@@ -83,13 +83,13 @@ const VerifyOtp = () => {
   // Validation function
   const validateOTP = () => {
     setValidationError('');
-    
+
     const otpCode = code.join('');
     if (!otpCode || otpCode.length !== 6) {
       setValidationError('Please enter the complete 6-digit OTP code');
       return false;
     }
-    
+
     return true;
   };
 
@@ -103,7 +103,7 @@ const VerifyOtp = () => {
 
     try {
       const otpCode = code.join('');
-      
+
       const payload = {
         phone_number: params.phone_number,
         country_code: params.country_code,
@@ -115,19 +115,22 @@ const VerifyOtp = () => {
       if (response && (response.status === 201)) {
         if (response.data) {
           setToken({
-            access_token: response.data.access_token, 
+            access_token: response.data.access_token,
             refresh_token: response.data.refresh_token
           });
-          if(response.data.is_profile_complete === false){
-            router.push('/update_profile');
+          if (response.data.is_profile_complete === false) {
+            router.replace('/update_profile');
+          }
+          else if (params.returnTo) {
+            router.replace(params.returnTo);
           }
           else {
-            router.push('/(main)/(tabs)');
+            router.replace('/(main)/(tabs)');
           }
-        }else{
+        } else {
           console.log('no data found in response')
         }
-      }else{
+      } else {
         console.log('I am here')
       }
 
@@ -149,17 +152,17 @@ const VerifyOtp = () => {
   // Handle code input
   const handleCodeChange = (text, index) => {
     const newCode = [...code];
-    
+
     // Handle single digit input
     if (text.length <= 1) {
       newCode[index] = text;
       setCode(newCode);
-      
+
       // Clear validation error when user starts typing
       if (validationError) {
         setValidationError('');
       }
-      
+
       // Auto-focus next input if text is entered and not the last input
       if (text && index < 5) {
         inputRefs.current[index + 1].focus();
@@ -178,8 +181,8 @@ const VerifyOtp = () => {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
-      
-      <Animated.View 
+
+      <Animated.View
         style={[
           styles.animatedContainer,
           {
@@ -187,82 +190,82 @@ const VerifyOtp = () => {
           }
         ]}
       >
-          {/* Logo Section */}
-          <LogoSection />
-          
-          {/* Middle Content */}
-          <View style={styles.contentContainer}>
-            <Image 
-              source={imagePath.mailbox} 
-              style={styles.illustration}
-              resizeMode="contain"
-            />
-            
-            <Text style={styles.title}>Verification Code</Text>
-            <Text style={styles.subtitle}>
-              Please Enter Code that we Send you{'\n'}to your Phone.
-            </Text>
-            
-            {/* Code Input */}
-            <View style={styles.codeInputContainer}>
-              <View style={styles.codeContainer}>
-                {[0, 1, 2, 3, 4, 5].map((index) => (
-                  <TextInput
-                    key={index}
-                    ref={(ref) => (inputRefs.current[index] = ref)}
-                    style={[
-                      styles.codeInput, 
-                      code[index] ? styles.filledInput : {},
-                      validationError ? styles.errorInput : {},
-                    ]}
-                    value={code[index]}
-                    onChangeText={(text) => handleCodeChange(text, index)}
-                    onKeyPress={(e) => handleKeyPress(e, index)}
-                    keyboardType="number-pad"
-                    maxLength={1}
-                    selectionColor="#00C853"
-                  />
-                ))}
-              </View>
-              
-              {/* Validation Error */}
-              {validationError ? (
-                <Text style={styles.errorText}>{validationError}</Text>
-              ) : null}
-            </View>
-            
-            {/* Resend Timer */}
-            <View style={styles.resendContainer}>
-              <Text style={styles.resendText}>
-                Resend in <Text style={styles.timerText}>{formatTime(timer)}</Text>
-              </Text>
+        {/* Logo Section */}
+        <LogoSection />
+
+        {/* Middle Content */}
+        <View style={styles.contentContainer}>
+          <Image
+            source={imagePath.mailbox}
+            style={styles.illustration}
+            resizeMode="contain"
+          />
+
+          <Text style={styles.title}>Verification Code</Text>
+          <Text style={styles.subtitle}>
+            Please Enter Code that we Send you{'\n'}to your Phone.
+          </Text>
+
+          {/* Code Input */}
+          <View style={styles.codeInputContainer}>
+            <View style={styles.codeContainer}>
+              {[0, 1, 2, 3, 4, 5].map((index) => (
+                <TextInput
+                  key={index}
+                  ref={(ref) => (inputRefs.current[index] = ref)}
+                  style={[
+                    styles.codeInput,
+                    code[index] ? styles.filledInput : {},
+                    validationError ? styles.errorInput : {},
+                  ]}
+                  value={code[index]}
+                  onChangeText={(text) => handleCodeChange(text, index)}
+                  onKeyPress={(e) => handleKeyPress(e, index)}
+                  keyboardType="number-pad"
+                  maxLength={1}
+                  selectionColor="#00C853"
+                />
+              ))}
             </View>
 
+            {/* Validation Error */}
+            {validationError ? (
+              <Text style={styles.errorText}>{validationError}</Text>
+            ) : null}
           </View>
-          
-          {/* Button */}
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity 
+
+          {/* Resend Timer */}
+          <View style={styles.resendContainer}>
+            <Text style={styles.resendText}>
+              Resend in <Text style={styles.timerText}>{formatTime(timer)}</Text>
+            </Text>
+          </View>
+
+        </View>
+
+        {/* Button */}
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
             style={[styles.button, styles.otpButton, isLoading && styles.buttonDisabled]}
             onPress={handleverifyOTP}
             disabled={isLoading}
-            >
-              {/* <Link href="/update_profile" style={styles.buttonText}> Verify Code</Link> */}
+          >
+            {/* <Link href="/update_profile" style={styles.buttonText}> Verify Code</Link> */}
 
             {isLoading ? (
-                <View style={styles.loadingContainer}>
-                  <ActivityIndicator size="small" color="#00C853" />
-                  <Text style={[styles.buttonText, styles.loadingText]}>Verifying OTP...</Text>
-                </View>
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="small" color="#00C853" />
+                <Text style={[styles.buttonText, styles.loadingText]}>Verifying OTP...</Text>
+              </View>
             ) : (
               <Text style={styles.buttonText}>Verify OTP</Text>
             )}
 
-            </TouchableOpacity>
-          </View>
-          
-          {/* Footer */}
-          <Text style={styles.footer}>Made with love in India by rjsnh1522</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Footer */}
+        <Text style={styles.footer}>Made with love in India by rjsnh1522</Text>
       </Animated.View>
     </SafeAreaView>
   );
@@ -276,7 +279,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
-  
+
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,

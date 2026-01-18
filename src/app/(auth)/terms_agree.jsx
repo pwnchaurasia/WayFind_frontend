@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StatusBar, 
-  TouchableOpacity, 
-  StyleSheet, 
+import {
+  View,
+  Text,
+  StatusBar,
+  TouchableOpacity,
+  StyleSheet,
   Dimensions,
   ScrollView,
   Platform
@@ -32,43 +32,43 @@ const TermsAndAgreement = () => {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
-      
+
       <View style={styles.animatedContainer}>
         {/* Logo Section */}
         <LogoSection />
-        
+
         {/* Middle Content */}
         <View style={styles.contentContainer}>
           <Text style={styles.title}>Terms & Privacy</Text>
           <Text style={styles.subtitle}>
             Please read and accept our terms{'\n'}and privacy policy to continue.
           </Text>
-          
+
           {/* Terms Content */}
-          <ScrollView 
+          <ScrollView
             style={styles.termsScrollView}
             contentContainerStyle={styles.termsContent}
             showsVerticalScrollIndicator={false}
           >
             <Text style={styles.termsTitle}>Terms of Service</Text>
             <Text style={styles.termsText}>
-              By using WayFind, you agree to our terms of service. This app helps you find and share locations with your friends and family. We are committed to providing a safe and reliable service.
+              By using Squadra, you agree to our terms of service. This app helps you find and share locations with your friends and family. We are committed to providing a safe and reliable service.
             </Text>
-            
+
             <Text style={styles.termsTitle}>Privacy Policy</Text>
             <Text style={styles.termsText}>
               Your privacy is important to us. We collect location data only when you explicitly share it. Your personal information is encrypted and stored securely. We do not sell your data to third parties.
             </Text>
-            
+
             <Text style={styles.termsTitle}>Data Usage</Text>
             <Text style={styles.termsText}>
               Location data is used solely for the purpose of sharing your location with selected contacts. You can control who sees your location and can stop sharing at any time.
             </Text>
           </ScrollView>
-          
+
           {/* Agreement Checkboxes */}
           <View style={styles.agreementContainer}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.checkboxContainer}
               onPress={() => setAgreedToTerms(!agreedToTerms)}
             >
@@ -77,8 +77,8 @@ const TermsAndAgreement = () => {
               </View>
               <Text style={styles.checkboxText}>I agree to the Terms of Service</Text>
             </TouchableOpacity>
-            
-            <TouchableOpacity 
+
+            <TouchableOpacity
               style={styles.checkboxContainer}
               onPress={() => setAgreedToPrivacy(!agreedToPrivacy)}
             >
@@ -89,10 +89,10 @@ const TermsAndAgreement = () => {
             </TouchableOpacity>
           </View>
         </View>
-        
+
         {/* Button */}
         <View style={styles.buttonContainer}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.button, isButtonEnabled && styles.buttonEnabled]}
             onPress={handleContinue}
             disabled={!isButtonEnabled}
@@ -102,7 +102,7 @@ const TermsAndAgreement = () => {
             </Text>
           </TouchableOpacity>
         </View>
-        
+
         {/* Footer */}
         <Text style={styles.footer}>Made with love in India by rjsnh1522</Text>
       </View>
@@ -117,13 +117,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
-  
+
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
     paddingHorizontal: width * 0.05,
   },
-  
+
   contentContainer: {
     flex: 1,
     justifyContent: 'flex-start',
@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
     marginTop: height * 0.03,
     paddingHorizontal: width * 0.05,
   },
-  
+
   title: {
     color: 'white',
     fontSize: 32,
@@ -139,14 +139,14 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     textAlign: 'center',
   },
-  
+
   subtitle: {
     color: 'white',
     fontSize: 16,
     textAlign: 'center',
     marginBottom: height * 0.04,
   },
-  
+
   termsScrollView: {
     width: '100%',
     maxHeight: height * 0.4,
@@ -154,11 +154,11 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     marginBottom: height * 0.03,
   },
-  
+
   termsContent: {
     padding: 20,
   },
-  
+
   termsTitle: {
     color: '#00C853',
     fontSize: 18,
@@ -166,26 +166,26 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     marginTop: 15,
   },
-  
+
   termsText: {
     color: '#CCCCCC',
     fontSize: 14,
     lineHeight: 20,
     marginBottom: 15,
   },
-  
+
   agreementContainer: {
     width: '100%',
     marginBottom: height * 0.02,
   },
-  
+
   checkboxContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 15,
     paddingHorizontal: 10,
   },
-  
+
   checkbox: {
     width: 24,
     height: 24,
@@ -196,18 +196,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  
+
   checkedBox: {
     backgroundColor: '#00C853',
     borderColor: '#00C853',
   },
-  
+
   checkboxText: {
     color: 'white',
     fontSize: 16,
     flex: 1,
   },
-  
+
   buttonContainer: {
     width: '100%',
     justifyContent: 'center',
@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
     paddingHorizontal: width * 0.05,
   },
-  
+
   button: {
     backgroundColor: 'transparent',
     borderWidth: 1,
@@ -225,21 +225,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '80%',
   },
-  
+
   buttonEnabled: {
     borderColor: '#00C853',
   },
-  
+
   buttonText: {
     color: '#666',
     fontSize: 18,
     fontWeight: '500',
   },
-  
+
   buttonTextEnabled: {
     color: '#00C853',
   },
-  
+
   footer: {
     color: 'white',
     textAlign: 'center',

@@ -7,16 +7,16 @@ const LoadingScreen = () => {
   return (
     <View style={[globalStyles.container, globalStyles.flexCenter]}>
       <View style={styles.logoContainer}>
-        <Image 
-          source={require('../assets/images/icon.png')} 
+        <Image
+          source={require('../assets/images/icon.png')}
           style={styles.logo}
           resizeMode="contain"
         />
-        <Text style={styles.appName}>WayFind</Text>
+        <Text style={styles.appName}>Squadra</Text>
       </View>
-      <ActivityIndicator 
-        size="large" 
-        color={theme.colors.primary} 
+      <ActivityIndicator
+        size="large"
+        color={theme.colors.primary}
         style={styles.loader}
       />
     </View>

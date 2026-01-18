@@ -59,7 +59,7 @@ const RootLayout = () => {
           <Stack.Screen name="index" />
           <Stack.Screen name="(auth)" />
           <Stack.Screen name="(main)" />
-          <Stack.Screen name="join/[code]" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="join" options={{ presentation: 'modal', headerShown: false }} />
         </Stack>
       </AuthProvider>
     </SafeAreaProvider>

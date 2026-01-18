@@ -51,7 +51,7 @@ export default function JoinOrganizationScreen() {
             // Redirect to login with return URL
             router.push({
                 pathname: '/(auth)/login',
-                params: { returnTo: `/join/${code}` }
+                params: { returnTo: `/join/org/${code}` }
             });
             return;
         }
@@ -85,7 +85,7 @@ export default function JoinOrganizationScreen() {
             } else if (response.requires_auth) {
                 router.push({
                     pathname: '/(auth)/login',
-                    params: { returnTo: `/join/${code}` }
+                    params: { returnTo: `/join/org/${code}` }
                 });
             } else {
                 Alert.alert('Error', response.message || 'Failed to join');

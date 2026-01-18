@@ -220,7 +220,7 @@ const MapSelector = ({
         try {
             const response = await fetch(
                 `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
-                { headers: { 'User-Agent': 'WayFind-App/1.0' } }
+                { headers: { 'User-Agent': 'Squadra-App/1.0' } }
             );
             const data = await response.json();
             if (data && data.display_name) {
@@ -252,7 +252,7 @@ const MapSelector = ({
                 // Using Photon API (by Komoot) - better coverage than Nominatim
                 const response = await fetch(
                     `https://photon.komoot.io/api/?q=${encodeURIComponent(text)}&limit=5&lat=12.97&lon=77.59`,
-                    { headers: { 'User-Agent': 'WayFind-App/1.0' } }
+                    { headers: { 'User-Agent': 'Squadra-App/1.0' } }
                 );
                 const data = await response.json();
                 // Photon returns GeoJSON format

@@ -150,7 +150,7 @@ const UpdateProfile = () => {
 
       // Complete
       await updateProfileCompletion(true);
-      router.push("/(main)");
+      router.replace("/(main)");
 
     } catch (error) {
       console.error("Vehicle update failed:", error);

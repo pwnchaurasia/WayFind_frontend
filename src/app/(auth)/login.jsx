@@ -17,13 +17,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import imagePath from '@/src/constants/imagePath'
 import { theme } from '@/src/styles/theme';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import LogoSection from '@/src/components/LogoSection';
 import { requestOTP } from '@/src/apis/authService';
 
 const { width, height } = Dimensions.get('window');
 
 const LoginPage = () => {
+  const { returnTo } = useLocalSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [countryCode, setCountryCode] = useState('+91');
@@ -77,7 +78,8 @@ const LoginPage = () => {
           params: {
             phone_number: cleanNumber,
             country_code: countryCode,
-            formatted_phone: formattedPhone
+            formatted_phone: formattedPhone,
+            returnTo
           }
         });
       } else {
