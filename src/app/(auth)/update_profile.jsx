@@ -17,17 +17,19 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { theme } from '@/src/styles/theme';
 import { Feather } from '@expo/vector-icons';
-import imagePath from '@/src/constants/imagePath';
-import LogoSection from '@/src/components/LogoSection';
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/src/context/AuthContext';
 import UserService from '@/src/apis/userService';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 const UpdateProfile = () => {
-  const { updateProfileCompletion, user } = useAuth();
+  const { updateProfileCompletion, user, refreshUserProfile, isProfileComplete } = useAuth();
+  const isSetupMode = !isProfileComplete;
+  const [currentStep, setCurrentStep] = useState(1); // 1: Profile, 2: Vehicle
+
+  // Profile State
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [nameCount, setNameCount] = useState(0);
@@ -42,28 +44,96 @@ const UpdateProfile = () => {
   const [isLoading, setIsLoading] = useState(false);
   const scrollViewRef = useRef(null);
 
-  console.log("user here test test test", user);
-
-  const handleSubmit = async () => {
-    setIsLoading(true);
-
-    try {
-      // 1. Update Basic Profile
-      const profilePayload = {
-        name,
-        email
-      };
-
-      const response = await UserService.updateCurrentUserProfile(profilePayload);
-      if (response.status !== 202 && response.status !== 200) {
-        throw new Error('Failed to update profile');
+  // Pre-fill data
+  useEffect(() => {
+    if (user) {
+      setName(user.name || "");
+      setEmail(user.email || "");
+      if (user.avatar || user.profile_picture_url) {
+        setProfileImage(user.avatar || user.profile_picture_url);
       }
+      if (user.name) setNameCount(user.name.length);
+    }
+  }, [user]);
 
-      // 2. Add Vehicle if applicable
-      debugger
+  const handleBack = () => {
+    if (currentStep === 2) {
+      setCurrentStep(1);
+    } else {
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        // Fallback if no history (e.g. direct deep link or reset stack)
+        router.push("/(main)");
+      }
+    }
+  };
+
+  const handleTextChange = (newText) => {
+    const validText = newText.replace(/[^a-zA-Z\s]/g, '');
+    setName(validText);
+    setNameCount(validText.length);
+  };
+
+  const selectImage = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'We need access to your photo library.');
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaType,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+        allowsMultipleSelection: false,
+      });
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setProfileImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Error selecting image:', error);
+    }
+  };
+
+  // Step 1: Update Profile
+  const handleNext = async () => {
+    if (!name.trim()) {
+      Alert.alert("Required", "Please enter your name");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const profilePayload = { name, email };
+      // UserService.updateCurrentUserProfile now handles 200 and 202
+      await UserService.updateCurrentUserProfile(profilePayload);
+
+      await refreshUserProfile();
+
+      if (isSetupMode) {
+        setCurrentStep(2);
+      } else {
+        Alert.alert('Success', 'Profile updated successfully');
+        if (router.canGoBack()) router.back();
+        else router.push('/(main)');
+      }
+    } catch (error) {
+      console.error("Profile update failed:", error);
+      Alert.alert('Error', error.message || 'Failed to update profile');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Step 2: Add Vehicle (Optional) and Finish
+  const handleDone = async () => {
+    setIsLoading(true);
+    try {
       if (hasVehicle) {
         if (!vehicleMake || !vehicleModel || !vehicleNumber) {
-          Alert.alert('Missing Info', 'Please fill in all vehicle details or uncheck "I have a motorcycle".');
+          Alert.alert('Missing Info', 'Please fill all vehicle details or uncheck "I have a motorcycle".');
           setIsLoading(false);
           return;
         }
@@ -78,56 +148,18 @@ const UpdateProfile = () => {
         await UserService.addVehicle(vehiclePayload);
       }
 
-      // Success
-      updateProfileCompletion(true);
-      console.log("Success! Navigating now...");
+      // Complete
+      await updateProfileCompletion(true);
       router.push("/(main)");
 
     } catch (error) {
-      debugger
-      console.error("Profile/Vehicle update failed:", error);
-      Alert.alert('Error', 'Failed to complete profile setup. Please try again.');
+      console.error("Vehicle update failed:", error);
+      Alert.alert('Error', error.message || 'Failed to save vehicle details');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleTextChange = (newText) => {
-    const validText = newText.replace(/[^a-zA-Z\s]/g, '');
-    setName(validText);
-  };
-
-  const selectImage = async () => {
-    try {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-      if (status !== 'granted') {
-        Alert.alert(
-          'Permission Required',
-          'We need access to your photo library to select a profile picture.',
-          [{ text: 'OK' }]
-        );
-        return;
-      }
-
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaType,
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.8,
-        allowsMultipleSelection: false,
-      });
-
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        setProfileImage(result.assets[0].uri);
-      }
-    } catch (error) {
-      console.error('Error selecting image:', error);
-      Alert.alert('Error', 'Failed to select image. Please try again.');
-    }
-  };
-
-  // Scroll to focused input
   const handleInputFocus = (yOffset) => {
     if (scrollViewRef.current) {
       scrollViewRef.current.scrollTo({ y: yOffset, animated: true });
@@ -137,6 +169,17 @@ const UpdateProfile = () => {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+
+      {/* Header with Back Button */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+          <Feather name="arrow-left" size={24} color="white" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>
+          {currentStep === 1 ? 'Profile Details' : 'Vehicle Details'}
+        </Text>
+        <View style={{ width: 24 }} />
+      </View>
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -149,177 +192,176 @@ const UpdateProfile = () => {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Logo Section */}
-          <LogoSection />
+          {/* Step 1: Profile */}
+          {currentStep === 1 && (
+            <View style={styles.contentContainer}>
+              {/* Profile Avatar */}
+              <View style={styles.avatarContainer}>
+                <View style={styles.avatar}>
+                  {profileImage ? (
+                    <Image
+                      source={{ uri: profileImage }}
+                      style={styles.avatarImage}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <Text style={styles.avatarText}>{name ? name.charAt(0) : 'U'}</Text>
+                  )}
+                </View>
+                <TouchableOpacity style={styles.editIcon} onPress={selectImage}>
+                  <Feather name="edit-2" size={18} color="white" />
+                </TouchableOpacity>
+              </View>
 
-          {/* Content */}
-          <View style={styles.contentContainer}>
-            <Text style={styles.title}>Update Profile</Text>
+              {/* Profile Fields */}
+              <View style={styles.fieldsContainer}>
+                {/* Name Field */}
+                <View style={styles.fieldWrapper}>
+                  <View style={styles.iconContainer}>
+                    <Feather name="user" size={24} color="#00C853" />
+                  </View>
+                  <View style={styles.inputContainer}>
+                    <TextInput
+                      style={styles.input}
+                      value={name}
+                      onChangeText={handleTextChange}
+                      placeholderTextColor="#666"
+                      placeholder="Your Good Name"
+                      maxLength={20}
+                      onFocus={() => handleInputFocus(0)}
+                    />
+                    <Text style={styles.fieldLabel}>Name</Text>
+                    <View style={styles.counterContainer}>
+                      <Text style={styles.counter}> {nameCount} <Text style={styles.maxCount}>/ 20</Text></Text>
+                    </View>
+                  </View>
+                </View>
 
-            {/* Profile Avatar */}
-            <View style={styles.avatarContainer}>
-              <View style={styles.avatar}>
-                {profileImage ? (
-                  <Image
-                    source={{ uri: profileImage }}
-                    style={styles.avatarImage}
-                    resizeMode="cover"
-                  />
-                ) : (
-                  <Text style={styles.avatarText}>M</Text>
+                <View style={styles.separator} />
+
+                {/* Email Field */}
+                <View style={styles.fieldWrapper}>
+                  <View style={styles.iconContainer}>
+                    <Feather name="at-sign" size={24} color="#00C853" />
+                  </View>
+                  <View style={styles.inputContainer}>
+                    <TextInput
+                      style={styles.input}
+                      value={email}
+                      onChangeText={setEmail}
+                      placeholderTextColor="#666"
+                      keyboardType="email-address"
+                      placeholder="youremail@example.com"
+                      onFocus={() => handleInputFocus(50)}
+                    />
+                    <Text style={styles.fieldLabel}>Email</Text>
+                  </View>
+                </View>
+              </View>
+
+
+              <View style={styles.buttonContainer}>
+                <TouchableOpacity
+                  style={[styles.button, isLoading && styles.buttonDisabled]}
+                  disabled={isLoading}
+                  onPress={handleNext}
+                >
+                  {isLoading ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>{isSetupMode ? "Next" : "Update"}</Text>}
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
+          {/* Step 2: Vehicle */}
+          {currentStep === 2 && (
+            <View style={styles.contentContainer}>
+
+              <Text style={styles.subTitle}>Add Your Ride</Text>
+
+              <View style={styles.fieldsContainer}>
+                <TouchableOpacity
+                  style={styles.checkboxRow}
+                  onPress={() => setHasVehicle(!hasVehicle)}
+                >
+                  <View style={[styles.checkbox, hasVehicle && styles.checkboxChecked]}>
+                    {hasVehicle && <Feather name="check" size={14} color="white" />}
+                  </View>
+                  <Text style={styles.checkboxLabel}>I have a motorcycle</Text>
+                </TouchableOpacity>
+
+                {hasVehicle && (
+                  <>
+                    <View style={styles.separator} />
+                    <View style={styles.fieldWrapper}>
+                      <View style={styles.iconContainer}>
+                        <Feather name="tool" size={24} color="#00C853" />
+                      </View>
+                      <View style={styles.inputContainer}>
+                        <TextInput
+                          style={styles.input}
+                          value={vehicleMake}
+                          onChangeText={setVehicleMake}
+                          placeholderTextColor="#666"
+                          placeholder="Make (e.g. Royal Enfield)"
+                          onFocus={() => handleInputFocus(0)}
+                        />
+                        <Text style={styles.fieldLabel}>Make</Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.separator} />
+
+                    <View style={styles.fieldWrapper}>
+                      <View style={styles.iconContainer}>
+                        <Feather name="activity" size={24} color="#00C853" />
+                      </View>
+                      <View style={styles.inputContainer}>
+                        <TextInput
+                          style={styles.input}
+                          value={vehicleModel}
+                          onChangeText={setVehicleModel}
+                          placeholderTextColor="#666"
+                          placeholder="Model (e.g. Himalayan 450)"
+                          onFocus={() => handleInputFocus(80)}
+                        />
+                        <Text style={styles.fieldLabel}>Model</Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.separator} />
+
+                    <View style={styles.fieldWrapper}>
+                      <View style={styles.iconContainer}>
+                        <Feather name="hash" size={24} color="#00C853" />
+                      </View>
+                      <View style={styles.inputContainer}>
+                        <TextInput
+                          style={styles.input}
+                          value={vehicleNumber}
+                          onChangeText={setVehicleNumber}
+                          placeholderTextColor="#666"
+                          placeholder="License Plate (e.g. KA 01 AB 1234)"
+                          onFocus={() => handleInputFocus(160)}
+                        />
+                        <Text style={styles.fieldLabel}>License Plate</Text>
+                      </View>
+                    </View>
+                  </>
                 )}
               </View>
-              <TouchableOpacity style={styles.editIcon} onPress={selectImage}>
-                <Feather name="edit-2" size={18} color="white" />
-              </TouchableOpacity>
-            </View>
 
-            {/* Profile Fields */}
-            <View style={styles.fieldsContainer}>
-              {/* Name Field */}
-              <View style={styles.fieldWrapper}>
-                <View style={styles.iconContainer}>
-                  <Feather name="user" size={24} color="#00C853" />
-                </View>
-                <View style={styles.inputContainer}>
-                  <TextInput
-                    style={styles.input}
-                    value={name}
-                    onChangeText={handleTextChange}
-                    placeholderTextColor="#666"
-                    placeholder="Your Good Name"
-                    maxLength={20}
-                    onFocus={() => handleInputFocus(0)}
-                    onChange={(event) => {
-                      setNameCount(event.nativeEvent.text.length);
-                    }}
-                  />
-                  <Text style={styles.fieldLabel}>Name</Text>
-                  <View style={styles.counterContainer}>
-                    <Text style={styles.counter}> {nameCount} <Text style={styles.maxCount}>/ 20</Text></Text>
-                  </View>
-                </View>
+              <View style={styles.buttonContainer}>
+                <TouchableOpacity
+                  style={[styles.button, isLoading && styles.buttonDisabled]}
+                  disabled={isLoading}
+                  onPress={handleDone}
+                >
+                  {isLoading ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Done</Text>}
+                </TouchableOpacity>
               </View>
-
-              <View style={styles.separator} />
-
-              {/* Email Field */}
-              <View style={styles.fieldWrapper}>
-                <View style={styles.iconContainer}>
-                  <Feather name="at-sign" size={24} color="#00C853" />
-                </View>
-                <View style={styles.inputContainer}>
-                  <TextInput
-                    style={styles.input}
-                    value={email}
-                    onChangeText={setEmail}
-                    placeholderTextColor="#666"
-                    keyboardType="email-address"
-                    placeholder="youremail@example.com"
-                    onFocus={() => handleInputFocus(50)}
-                  />
-                  <Text style={styles.fieldLabel}>Email</Text>
-                </View>
-              </View>
-
-              <View style={styles.separator} />
-
-              {/* Vehicle Section Header */}
-              <TouchableOpacity
-                style={styles.checkboxRow}
-                onPress={() => setHasVehicle(!hasVehicle)}
-              >
-                <View style={[
-                  styles.checkbox,
-                  hasVehicle && styles.checkboxChecked
-                ]}>
-                  {hasVehicle && <Feather name="check" size={14} color="white" />}
-                </View>
-                <Text style={styles.checkboxLabel}>I have a motorcycle</Text>
-              </TouchableOpacity>
-
-              {hasVehicle && (
-                <>
-                  <View style={styles.separator} />
-
-                  {/* Make Field */}
-                  <View style={styles.fieldWrapper}>
-                    <View style={styles.iconContainer}>
-                      <Feather name="tool" size={24} color="#00C853" />
-                    </View>
-                    <View style={styles.inputContainer}>
-                      <TextInput
-                        style={styles.input}
-                        value={vehicleMake}
-                        onChangeText={setVehicleMake}
-                        placeholderTextColor="#666"
-                        placeholder="Vehicle Make (e.g. Royal Enfield)"
-                        onFocus={() => handleInputFocus(200)}
-                      />
-                      <Text style={styles.fieldLabel}>Make</Text>
-                    </View>
-                  </View>
-
-                  <View style={styles.separator} />
-
-                  {/* Model Field */}
-                  <View style={styles.fieldWrapper}>
-                    <View style={styles.iconContainer}>
-                      <Feather name="activity" size={24} color="#00C853" />
-                    </View>
-                    <View style={styles.inputContainer}>
-                      <TextInput
-                        style={styles.input}
-                        value={vehicleModel}
-                        onChangeText={setVehicleModel}
-                        placeholderTextColor="#666"
-                        placeholder="Vehicle Model (e.g. Himalayan 450)"
-                        onFocus={() => handleInputFocus(280)}
-                      />
-                      <Text style={styles.fieldLabel}>Model</Text>
-                    </View>
-                  </View>
-
-                  <View style={styles.separator} />
-
-                  {/* Number Plate Field */}
-                  <View style={styles.fieldWrapper}>
-                    <View style={styles.iconContainer}>
-                      <Feather name="hash" size={24} color="#00C853" />
-                    </View>
-                    <View style={styles.inputContainer}>
-                      <TextInput
-                        style={styles.input}
-                        value={vehicleNumber}
-                        onChangeText={setVehicleNumber}
-                        placeholderTextColor="#666"
-                        placeholder="License Plate (e.g. KA 01 AB 1234)"
-                        onFocus={() => handleInputFocus(360)}
-                      />
-                      <Text style={styles.fieldLabel}>License Plate</Text>
-                    </View>
-                  </View>
-                </>
-              )}
             </View>
-          </View>
+          )}
 
-          {/* Button */}
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={[styles.button, isLoading && styles.buttonDisabled]}
-              disabled={isLoading}
-              onPress={handleSubmit}
-            >
-              {isLoading ? (
-                <ActivityIndicator color="white" />
-              ) : (
-                <Text style={styles.buttonText}>Done</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-
-          {/* Footer */}
           <Text style={styles.footer}>Made with love in India by rjsnh1522</Text>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -334,6 +376,21 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+  },
+  backButton: {
+    padding: 5,
+  },
+  headerTitle: {
+    color: 'white',
+    fontSize: 20,
+    fontWeight: '600',
+  },
   keyboardView: {
     flex: 1,
   },
@@ -345,11 +402,11 @@ const styles = StyleSheet.create({
   contentContainer: {
     alignItems: 'center',
     marginTop: 20,
+    width: '100%',
   },
-  title: {
-    color: 'white',
-    fontSize: 28,
-    fontWeight: '600',
+  subTitle: {
+    color: '#aaa',
+    fontSize: 16,
     marginBottom: 20,
   },
   avatarContainer: {
@@ -392,7 +449,7 @@ const styles = StyleSheet.create({
     width: '100%',
     backgroundColor: '#1E1E1E',
     borderRadius: 20,
-    marginBottom: 20,
+    marginBottom: 30,
   },
   fieldWrapper: {
     flexDirection: 'row',
@@ -469,7 +526,7 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     paddingVertical: 15,
     alignItems: 'center',
-    width: '80%',
+    width: '100%',
   },
   buttonDisabled: {
     opacity: 0.6,
@@ -482,7 +539,7 @@ const styles = StyleSheet.create({
   footer: {
     color: '#666',
     textAlign: 'center',
-    marginTop: 10,
+    marginTop: 30, // Increased margin
     fontSize: 14,
   },
 });

@@ -7,7 +7,7 @@ const UserService = {
         try {
             const response = await API.put("/v1/users/me", payload)
             console.log('Updating user profile with payload:', response);
-            if (response.status !== 200) {
+            if (response.status !== 200 && response.status !== 202) {
                 throw new Error('Failed to update user profile');
             }
             console.log('User profile updated successfully');
