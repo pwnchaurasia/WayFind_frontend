@@ -34,6 +34,10 @@
             "DEFAULT"
           ]
         }
+      ],
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
       ]
     },
     "web": {
@@ -70,7 +74,11 @@
       "typedRoutes": true
     },
     "extra": {
-      "env": "dev"
+      "env": "dev",
+      "router": {},
+      "eas": {
+        "projectId": "d55eac50-93e0-4e83-906f-11d148cde348"
+      }
     }
   }
 }
