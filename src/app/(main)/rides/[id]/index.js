@@ -1495,6 +1495,7 @@ const styles = StyleSheet.create({
         backgroundColor: theme.colors.surface,
         borderRadius: 12,
         padding: 12,
+        gap: 8,
     },
     bannedCard: {
         opacity: 0.6,
@@ -1515,7 +1516,6 @@ const styles = StyleSheet.create({
     },
     participantInfo: {
         flex: 1,
-        marginLeft: 12,
     },
     participantNameRow: {
         flexDirection: 'row',
@@ -1582,12 +1582,14 @@ const styles = StyleSheet.create({
     statusIndicators: {
         flexDirection: 'row',
         alignItems: 'center',
+        alignSelf: 'center',
         gap: 6,
+        marginLeft: 8,
     },
     indicatorBadge: {
-        width: 24,
-        height: 24,
-        borderRadius: 12,
+        width: 26,
+        height: 26,
+        borderRadius: 13,
         justifyContent: 'center',
         alignItems: 'center',
     },

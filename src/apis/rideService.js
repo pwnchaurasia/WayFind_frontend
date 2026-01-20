@@ -45,6 +45,27 @@ const RideService = {
         return RideService.updateRide(rideId, { status: 'completed' });
     },
 
+    // Get rides the user has joined
+    getMyRides: async (params = {}) => {
+        try {
+            const queryParams = new URLSearchParams();
+            if (params.status) queryParams.append('status_filter', params.status);
+            if (params.search) queryParams.append('search', params.search);
+            if (params.sortBy) queryParams.append('sort_by', params.sortBy);
+            if (params.sortOrder) queryParams.append('sort_order', params.sortOrder);
+            if (params.includeCompleted !== undefined) {
+                queryParams.append('include_completed', params.includeCompleted);
+            }
+
+            const url = `/v1/rides/my-rides${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+            const response = await API.get(url);
+            return response.data;
+        } catch (error) {
+            console.error('Failed to fetch my rides:', error);
+            throw error.response?.data || error;
+        }
+    },
+
     // Participation
     getJoinLink: async (rideId) => {
         try {
