@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
     View,
     Text,
@@ -15,24 +15,51 @@ import { useAuth } from '@/src/context/AuthContext';
 
 export default function JoinRideScreen() {
     const { id } = useLocalSearchParams();
-    const { isAuthenticated } = useAuth();
+    // Note: We don't wait for isLoading - just check isAuthenticated when needed
+    const { isAuthenticated, isLoading: authLoading } = useAuth();
 
     const [loading, setLoading] = useState(true);
     const [joining, setJoining] = useState(false);
     const [ride, setRide] = useState(null);
     const [error, setError] = useState(null);
 
+    // Track if we've already attempted auto-join to prevent duplicates
+    const hasAutoJoined = useRef(false);
+
     useEffect(() => {
         if (id) {
             fetchRide();
+        } else {
+            setLoading(false);
+            setError('No ride ID provided');
         }
     }, [id]);
+
+    // Auto-join when user returns authenticated after login flow
+    useEffect(() => {
+        console.log('JoinRide useEffect - authLoading:', authLoading, 'isAuthenticated:', isAuthenticated,
+            'ride:', !!ride, 'hasAutoJoined:', hasAutoJoined.current, 'joining:', joining, 'loading:', loading);
+
+        // Only auto-join if:
+        // 1. Auth check is complete (not loading)
+        // 2. User is authenticated
+        // 3. Ride data is loaded
+        // 4. We haven't already tried auto-joining
+        // 5. Not currently joining
+        if (!authLoading && isAuthenticated && ride && !hasAutoJoined.current && !joining && !loading) {
+            console.log('✅ Auto-joining ride after auth complete');
+            hasAutoJoined.current = true;
+            performJoin();
+        }
+    }, [authLoading, isAuthenticated, ride, loading]);
 
     const fetchRide = async () => {
         setLoading(true);
         setError(null);
         try {
+            console.log('Fetching ride with id:', id);
             const data = await RideService.getRideById(id);
+            console.log('Ride response:', data);
             // Response format usually { status, ride: {...} } or just ride object depending on API wrapper
             // RideService.getRideById returns response.data
             // Backend /v1/rides/{id} returns RideResponse model.
@@ -46,21 +73,16 @@ export default function JoinRideScreen() {
                 setRide(data); // Fallback
             }
         } catch (err) {
-            console.error(err);
-            setError('Failed to load ride details or ride not found.');
+            console.error('Failed to fetch ride:', err);
+            setError(err?.message || 'Failed to load ride details or ride not found.');
         } finally {
             setLoading(false);
         }
     };
 
-    const handleJoin = async () => {
-        if (!isAuthenticated) {
-            router.push({
-                pathname: '/(auth)/login',
-                params: { returnTo: `/join/ride/${id}` }
-            });
-            return;
-        }
+    // Actual join logic - called by handleJoin and auto-join
+    const performJoin = async () => {
+        if (joining) return; // Prevent duplicate calls
 
         setJoining(true);
         try {
@@ -73,15 +95,13 @@ export default function JoinRideScreen() {
                     {
                         text: 'Go to Ride',
                         onPress: () => router.replace(`/(main)/rides/${id}`)
-                        // Note: Assuming /(main)/rides/[id] route exists. 
-                        // If separate org ride list, might need adjustment.
-                        // Standard route: (main)/rides/[id] or (main)/(tabs)/rides (list) -> detail
                     }
                 ]
             );
         } catch (err) {
-            const msg = err.message || 'Failed to join ride';
-            if (msg.includes('already joined')) {
+            console.error('Failed to join ride:', err);
+            const msg = err?.message || 'Failed to join ride';
+            if (msg.includes('already joined') || msg.includes('already a participant')) {
                 Alert.alert('Info', 'You have already joined this ride.', [
                     { text: 'Go to Ride', onPress: () => router.replace(`/(main)/rides/${id}`) }
                 ]);
@@ -91,6 +111,23 @@ export default function JoinRideScreen() {
         } finally {
             setJoining(false);
         }
+    };
+
+    // Button handler - checks auth first, then joins
+    const handleJoin = async () => {
+        // If auth is still loading or not authenticated, redirect to login
+        // The returnTo param will bring them back here after login
+        if (authLoading || !isAuthenticated) {
+            hasAutoJoined.current = false; // Reset so auto-join triggers after login
+            router.push({
+                pathname: '/(auth)/login',
+                params: { returnTo: `/join/ride/${id}` }
+            });
+            return;
+        }
+
+        // User is authenticated, perform the join
+        performJoin();
     };
 
     const handleGoBack = () => {
@@ -160,11 +197,13 @@ export default function JoinRideScreen() {
                 </View>
 
                 {/* Auth Notice */}
-                {!isAuthenticated && (
+                {(authLoading || !isAuthenticated) && (
                     <View style={styles.authNotice}>
                         <Feather name="info" size={16} color="#FF9800" />
                         <Text style={styles.authNoticeText}>
-                            You'll need to login to join this ride
+                            {authLoading
+                                ? 'Checking your session...'
+                                : "You'll need to login to join this ride"}
                         </Text>
                     </View>
                 )}

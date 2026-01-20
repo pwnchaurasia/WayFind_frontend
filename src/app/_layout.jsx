@@ -1,6 +1,6 @@
 import { StyleSheet } from 'react-native'
 import React, { useEffect } from 'react'
-import { Stack } from 'expo-router'
+import { Stack, useSegments, useRootNavigationState } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from '@/src/context/AuthContext';
@@ -26,6 +26,9 @@ SplashScreen.preventAutoHideAsync();
  * 2. Splash screen management
  * 3. Provides authentication context
  * 4. Sets up the Stack navigation structure
+ * 
+ * Note: Deep link routes (join/*) are configured to work independently
+ * without waiting for auth state to be resolved.
  */
 const RootLayout = () => {
   const [loaded, error] = useFonts({
@@ -59,7 +62,15 @@ const RootLayout = () => {
           <Stack.Screen name="index" />
           <Stack.Screen name="(auth)" />
           <Stack.Screen name="(main)" />
-          <Stack.Screen name="join" options={{ presentation: 'modal', headerShown: false }} />
+          {/* Join routes are independent modals - they handle their own auth checks */}
+          <Stack.Screen
+            name="join"
+            options={{
+              presentation: 'containedModal',
+              headerShown: false,
+              gestureEnabled: true,
+            }}
+          />
         </Stack>
       </AuthProvider>
     </SafeAreaProvider>

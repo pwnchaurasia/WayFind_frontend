@@ -59,10 +59,27 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     let isMounted = true;
+    let timeoutId = null;
 
     const initializeAuth = async () => {
       try {
-        const isValid = await AuthService.isAuthenticated();
+        // Add timeout to prevent infinite loading (10 seconds max)
+        const authCheckPromise = AuthService.isAuthenticated();
+        const timeoutPromise = new Promise((_, reject) => {
+          timeoutId = setTimeout(() => {
+            reject(new Error('Auth check timeout'));
+          }, 10000); // 10 second timeout
+        });
+
+        let isValid = false;
+        try {
+          isValid = await Promise.race([authCheckPromise, timeoutPromise]);
+        } catch (timeoutError) {
+          console.warn('AuthContext: Auth check timed out, assuming not authenticated');
+          isValid = false;
+        } finally {
+          if (timeoutId) clearTimeout(timeoutId);
+        }
 
         if (isMounted) {
           console.log('AuthContext: Authentication status:', isValid);
@@ -108,6 +125,7 @@ export const AuthProvider = ({ children }) => {
           console.log("AuthContext: Setting loading to false");
           setIsLoading(false);
         }
+        if (timeoutId) clearTimeout(timeoutId);
       }
     };
 
@@ -128,6 +146,7 @@ export const AuthProvider = ({ children }) => {
     return () => {
       isMounted = false;
       clearInterval(sessionCheckInterval);
+      if (timeoutId) clearTimeout(timeoutId);
     };
   }, []);
 

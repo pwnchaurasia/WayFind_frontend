@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
     View,
     Text,
@@ -16,45 +16,67 @@ import { useAuth } from '@/src/context/AuthContext';
 
 export default function JoinOrganizationScreen() {
     const { code } = useLocalSearchParams();
-    const { user, isAuthenticated } = useAuth();
+    // Note: We don't wait for isLoading - just check isAuthenticated when needed
+    const { user, isAuthenticated, isLoading: authLoading } = useAuth();
 
     const [loading, setLoading] = useState(true);
     const [joining, setJoining] = useState(false);
     const [organization, setOrganization] = useState(null);
     const [error, setError] = useState(null);
 
+    // Track if we've already attempted auto-join to prevent duplicates
+    const hasAutoJoined = useRef(false);
+
     useEffect(() => {
         if (code) {
             fetchOrganization();
+        } else {
+            setLoading(false);
+            setError('No join code provided');
         }
     }, [code]);
+
+    // Auto-join when user returns authenticated after login flow
+    useEffect(() => {
+        console.log('JoinOrg useEffect - authLoading:', authLoading, 'isAuthenticated:', isAuthenticated,
+            'organization:', !!organization, 'hasAutoJoined:', hasAutoJoined.current, 'joining:', joining, 'loading:', loading);
+
+        // Only auto-join if:
+        // 1. Auth check is complete (not loading)
+        // 2. User is authenticated
+        // 3. Organization data is loaded
+        // 4. We haven't already tried auto-joining
+        // 5. Not currently joining
+        if (!authLoading && isAuthenticated && organization && !hasAutoJoined.current && !joining && !loading) {
+            console.log('✅ Auto-joining organization after auth complete');
+            hasAutoJoined.current = true;
+            performJoin();
+        }
+    }, [authLoading, isAuthenticated, organization, loading]);
 
     const fetchOrganization = async () => {
         setLoading(true);
         setError(null);
         try {
+            console.log('Fetching organization with code:', code);
             const response = await OrganizationService.getOrgByJoinCode(code);
+            console.log('Organization response:', response);
             if (response.status === 'success') {
                 setOrganization(response.organization);
             } else {
                 setError(response.message || 'Invalid or expired join code');
             }
         } catch (err) {
-            setError('Failed to load organization details');
+            console.error('Failed to fetch organization:', err);
+            setError(err?.message || 'Failed to load organization details. Please check your connection.');
         } finally {
             setLoading(false);
         }
     };
 
-    const handleJoin = async () => {
-        if (!isAuthenticated) {
-            // Redirect to login with return URL
-            router.push({
-                pathname: '/(auth)/login',
-                params: { returnTo: `/join/org/${code}` }
-            });
-            return;
-        }
+    // Actual join logic - called by handleJoin and auto-join
+    const performJoin = async () => {
+        if (joining) return; // Prevent duplicate calls
 
         setJoining(true);
         try {
@@ -91,10 +113,28 @@ export default function JoinOrganizationScreen() {
                 Alert.alert('Error', response.message || 'Failed to join');
             }
         } catch (err) {
-            Alert.alert('Error', 'Failed to join organization');
+            console.error('Failed to join organization:', err);
+            Alert.alert('Error', err?.message || 'Failed to join organization');
         } finally {
             setJoining(false);
         }
+    };
+
+    // Button handler - checks auth first, then joins
+    const handleJoin = async () => {
+        // If auth is still loading or not authenticated, redirect to login
+        // The returnTo param will bring them back here after login
+        if (authLoading || !isAuthenticated) {
+            hasAutoJoined.current = false; // Reset so auto-join triggers after login
+            router.push({
+                pathname: '/(auth)/login',
+                params: { returnTo: `/join/org/${code}` }
+            });
+            return;
+        }
+
+        // User is authenticated, perform the join
+        performJoin();
     };
 
     const handleGoBack = () => {
@@ -179,11 +219,13 @@ export default function JoinOrganizationScreen() {
                 </View>
 
                 {/* Auth Status */}
-                {!isAuthenticated && (
+                {(authLoading || !isAuthenticated) && (
                     <View style={styles.authNotice}>
                         <Feather name="info" size={16} color="#FF9800" />
                         <Text style={styles.authNoticeText}>
-                            You'll need to login or sign up to join
+                            {authLoading
+                                ? 'Checking your session...'
+                                : "You'll need to login or sign up to join"}
                         </Text>
                     </View>
                 )}

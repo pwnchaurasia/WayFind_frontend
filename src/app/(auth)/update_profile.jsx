@@ -17,7 +17,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { theme } from '@/src/styles/theme';
 import { Feather } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/src/context/AuthContext';
 import UserService from '@/src/apis/userService';
@@ -25,9 +25,14 @@ import UserService from '@/src/apis/userService';
 const { width } = Dimensions.get('window');
 
 const UpdateProfile = () => {
+  const params = useLocalSearchParams();
   const { updateProfileCompletion, user, refreshUserProfile, isProfileComplete } = useAuth();
   const isSetupMode = !isProfileComplete;
   const [currentStep, setCurrentStep] = useState(1); // 1: Profile, 2: Vehicle
+
+  // Log params for debugging
+  console.log('UpdateProfile received params:', params);
+  console.log('UpdateProfile returnTo:', params.returnTo);
 
   // Profile State
   const [name, setName] = useState("");
@@ -148,9 +153,17 @@ const UpdateProfile = () => {
         await UserService.addVehicle(vehiclePayload);
       }
 
-      // Complete
+      // Complete profile
       await updateProfileCompletion(true);
-      router.replace("/(main)");
+
+      // If we have a returnTo (e.g., from join ride/org flow), go there
+      // Otherwise go to main screen
+      if (params.returnTo) {
+        console.log('Redirecting to returnTo:', params.returnTo);
+        router.replace(params.returnTo);
+      } else {
+        router.replace("/(main)");
+      }
 
     } catch (error) {
       console.error("Vehicle update failed:", error);

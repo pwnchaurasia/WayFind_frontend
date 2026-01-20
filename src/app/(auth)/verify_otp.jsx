@@ -20,11 +20,13 @@ import imagePath from '../../constants/imagePath';
 import { router, useLocalSearchParams } from 'expo-router';
 import { verifyOTP } from '@/src/apis/authService';
 import { setToken } from '@/src/utils/token';
+import { useAuth } from '@/src/context/AuthContext';
 
 const { width, height } = Dimensions.get('window');
 
 const VerifyOtp = () => {
   const params = useLocalSearchParams();
+  const { login } = useAuth(); // Get login function to update auth state
   const [timer, setTimer] = useState(60); // 60 in seconds
   const [code, setCode] = useState(['', '', '', '', '', '']); // Changed to empty initial state
   const inputRefs = useRef([]);
@@ -114,14 +116,30 @@ const VerifyOtp = () => {
       console.log("Response from verifyOTP:", response.data, response.status);
       if (response && (response.status === 201)) {
         if (response.data) {
-          setToken({
+          // Store tokens
+          await setToken({
             access_token: response.data.access_token,
             refresh_token: response.data.refresh_token
           });
+
+          // Update AuthContext state so isAuthenticated becomes true
+          // Pass user data if available in response
+          await login(response.data.user || null);
+          console.log('Auth state updated after OTP verification');
           if (response.data.is_profile_complete === false) {
-            router.replace('/update_profile');
+            // Pass returnTo to update_profile so user comes back after completing
+            console.log('Profile incomplete, redirecting to update_profile with returnTo:', params.returnTo);
+            if (params.returnTo) {
+              router.replace({
+                pathname: '/(auth)/update_profile',
+                params: { returnTo: params.returnTo }
+              });
+            } else {
+              router.replace('/(auth)/update_profile');
+            }
           }
           else if (params.returnTo) {
+            console.log('Profile complete, redirecting to returnTo:', params.returnTo);
             router.replace(params.returnTo);
           }
           else {
