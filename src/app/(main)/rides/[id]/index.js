@@ -269,10 +269,18 @@ const RideDetails = () => {
         );
     };
 
+    // Build the shareable web URL for ride join
+    const getJoinUrl = () => {
+        // Use the backend API URL which serves the web join page
+        // This URL works for both app users (via deep link) and non-app users (via web)
+        const baseUrl = process.env.EXPO_PUBLIC_API_BASE_URL_DEV;
+        return `${baseUrl}/v1/rides/join/${id}`;
+    };
+
     const handleShare = async () => {
         if (!ride) return;
         try {
-            const joinUrl = `squadra://rides/${id}`;
+            const joinUrl = getJoinUrl();
             await Share.share({
                 message: `Join me on "${ride.name}" ride with ${ride.organization?.name}!\n\n${joinUrl}`,
                 title: `Join ${ride.name}`
@@ -283,7 +291,7 @@ const RideDetails = () => {
     }
 
     const handleCopyLink = async () => {
-        const joinUrl = `squadra://rides/${id}`;
+        const joinUrl = getJoinUrl();
         await Clipboard.setStringAsync(joinUrl);
         Alert.alert('Copied!', 'Ride link copied to clipboard');
     }
