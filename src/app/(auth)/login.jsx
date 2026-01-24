@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -20,15 +20,37 @@ import { theme } from '@/src/styles/theme';
 import { router, useLocalSearchParams } from 'expo-router';
 import LogoSection from '@/src/components/LogoSection';
 import { requestOTP } from '@/src/apis/authService';
+import { useAuth } from '@/src/context/AuthContext';
 
 const { width, height } = Dimensions.get('window');
 
 const LoginPage = () => {
   const { returnTo } = useLocalSearchParams();
+  const { isAuthenticated, isLoading: authLoading, isProfileComplete } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [countryCode, setCountryCode] = useState('+91');
   const [validationError, setValidationError] = useState('');
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      console.log('Login: User already authenticated, redirecting...');
+      if (!isProfileComplete) {
+        // Profile not complete, go to update profile
+        router.replace({
+          pathname: '/(auth)/update_profile',
+          params: returnTo ? { returnTo } : {}
+        });
+      } else if (returnTo) {
+        // Has returnTo destination
+        router.replace(returnTo);
+      } else {
+        // Default to main
+        router.replace('/(main)');
+      }
+    }
+  }, [authLoading, isAuthenticated, isProfileComplete, returnTo]);
 
   const validatePhoneNumber = () => {
     setValidationError('');

@@ -26,9 +26,20 @@ const { width } = Dimensions.get('window');
 
 const UpdateProfile = () => {
   const params = useLocalSearchParams();
-  const { updateProfileCompletion, user, refreshUserProfile, isProfileComplete } = useAuth();
-  const isSetupMode = !isProfileComplete;
+  const { updateProfileCompletion, user, refreshUserProfile, isProfileComplete, isLoading: authLoading } = useAuth();
   const [currentStep, setCurrentStep] = useState(1); // 1: Profile, 2: Vehicle
+
+  // Track if we're in setup mode (captured on mount/when user changes)
+  // Use ref so it doesn't change after refreshUserProfile updates isProfileComplete
+  const isSetupModeRef = useRef(!isProfileComplete);
+
+  // Update ref only when user changes (e.g., on first load) not after profile updates
+  useEffect(() => {
+    // Only update setup mode ref if user doesn't have a name yet
+    const hasName = user?.name && user.name.trim().length > 0;
+    isSetupModeRef.current = !hasName && !isProfileComplete;
+    console.log('UpdateProfile - isSetupMode:', isSetupModeRef.current, 'hasName:', hasName, 'isProfileComplete:', isProfileComplete);
+  }, [user?.id]); // Only re-evaluate when user ID changes (login), not on every profile update
 
   // Log params for debugging
   console.log('UpdateProfile received params:', params);
@@ -49,6 +60,7 @@ const UpdateProfile = () => {
   const [isLoading, setIsLoading] = useState(false);
   const scrollViewRef = useRef(null);
 
+
   // Pre-fill data
   useEffect(() => {
     if (user) {
@@ -63,16 +75,25 @@ const UpdateProfile = () => {
 
   const handleBack = () => {
     if (currentStep === 2) {
+      // Go back to step 1 from vehicle step
       setCurrentStep(1);
+    } else if (isSetupModeRef.current) {
+      // In setup mode on step 1, don't allow going back - profile must be completed
+      Alert.alert(
+        'Complete Profile',
+        'Please complete your profile to continue using the app.',
+        [{ text: 'OK', style: 'default' }]
+      );
     } else {
+      // In edit mode, allow going back
       if (router.canGoBack()) {
         router.back();
       } else {
-        // Fallback if no history (e.g. direct deep link or reset stack)
-        router.push("/(main)");
+        router.replace("/(main)");
       }
     }
   };
+
 
   const handleTextChange = (newText) => {
     const validText = newText.replace(/[^a-zA-Z\s]/g, '');
@@ -113,20 +134,31 @@ const UpdateProfile = () => {
     try {
       const profilePayload = { name, email };
       // UserService.updateCurrentUserProfile now handles 200 and 202
-      await UserService.updateCurrentUserProfile(profilePayload);
+      const result = await UserService.updateCurrentUserProfile(profilePayload);
+      console.log('Profile update result:', result);
 
+      // Refresh user data in context
       await refreshUserProfile();
 
-      if (isSetupMode) {
+      if (isSetupModeRef.current) {
+        // In setup mode, go to vehicle step
         setCurrentStep(2);
       } else {
-        Alert.alert('Success', 'Profile updated successfully');
-        if (router.canGoBack()) router.back();
-        else router.push('/(main)');
+        // In edit mode, mark profile as complete and navigate back
+        await updateProfileCompletion(true);
+        Alert.alert('Success', 'Profile updated successfully', [
+          {
+            text: 'OK',
+            onPress: () => {
+              if (router.canGoBack()) router.back();
+              else router.replace('/(main)');
+            }
+          }
+        ]);
       }
     } catch (error) {
       console.error("Profile update failed:", error);
-      Alert.alert('Error', error.message || 'Failed to update profile');
+      Alert.alert('Error', error.message || error.detail || 'Failed to update profile');
     } finally {
       setIsLoading(false);
     }
@@ -153,8 +185,17 @@ const UpdateProfile = () => {
         await UserService.addVehicle(vehiclePayload);
       }
 
-      // Complete profile
+      // Mark profile as complete in context
       await updateProfileCompletion(true);
+
+      // Refresh profile to sync state
+      await refreshUserProfile();
+
+      console.log('Profile setup complete, navigating...');
+      console.log('returnTo param:', params.returnTo);
+
+      // Small delay to let state propagate
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       // If we have a returnTo (e.g., from join ride/org flow), go there
       // Otherwise go to main screen
@@ -167,11 +208,12 @@ const UpdateProfile = () => {
 
     } catch (error) {
       console.error("Vehicle update failed:", error);
-      Alert.alert('Error', error.message || 'Failed to save vehicle details');
+      Alert.alert('Error', error.message || error.detail || 'Failed to save vehicle details');
     } finally {
       setIsLoading(false);
     }
   };
+
 
   const handleInputFocus = (yOffset) => {
     if (scrollViewRef.current) {
@@ -279,7 +321,7 @@ const UpdateProfile = () => {
                   disabled={isLoading}
                   onPress={handleNext}
                 >
-                  {isLoading ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>{isSetupMode ? "Next" : "Update"}</Text>}
+                  {isLoading ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>{isSetupModeRef.current ? "Next" : "Update"}</Text>}
                 </TouchableOpacity>
               </View>
             </View>

@@ -114,7 +114,9 @@ const VerifyOtp = () => {
       };
       const response = await verifyOTP(payload);
       console.log("Response from verifyOTP:", response.data, response.status);
-      if (response && (response.status === 201)) {
+
+      // Handle both 200 and 201 status codes
+      if (response && (response.status === 200 || response.status === 201)) {
         if (response.data) {
           // Store tokens
           await setToken({
@@ -124,32 +126,37 @@ const VerifyOtp = () => {
 
           // Update AuthContext state so isAuthenticated becomes true
           // Pass user data if available in response
-          await login(response.data.user || null);
+          const userData = response.data.user || null;
+          await login(userData);
           console.log('Auth state updated after OTP verification');
-          if (response.data.is_profile_complete === false) {
+
+          // Check if profile is complete - need name at minimum
+          // Backend might return is_profile_complete, or we check if user has name
+          const hasName = userData?.name && userData.name.trim().length > 0;
+          const isProfileComplete = response.data.is_profile_complete === true || hasName;
+
+          console.log('Profile check - hasName:', hasName, 'is_profile_complete from API:', response.data.is_profile_complete, 'final:', isProfileComplete);
+
+          if (!isProfileComplete) {
             // Pass returnTo to update_profile so user comes back after completing
             console.log('Profile incomplete, redirecting to update_profile with returnTo:', params.returnTo);
-            if (params.returnTo) {
-              router.replace({
-                pathname: '/(auth)/update_profile',
-                params: { returnTo: params.returnTo }
-              });
-            } else {
-              router.replace('/(auth)/update_profile');
-            }
-          }
-          else if (params.returnTo) {
+            router.replace({
+              pathname: '/(auth)/update_profile',
+              params: params.returnTo ? { returnTo: params.returnTo } : {}
+            });
+          } else if (params.returnTo) {
             console.log('Profile complete, redirecting to returnTo:', params.returnTo);
             router.replace(params.returnTo);
-          }
-          else {
+          } else {
             router.replace('/(main)/(tabs)');
           }
         } else {
-          console.log('no data found in response')
+          console.log('No data found in response');
+          setValidationError('Verification failed. Please try again.');
         }
       } else {
-        console.log('I am here')
+        console.log('Unexpected response status:', response?.status);
+        setValidationError('Verification failed. Please try again.');
       }
 
     } catch (error) {
@@ -159,6 +166,8 @@ const VerifyOtp = () => {
         setValidationError(error.message);
       } else if (error?.error) {
         setValidationError(error.error);
+      } else if (error?.detail) {
+        setValidationError(error.detail);
       } else {
         setValidationError('Invalid OTP. Please try again.');
       }
@@ -166,6 +175,7 @@ const VerifyOtp = () => {
       setIsLoading(false);
     }
   };
+
 
   // Handle code input
   const handleCodeChange = (text, index) => {

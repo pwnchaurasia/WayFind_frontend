@@ -8,7 +8,7 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState(null);
-  const [isProfileComplete, setIsProfileComplete] = useState(true);
+  const [isProfileComplete, setIsProfileComplete] = useState(false);
 
   /**
    * Login user and set authentication state
@@ -185,21 +185,30 @@ export const AuthProvider = ({ children }) => {
 
   /**
    * Manually refresh user profile data
+   * @returns {Promise<Object|null>} The user data or null
    */
   const refreshUserProfile = async () => {
     try {
       const response = await AuthService.getCurrentUser();
 
-      if (response.status === 200) {
-        const currentUser = response.data?.user;
+      if (response.status === 200 && response.data?.user) {
+        const currentUser = response.data.user;
         console.log('Refreshed User Profile:', currentUser);
         setUser(currentUser);
 
-        const profileComplete = currentUser?.is_profile_complete ? currentUser.is_profile_complete : false;
+        // Check if profile is complete - user must have a name at minimum
+        const hasName = currentUser?.name && currentUser.name.trim().length > 0;
+        const profileComplete = hasName || currentUser?.is_profile_complete === true;
+
+        console.log('Profile completion check - hasName:', hasName, 'is_profile_complete:', currentUser?.is_profile_complete, 'final:', profileComplete);
         setIsProfileComplete(profileComplete);
+
+        return currentUser;
       }
+      return null;
     } catch (error) {
       console.error('Failed to refresh user profile:', error);
+      return null;
     }
   };
 

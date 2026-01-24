@@ -20,6 +20,10 @@ const RideService = {
             if (response.status !== 200) {
                 throw new Error('Failed to fetch ride details');
             }
+            // Check API-level status (backend may return 200 with error status)
+            if (response.data?.status === 'error') {
+                throw new Error(response.data?.message || 'Ride not found');
+            }
             return response.data;
         } catch (error) {
             console.error('Failed to fetch ride details:', error);

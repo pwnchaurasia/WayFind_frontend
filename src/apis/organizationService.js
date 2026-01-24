@@ -32,6 +32,10 @@ const OrganizationService = {
             if (response.status !== 200) {
                 throw new Error('Failed to fetch organization details');
             }
+            // Check API-level status (backend returns 200 even for errors)
+            if (response.data?.status === 'error') {
+                throw new Error(response.data?.message || 'Organization not found');
+            }
             return response.data;
         } catch (error) {
             console.error('Failed to fetch organization details:', error);

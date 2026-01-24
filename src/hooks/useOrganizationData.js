@@ -15,21 +15,26 @@ export const useOrganizationData = (orgId) => {
     try {
       setLoading(true);
 
-      const response = await OrganizationService.getOrganizationById(orgId)
-      if (!response || !response.organization) {
-        // response.organization based on expected API format
-        throw new Error('Organization data not found');
+      const response = await OrganizationService.getOrganizationById(orgId);
+      console.log('Organization API response:', response);
+
+      // Check for successful API response
+      if (!response || response.status !== 'success' || !response.organization) {
+        const errorMsg = response?.message || 'Organization data not found';
+        console.error('Organization fetch failed:', errorMsg, response);
+        throw new Error(errorMsg);
       }
       setOrganization(response.organization);
       setError(null);
     } catch (err) {
       console.error('Error fetching organization:', err);
-      setError(err.message);
+      setError(err.message || 'Failed to load organization');
       setOrganization(null);
     } finally {
       setLoading(false);
     }
   };
+
 
   const refreshOrganization = () => {
     fetchOrganizationData();
