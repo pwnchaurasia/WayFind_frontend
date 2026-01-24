@@ -6,8 +6,10 @@ import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
 import * as Clipboard from 'expo-clipboard'
 import RideService from '@/src/apis/rideService'
 import UserService from '@/src/apis/userService'
+import IntercomService from '@/src/apis/intercomService'
 import { useAuth } from '@/src/context/AuthContext'
 import { theme } from '@/src/styles/theme'
+import IntercomBar from '@/src/components/intercom/IntercomBar'
 
 const RideDetails = () => {
     const { id } = useLocalSearchParams();
@@ -383,6 +385,23 @@ const RideDetails = () => {
             fetchRideDetails();
         } catch (error) {
             Alert.alert('Error', error.detail || 'Failed to update ban status');
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    // Set participant as Lead for intercom
+    const handleSetAsLead = async () => {
+        if (!selectedParticipant?.user?.id) return;
+
+        setActionLoading(true);
+        try {
+            const response = await IntercomService.setLead(id, selectedParticipant.user.id);
+            Alert.alert('Success', response.message || `${selectedParticipant.user.name} is now the Lead`);
+            setShowActionModal(false);
+            fetchRideDetails();
+        } catch (error) {
+            Alert.alert('Error', error.detail || error.message || 'Failed to set Lead');
         } finally {
             setActionLoading(false);
         }
@@ -1024,6 +1043,31 @@ const RideDetails = () => {
                                 </View>
                             </TouchableOpacity>
 
+                            {/* Set as Lead - for active rides only */}
+                            {(ride.status === 'ACTIVE' || ride.status === 'active') && selectedParticipant?.role !== 'banned' && (
+                                <TouchableOpacity
+                                    style={styles.actionButton}
+                                    onPress={handleSetAsLead}
+                                    disabled={actionLoading}
+                                >
+                                    <View style={[styles.actionIcon, { backgroundColor: selectedParticipant?.role === 'lead' ? '#1a3a1a' : '#1a2a3a' }]}>
+                                        <Feather
+                                            name={selectedParticipant?.role === 'lead' ? "mic" : "radio"}
+                                            size={20}
+                                            color={selectedParticipant?.role === 'lead' ? theme.colors.primary : "#2196F3"}
+                                        />
+                                    </View>
+                                    <View style={styles.actionTextContainer}>
+                                        <Text style={styles.actionTitle}>
+                                            {selectedParticipant?.role === 'lead' ? '🎙️ Current Lead' : 'Set as Lead'}
+                                        </Text>
+                                        <Text style={styles.actionSubtitle}>
+                                            {selectedParticipant?.role === 'lead' ? 'Broadcasting audio to group' : 'Can broadcast audio via intercom'}
+                                        </Text>
+                                    </View>
+                                </TouchableOpacity>
+                            )}
+
                             {/* Remove */}
                             <TouchableOpacity
                                 style={[styles.actionButton, styles.dangerAction]}
@@ -1220,6 +1264,13 @@ const RideDetails = () => {
                     </Pressable>
                 </Pressable>
             </Modal>
+
+            {/* Universal Intercom - Shows during active rides */}
+            <IntercomBar
+                rideId={id}
+                visible={ride?.is_participant}
+                isRideActive={ride?.status === 'active' || ride?.status === 'ACTIVE'}
+            />
         </SafeAreaView>
     )
 }
