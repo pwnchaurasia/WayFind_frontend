@@ -565,16 +565,14 @@ const RideDetails = () => {
                                 </>
                             )}
 
-                            {/* Open Map - Active Only */}
+                            {/* Live Ride - Active Only */}
                             {(ride.status === 'ACTIVE' || ride.status === 'active') && (
                                 <TouchableOpacity
                                     style={[styles.headerActionButton, { backgroundColor: '#2196F3' }]}
-                                    onPress={() => {
-                                        Alert.alert("Open Map", "Navigating to live map...");
-                                    }}
+                                    onPress={() => router.push(`/(main)/rides/${id}/live`)}
                                 >
-                                    <Feather name="map" size={14} color="white" />
-                                    <Text style={styles.headerActionText}>Open Map</Text>
+                                    <Feather name="radio" size={14} color="white" />
+                                    <Text style={styles.headerActionText}>Live</Text>
                                 </TouchableOpacity>
                             )}
                         </View>

@@ -217,6 +217,83 @@ const RideService = {
             console.error('Failed to toggle ban:', error);
             throw error.response?.data || error;
         }
+    },
+
+    // ============================================
+    // LIVE RIDE APIs
+    // ============================================
+
+    // Check in at a checkpoint (auto-attendance)
+    checkIn: async (rideId, location) => {
+        try {
+            const response = await API.post(`/v1/rides/${rideId}/checkin`, {
+                latitude: location.latitude,
+                longitude: location.longitude,
+                accuracy: location.accuracy
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Failed to check in:', error);
+            throw error.response?.data || error;
+        }
+    },
+
+    // Update current location during active ride
+    updateLocation: async (rideId, location) => {
+        try {
+            const response = await API.post(`/v1/rides/${rideId}/location`, {
+                latitude: location.latitude,
+                longitude: location.longitude,
+                heading: location.heading,
+                speed: location.speed,
+                accuracy: location.accuracy
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Failed to update location:', error);
+            throw error.response?.data || error;
+        }
+    },
+
+    // Send SOS/alert to all riders
+    sendAlert: async (rideId, alertType, message = null, location = null) => {
+        try {
+            const payload = { alert_type: alertType };
+            if (message) payload.message = message;
+            if (location) {
+                payload.latitude = location.latitude;
+                payload.longitude = location.longitude;
+            }
+            const response = await API.post(`/v1/rides/${rideId}/alert`, payload);
+            return response.data;
+        } catch (error) {
+            console.error('Failed to send alert:', error);
+            throw error.response?.data || error;
+        }
+    },
+
+    // Get activity feed for a ride
+    getActivities: async (rideId, before = null, limit = 50) => {
+        try {
+            let url = `/v1/rides/${rideId}/activities?limit=${limit}`;
+            if (before) url += `&before=${before}`;
+            const response = await API.get(url);
+            return response.data;
+        } catch (error) {
+            console.error('Failed to get activities:', error);
+            throw error.response?.data || error;
+        }
+    },
+
+    // Get all live ride data (activities, locations, checkpoints)
+    getLiveData: async (rideId) => {
+        try {
+            const response = await API.get(`/v1/rides/${rideId}/live`);
+            return response.data;
+        } catch (error) {
+            console.error('Failed to get live data:', error);
+            throw error.response?.data || error;
+        }
     }
 };
 
