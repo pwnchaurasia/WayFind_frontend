@@ -11,7 +11,7 @@
  * - Gloved-hand optimized touch targets
  */
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
     View,
     Text,
@@ -27,11 +27,13 @@ import {
     Dimensions,
     Linking,
     Platform,
+    Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router, useFocusEffect } from 'expo-router';
 import { Feather, MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { WebView } from 'react-native-webview';
+import { BlurView } from 'expo-blur';
 
 import { theme } from '@/src/styles/theme';
 import { useAuth } from '@/src/context/AuthContext';
@@ -259,6 +261,124 @@ const WaveformAnimation = ({ active }) => {
     );
 };
 
+/* Activity Modal Component */
+const ActivityModal = ({ visible, onClose, activities, onSOSClick, riders }) => {
+    // Helper to get rider
+    const getRider = (activity) => {
+        return riders.find(r => r.user_id === activity.user_id || (activity.user_name && r.name === activity.user_name));
+    };
+
+    if (!visible) return null;
+
+    return (
+        <Modal
+            visible={visible}
+            transparent={true}
+            animationType="slide"
+            onRequestClose={onClose}
+        >
+            <View style={styles.modalOverlay}>
+                <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
+                <TouchableOpacity style={styles.modalDismiss} onPress={onClose} />
+
+                <View style={styles.modalContent}>
+                    <View style={styles.modalHandle} />
+
+                    <View style={styles.modalHeader}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                            <View style={styles.historyIcon}>
+                                <Feather name="clock" size={20} color="#FFD700" />
+                            </View>
+                            <View>
+                                <Text style={styles.modalTitle}>Ride Activity</Text>
+                                <Text style={styles.modalSubtitle}>Live Updates • {riders.length} Riders</Text>
+                            </View>
+                        </View>
+                        <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
+                            <Feather name="x" size={20} color="#FFF" />
+                        </TouchableOpacity>
+                    </View>
+
+                    <ScrollView contentContainerStyle={styles.listContent}>
+                        {activities.length === 0 ? (
+                            <View style={styles.emptyState}>
+                                <Feather name="activity" size={40} color="#444" />
+                                <Text style={styles.emptyText}>No activity yet...</Text>
+                                <Text style={styles.bottomPillText}>RIDE STARTED</Text>
+                            </View>
+                        ) : (
+                            <View>
+                                {/* Vertical Timeline Line */}
+                                <View style={styles.timelineLine} />
+
+                                {activities.map((item, index) => {
+                                    const rider = getRider(item);
+                                    const isSOS = item.activity_type === 'sos_alert';
+                                    let color = '#00BFFF'; // Default Blue
+                                    if (isSOS) color = '#FF5252';
+                                    else if (item.message?.includes('Checkpoint') || item.message?.includes('Meeting')) color = '#00C853';
+                                    else if (item.message?.includes('Offline')) color = '#888';
+
+                                    return (
+                                        <View key={index} style={styles.timelineRow}>
+                                            <View style={[styles.timelineAvatarRing, { borderColor: isSOS ? '#FF5252' : color, shadowColor: color }]}>
+                                                {rider?.profile_picture ? (
+                                                    <Image source={{ uri: rider.profile_picture }} style={styles.timelineAvatarImage} />
+                                                ) : (
+                                                    <View style={[styles.timelineAvatarPlaceholder, { backgroundColor: '#333' }]}>
+                                                        <Text style={styles.timelineAvatarInitials}>{rider?.name ? rider.name.charAt(0) : '?'}</Text>
+                                                    </View>
+                                                )}
+                                            </View>
+
+                                            <View style={{ flex: 1 }}>
+                                                {isSOS ? (
+                                                    <View style={styles.sosCardExpanded}>
+                                                        <View style={styles.sosHeaderRow}>
+                                                            <View style={styles.sosBadge}>
+                                                                <Text style={styles.sosBadgeText}>CRITICAL ALERT</Text>
+                                                            </View>
+                                                            <Text style={styles.sosTime}>{new Date(item.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                                                        </View>
+                                                        <Text style={styles.sosTitle}>{item.user_name || 'Rider'} triggered SOS</Text>
+                                                        <Text style={styles.sosBody}>Location shared with emergency contacts. Tap to view on map.</Text>
+                                                        <TouchableOpacity style={styles.sosButton} onPress={() => onSOSClick(item)}>
+                                                            <Feather name="map-pin" size={16} color="white" />
+                                                            <Text style={styles.sosButtonText}>View Location</Text>
+                                                        </TouchableOpacity>
+                                                    </View>
+                                                ) : (
+                                                    <View style={styles.timelineCard}>
+                                                        <View style={styles.timelineHeaderRow}>
+                                                            <Text style={[styles.timelineTitle, { color: color }]}>
+                                                                {item.user_name || 'Rider'} <Text style={{ color: 'white', fontWeight: '400' }}>updated status</Text>
+                                                            </Text>
+                                                            <Text style={styles.timelineTime}>{new Date(item.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                                                        </View>
+                                                        <Text style={styles.timelineSubtitle}>{item.message}</Text>
+                                                    </View>
+                                                )}
+                                            </View>
+                                        </View>
+                                    );
+                                })}
+                            </View>
+                        )}
+
+                        {/* Bottom Pill */}
+                        <View style={styles.bottomPillContainer}>
+                            <View style={styles.bottomPill}>
+                                <View style={styles.liveDot} />
+                                <Text style={styles.bottomPillText}>LIVE UPDATES ACTIVE</Text>
+                            </View>
+                        </View>
+                    </ScrollView>
+                </View>
+            </View>
+        </Modal>
+    );
+};
+
 const LiveRideScreen = () => {
     const { id } = useLocalSearchParams();
     const { user } = useAuth();
@@ -277,6 +397,7 @@ const LiveRideScreen = () => {
     // UI state
     const [toastMessage, setToastMessage] = useState('');
     const [showToast, setShowToast] = useState(false);
+    const [showActivityModal, setShowActivityModal] = useState(false);
     const [activityCount, setActivityCount] = useState(0);
     const [sendingAlert, setSendingAlert] = useState(false);
 
@@ -300,9 +421,30 @@ const LiveRideScreen = () => {
     const previousActivityCount = useRef(0);
     const appState = useRef(AppState.currentState);
 
+    // Sort riders: Speaker > Lead > Others (Alpha)
+    const sortedRiders = useMemo(() => {
+        return [...riderLocations].sort((a, b) => {
+            // Speaker priority
+            if (speakerName) {
+                if (a.name === speakerName) return -1;
+                if (b.name === speakerName) return 1;
+            }
+            // Lead priority
+            if (a.is_lead !== b.is_lead) return a.is_lead ? -1 : 1;
+            // Name alpha
+            return (a.name || '').localeCompare(b.name || '');
+        });
+    }, [riderLocations, speakerName]);
+
     // ============================================
     // DATA FETCHING
     // ============================================
+
+    // ... (fetchLiveData code) ...
+
+    // (Update Render Loop below in same file)
+
+    // ...
 
     const fetchLiveData = useCallback(async () => {
         try {
@@ -549,6 +691,19 @@ const LiveRideScreen = () => {
         return colors[name ? name.charCodeAt(0) % colors.length : 0];
     };
 
+    const handleSOSClick = (activity) => {
+        // Attempt to find rider by ID or Name
+        const rider = riderLocations.find(r => r.user_id === activity.user_id || (activity.user_name && r.name === activity.user_name) || activity.message.includes(r.name));
+
+        if (rider) {
+            handleGetDirections(rider);
+            setShowActivityModal(false);
+        } else {
+            // Fallback: If latitude/longitude in activity metadata? (Not implemented yet)
+            Alert.alert('Rider Not Found', 'Could not locate the sender on the map.');
+        }
+    };
+
     // ============================================
     // RENDER
     // ============================================
@@ -569,6 +724,18 @@ const LiveRideScreen = () => {
                 message={toastMessage}
                 visible={showToast}
                 onHide={() => setShowToast(false)}
+            />
+
+            <ActivityModal
+                visible={showActivityModal}
+                onClose={() => {
+                    setShowActivityModal(false);
+                    setActivityCount(0); // Mark all as read
+                    previousActivityCount.current = activities.length; // Sync ref
+                }}
+                activities={activities}
+                onSOSClick={handleSOSClick}
+                riders={sortedRiders}
             />
 
             {/* OpenStreetMap via WebView */}
@@ -609,11 +776,13 @@ const LiveRideScreen = () => {
                 </View>
 
                 {/* Activity Button */}
-                <TouchableOpacity style={styles.floatingBtn} onPress={() => Alert.alert('Activity', activities.slice(0, 5).map(a => `• ${a.message}`).join('\n') || 'No recent activity')}>
-                    <Feather name="activity" size={22} color="white" />
+                <TouchableOpacity style={styles.floatingBtn} onPress={() => setShowActivityModal(true)}>
+                    <Feather name="bell" size={22} color="white" />
                     {activityCount > 0 && (
                         <View style={styles.activityBadge}>
-                            <Text style={styles.activityBadgeText}>{activityCount > 9 ? '9+' : activityCount}</Text>
+                            <Text style={styles.activityBadgeText}>
+                                {activityCount > 9 ? '9+' : activityCount}
+                            </Text>
                         </View>
                     )}
                 </TouchableOpacity>
@@ -825,4 +994,51 @@ const styles = StyleSheet.create({
     // Waveform
     waveformContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', height: 32, gap: 3 },
     waveformBar: { width: 4, height: 32, backgroundColor: '#00C853', borderRadius: 2 },
+
+    /* Activity Modal Styles (Timeline Design) */
+    modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' },
+    modalDismiss: { flex: 1 },
+    modalContent: { backgroundColor: '#111', borderTopLeftRadius: 24, borderTopRightRadius: 24, height: '80%', paddingBottom: 40, overflow: 'hidden' },
+    modalHandle: { width: 40, height: 4, backgroundColor: '#333', borderRadius: 2, alignSelf: 'center', marginTop: 12, marginBottom: 8 },
+    modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, paddingVertical: 20, borderBottomWidth: 1, borderBottomColor: '#222' },
+    modalTitle: { color: 'white', fontSize: 22, fontWeight: '700' },
+    modalSubtitle: { color: '#666', fontSize: 12, marginTop: 2, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 1 },
+    historyIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255, 215, 0, 0.15)', justifyContent: 'center', alignItems: 'center' },
+    closeBtn: { padding: 8, backgroundColor: '#222', borderRadius: 12 },
+
+    listContent: { padding: 24, paddingBottom: 80 },
+    emptyState: { alignItems: 'center', justifyContent: 'center', marginTop: 100, gap: 16 },
+    emptyText: { color: '#666', fontSize: 16 },
+
+    // Timeline
+    timelineLine: { position: 'absolute', top: 20, bottom: 20, left: 24, width: 2, backgroundColor: '#222', zIndex: -1 },
+    timelineRow: { flexDirection: 'row', marginBottom: 24, gap: 16 },
+    timelineAvatarRing: { width: 50, height: 50, borderRadius: 25, borderWidth: 2, backgroundColor: '#111', justifyContent: 'center', alignItems: 'center', zIndex: 1 },
+    timelineAvatarImage: { width: 42, height: 42, borderRadius: 21 },
+    timelineAvatarPlaceholder: { width: 42, height: 42, borderRadius: 21, justifyContent: 'center', alignItems: 'center', backgroundColor: '#333' },
+    timelineAvatarInitials: { color: '#888', fontWeight: 'bold' },
+
+    // Cards
+    timelineCard: { backgroundColor: '#1A1A1A', borderRadius: 16, padding: 16, borderLeftWidth: 4, borderLeftColor: '#333', flex: 1 },
+    timelineHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
+    timelineTitle: { fontSize: 15, fontWeight: '700', color: 'white' },
+    timelineTime: { fontSize: 12, color: '#666' },
+    timelineSubtitle: { color: '#999', fontSize: 13, lineHeight: 18 },
+
+    // SOS Expanded
+    sosCardExpanded: { backgroundColor: '#2A0E0E', borderRadius: 20, padding: 20, borderWidth: 1, borderColor: '#5E1818', flex: 1 },
+    sosHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+    sosBadge: { backgroundColor: '#D50000', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4 },
+    sosBadgeText: { color: 'white', fontSize: 10, fontWeight: '900', letterSpacing: 0.5 },
+    sosTime: { color: '#FFAAAA', fontSize: 12 },
+    sosTitle: { color: 'white', fontSize: 18, fontWeight: 'bold', marginBottom: 8 },
+    sosBody: { color: '#FFCDD2', fontSize: 14, lineHeight: 20, marginBottom: 16 },
+    sosButton: { backgroundColor: '#FF5252', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 12, borderRadius: 12, gap: 8 },
+    sosButtonText: { color: 'white', fontWeight: 'bold', fontSize: 15 },
+
+    // Bottom Pill
+    bottomPillContainer: { alignItems: 'center', marginTop: 40, marginBottom: 20 },
+    bottomPill: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1A1A1A', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, gap: 8, borderWidth: 1, borderColor: '#333' },
+    liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#FFD700' },
+    bottomPillText: { color: '#AAA', fontSize: 12, fontWeight: '700', letterSpacing: 1 },
 });
