@@ -36,6 +36,7 @@ import { WebView } from 'react-native-webview';
 import { theme } from '@/src/styles/theme';
 import { useAuth } from '@/src/context/AuthContext';
 import RideService from '@/src/apis/rideService';
+import { useIntercom } from '@/src/hooks/useIntercom';
 import LiveRideLocationService from '@/src/services/LiveRideLocationService';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -103,28 +104,22 @@ const generateMapHTML = (centerLat, centerLng, zoom = 13) => {
 <body>
     <div id="map"></div>
     <script>
-        // Initialize dark-themed map
         var map = L.map('map', { zoomControl: false }).setView([${centerLat}, ${centerLng}], ${zoom});
         
-        // Dark tiles from CartoDB
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
             attribution: '&copy; OpenStreetMap, &copy; CartoDB',
             maxZoom: 19
         }).addTo(map);
 
-        // Store markers and route
         var riderMarkers = {};
         var checkpointMarkers = {};
         var routeLine = null;
 
-        // Handle messages from React Native
         window.updateRiders = function(riders) {
-            // Clear old markers
             Object.values(riderMarkers).forEach(m => map.removeLayer(m));
             riderMarkers = {};
             
             riders.forEach(function(rider) {
-                // Skip riders without location
                 if (!rider.hasLocation && !rider.lat) return;
                 
                 var isStale = rider.isStale;
@@ -133,7 +128,6 @@ const generateMapHTML = (centerLat, centerLng, zoom = 13) => {
                 var initials = rider.initials || 'U';
                 var avatarColor = rider.avatarColor || '#FF6B6B';
                 
-                // Build CSS classes
                 var classes = 'rider-marker';
                 if (isLead) classes += ' lead';
                 if (isStale) classes += ' stale';
@@ -146,7 +140,6 @@ const generateMapHTML = (centerLat, centerLng, zoom = 13) => {
                 var icon = L.divIcon({ html: markerHtml, className: '', iconSize: [48, 48], iconAnchor: [24, 24] });
                 var marker = L.marker([rider.lat, rider.lng], { icon: icon }).addTo(map);
                 
-                // Build popup with role
                 var roleHtml = isLead ? '<div class="popup-role">🎤 RIDE LEAD</div>' : '';
                 var vehicleText = rider.vehicle || 'No vehicle info';
                 
@@ -287,9 +280,17 @@ const LiveRideScreen = () => {
     const [activityCount, setActivityCount] = useState(0);
     const [sendingAlert, setSendingAlert] = useState(false);
 
-    // Intercom state (simplified without the hook to avoid crash)
-    const [intercomConnected, setIntercomConnected] = useState(false);
-    const [isSpeaking, setIsSpeaking] = useState(false);
+    // Voice Intercom
+    const {
+        isConnected: intercomConnected,
+        isSpeaking: isRemoteSpeaking,
+        speakerName,
+        toggleMute,
+        isMuted,
+        isLead // Am I the lead?
+    } = useIntercom(id, true);
+
+    const isSpeaking = isRemoteSpeaking; // For UI compatibility
 
     // Initial map center (India default)
     const [mapCenter] = useState({ lat: 12.9716, lng: 77.5946 });
@@ -449,13 +450,20 @@ const LiveRideScreen = () => {
         }
     };
 
-    const handlePTT = () => {
-        // Toggle intercom connection
-        setIntercomConnected(!intercomConnected);
+    const handlePTT = async () => {
         if (!intercomConnected) {
-            // Simulate speaking after connecting
-            setTimeout(() => setIsSpeaking(true), 500);
-            setTimeout(() => setIsSpeaking(false), 2000);
+            Alert.alert('Connecting...', 'Voice channel is connecting over LTE/5G.');
+            return;
+        }
+
+        if (isLead) {
+            // Toggle mute status
+            const success = await toggleMute();
+            if (success) {
+                Vibration.vibrate(50);
+            }
+        } else {
+            Alert.alert('Listener Only', 'You are in listener mode. Only the Ride Lead can broadcast voice.');
         }
     };
 
@@ -696,21 +704,31 @@ const LiveRideScreen = () => {
 
                 {/* PTT Button */}
                 <TouchableOpacity
-                    style={[styles.pttBtn, (isSpeaking || intercomConnected) && styles.pttBtnActive]}
+                    style={[
+                        styles.pttBtn,
+                        intercomConnected && !isMuted && isLead && styles.pttBtnActive,
+                        !isLead && styles.pttBtnListener
+                    ]}
                     onPress={handlePTT}
                     activeOpacity={0.8}
                 >
                     <View style={styles.pttInner}>
-                        {isSpeaking ? (
+                        {isSpeaking || (isLead && !isMuted && intercomConnected) ? (
                             <>
                                 <WaveformAnimation active={true} />
-                                <Text style={styles.pttLabel}>Speaking...</Text>
+                                <Text style={styles.pttLabel} numberOfLines={1}>
+                                    {isLead && !isMuted ? 'Broadcasting' : (speakerName ? `${speakerName}` : 'Speaking...')}
+                                </Text>
                             </>
                         ) : (
                             <>
-                                <Feather name={intercomConnected ? "mic" : "headphones"} size={32} color="white" />
-                                <Text style={styles.pttLabel}>
-                                    {intercomConnected ? 'Tap to Speak' : 'Tap to Connect'}
+                                <Feather
+                                    name={!intercomConnected ? "mic-off" : (isLead ? (isMuted ? "mic-off" : "mic") : "headphones")}
+                                    size={32}
+                                    color={intercomConnected ? "white" : "#666"}
+                                />
+                                <Text style={[styles.pttLabel, !intercomConnected && { color: '#666' }]}>
+                                    {!intercomConnected ? 'Connecting...' : (isLead ? (isMuted ? 'Tap to Speak' : 'Tap to Mute') : 'Listening')}
                                 </Text>
                             </>
                         )}
@@ -797,6 +815,7 @@ const styles = StyleSheet.create({
     // PTT Button
     pttBtn: { width: 100, height: 100, borderRadius: 50, backgroundColor: 'rgba(30,30,30,0.95)', justifyContent: 'center', alignItems: 'center', borderWidth: 3, borderColor: '#333' },
     pttBtnActive: { borderColor: '#00C853', backgroundColor: 'rgba(0,200,83,0.2)' },
+    pttBtnListener: { borderColor: '#666', backgroundColor: 'rgba(50,50,50,0.5)' },
     pttInner: { alignItems: 'center', justifyContent: 'center' },
     pttLabel: { color: 'white', fontSize: 10, marginTop: 4, textAlign: 'center', maxWidth: 80 },
 

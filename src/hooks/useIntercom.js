@@ -9,10 +9,19 @@
  * - Auto-reconnection
  */
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { Platform } from 'react-native';
+import {
+    Room,
+    RoomEvent,
+    Track,
+    AudioSession,
+    DataPacket_Kind,
+    registerGlobals
+} from '@livekit/react-native';
 import IntercomService from '@/src/apis/intercomService';
 
-// Note: These imports will work after installing @livekit/react-native
-// For now, we'll create a mock structure that can be replaced
+// Ensure WebRTC globals are registered
+registerGlobals();
 
 /**
  * Intercom connection states
@@ -34,14 +43,19 @@ export function useIntercom(rideId, enabled = false) {
     const [state, setState] = useState(IntercomState.DISCONNECTED);
     const [isLead, setIsLead] = useState(false);
     const [leadInfo, setLeadInfo] = useState(null);
-    const [isSpeaking, setIsSpeaking] = useState(false);
+    const [isSpeaking, setIsSpeaking] = useState(false); // If *Active Speaker* is speaking
+    const [speakerName, setSpeakerName] = useState(null); // Name of current speaker
+
+    // User controls
+    const [isMuted, setIsMuted] = useState(true); // Default to muted
+
     const [error, setError] = useState(null);
     const [token, setToken] = useState(null);
     const [livekitUrl, setLivekitUrl] = useState(null);
 
     // Refs for managing connection
     const roomRef = useRef(null);
-    const reconnectTimeoutRef = useRef(null);
+    const requestRef = useRef(null);
 
     /**
      * Fetch token and connection details from backend
@@ -72,31 +86,21 @@ export function useIntercom(rideId, enabled = false) {
     const connect = useCallback(async () => {
         if (!rideId || !enabled) return;
 
+        // If already connecting, connected, or in permanent error, skip
+        if (state === IntercomState.CONNECTING || state === IntercomState.CONNECTED || state === IntercomState.ERROR) return;
+
         setState(IntercomState.CONNECTING);
         setError(null);
 
         try {
-            // Fetch token
+            // 1. Fetch token
             const tokenData = await fetchToken();
-            if (!tokenData) {
+            if (!tokenData || !tokenData.token) {
                 setState(IntercomState.ERROR);
                 return;
             }
 
-            // TODO: Replace with actual LiveKit connection when package is installed
-            // This is a placeholder showing the expected flow
-            console.log('Intercom: Would connect to LiveKit with:', {
-                url: tokenData.livekit_url,
-                token: tokenData.token?.substring(0, 20) + '...',
-                isLead: tokenData.is_lead,
-            });
-
-            /*
-            // Actual LiveKit connection code (uncomment when @livekit/react-native is installed):
-            
-            import { Room, RoomEvent, Track, AudioSession } from '@livekit/react-native';
-            
-            // Configure audio session for background playback
+            // 2. Configure Audio Session
             await AudioSession.configureAudio({
                 android: {
                     audioTypeOptions: {
@@ -111,117 +115,125 @@ export function useIntercom(rideId, enabled = false) {
                 },
             });
 
-            const room = new Room();
+            // 3. Create Room and Connect
+            let room;
+            try {
+                // Safety check for WebRTC globals
+                // @livekit/react-native should polyfill these via registerGlobals()
+                if (!global.WebSocket && !window?.WebSocket) {
+                    console.error("UseIntercom: WebRTC globals missing!");
+                }
+                room = new Room();
+            } catch (e) {
+                console.error("UseIntercom: Failed to create Room instance", e);
+                setError("Voice initialization failed - native module missing?");
+                setState(IntercomState.ERROR);
+                return; // Stop the connection attempt
+            }
+
             roomRef.current = room;
 
-            // Set up event listeners
-            room.on(RoomEvent.Connected, () => {
-                setState(IntercomState.CONNECTED);
-                console.log('Intercom: Connected to room');
+            await room.connect(tokenData.livekit_url, tokenData.token, {
+                autoSubscribe: true,
             });
 
-            room.on(RoomEvent.Disconnected, () => {
-                setState(IntercomState.DISCONNECTED);
-                console.log('Intercom: Disconnected from room');
-            });
+            // 4. Set up Event Listeners
+            _setupEventListeners(room);
 
-            room.on(RoomEvent.Reconnecting, () => {
-                setState(IntercomState.RECONNECTING);
-            });
-
-            room.on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
-                if (track.kind === Track.Kind.Audio) {
-                    // Audio track from Lead received
-                    setIsSpeaking(true);
-                }
-            });
-
-            room.on(RoomEvent.TrackUnsubscribed, (track) => {
-                if (track.kind === Track.Kind.Audio) {
-                    setIsSpeaking(false);
-                }
-            });
-
-            // Connect to room
-            await room.connect(tokenData.livekit_url, tokenData.token, {});
-
-            // If Lead, enable microphone automatically
-            if (tokenData.is_lead) {
-                await room.localParticipant.setMicrophoneEnabled(true, {
-                    // Enable noise suppression for wind noise
-                    noiseSuppression: true,
-                    echoCancellation: true,
-                    autoGainControl: true,
-                });
-                console.log('Intercom: Lead microphone enabled');
-            }
-            */
-
-            // Simulate successful connection for now
+            // 5. Initial State
             setState(IntercomState.CONNECTED);
+
+            // If Lead, prepare microphone but start muted
+            if (tokenData.is_lead) {
+                // By default muted, user must tap to talk/open mic
+                await room.localParticipant.setMicrophoneEnabled(false);
+                setIsMuted(true);
+            }
+
+            console.log('Intercom: Connected successfully!');
 
         } catch (err) {
             console.error('Intercom connection error:', err);
             setError(err.message || 'Connection failed');
             setState(IntercomState.ERROR);
         }
-    }, [rideId, enabled, fetchToken]);
+    }, [rideId, enabled, fetchToken, state]);
+
+    /**
+     * Setup Room Event Listeners
+     */
+    const _setupEventListeners = (room) => {
+        if (!room) return;
+
+        room
+            .on(RoomEvent.Connected, () => {
+                setState(IntercomState.CONNECTED);
+            })
+            .on(RoomEvent.Disconnected, () => {
+                setState(IntercomState.DISCONNECTED);
+                setIsSpeaking(false);
+                setSpeakerName(null);
+            })
+            .on(RoomEvent.Reconnecting, () => {
+                setState(IntercomState.RECONNECTING);
+            })
+            .on(RoomEvent.Reconnected, () => {
+                setState(IntercomState.CONNECTED);
+            })
+            .on(RoomEvent.ActiveSpeakersChanged, (speakers) => {
+                if (speakers.length > 0) {
+                    setIsSpeaking(true);
+                    // Use identity or name of first speaker
+                    const speaker = speakers[0];
+                    setSpeakerName(speaker.identity || 'Rider');
+                } else {
+                    setIsSpeaking(false);
+                    setSpeakerName(null);
+                }
+            })
+            .on(RoomEvent.LocalTrackPublished, (publication, participant) => {
+                console.log('Local track published:', publication.kind);
+            })
+            .on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
+                console.log('Track subscribed:', track.kind, 'from', participant.identity);
+            });
+    };
 
     /**
      * Disconnect from the intercom room
      */
     const disconnect = useCallback(async () => {
-        if (reconnectTimeoutRef.current) {
-            clearTimeout(reconnectTimeoutRef.current);
-        }
-
         if (roomRef.current) {
-            // await roomRef.current.disconnect();
+            await roomRef.current.disconnect();
             roomRef.current = null;
         }
 
         setState(IntercomState.DISCONNECTED);
         setIsSpeaking(false);
+        setSpeakerName(null);
         console.log('Intercom: Disconnected');
     }, []);
 
     /**
-     * Toggle microphone (Lead only)
+     * Toggle Mute (Unmute to speak) - Only for LEADS
      */
-    const toggleMicrophone = useCallback(async (enable) => {
+    const toggleMute = useCallback(async () => {
         if (!isLead || !roomRef.current) {
             console.log('Intercom: Cannot toggle mic - not Lead or not connected');
             return false;
         }
 
         try {
-            // await roomRef.current.localParticipant.setMicrophoneEnabled(enable);
-            console.log(`Intercom: Microphone ${enable ? 'enabled' : 'disabled'}`);
+            const newMutedState = !isMuted;
+            await roomRef.current.localParticipant.setMicrophoneEnabled(!newMutedState);
+            setIsMuted(newMutedState);
+            console.log(`Intercom: Microphone ${newMutedState ? 'MUTED' : 'UNMUTED'}`);
             return true;
         } catch (err) {
             console.error('Failed to toggle microphone:', err);
             return false;
         }
-    }, [isLead]);
-
-    /**
-     * Refresh intercom status (who is Lead, etc.)
-     */
-    const refreshStatus = useCallback(async () => {
-        if (!rideId) return null;
-
-        try {
-            const status = await IntercomService.getIntercomStatus(rideId);
-            if (status.status === 'success') {
-                setLeadInfo(status.lead);
-                return status;
-            }
-            return null;
-        } catch (err) {
-            console.error('Failed to refresh intercom status:', err);
-            return null;
-        }
-    }, [rideId]);
+    }, [isLead, isMuted]);
 
     // Auto-connect when enabled
     useEffect(() => {
@@ -234,7 +246,7 @@ export function useIntercom(rideId, enabled = false) {
         return () => {
             disconnect();
         };
-    }, [enabled, rideId, connect, disconnect]);
+    }, [enabled, rideId, connect]);
 
     return {
         // State
@@ -242,14 +254,15 @@ export function useIntercom(rideId, enabled = false) {
         isConnected: state === IntercomState.CONNECTED,
         isLead,
         leadInfo,
-        isSpeaking,
+        isSpeaking, // Is someone speaking?
+        speakerName, // Who is speaking?
+        isMuted, // Am I muted?
         error,
 
         // Actions
         connect,
         disconnect,
-        toggleMicrophone,
-        refreshStatus,
+        toggleMute, // Function to toggle mute status
         fetchToken,
     };
 }

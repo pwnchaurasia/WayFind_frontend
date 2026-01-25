@@ -14,6 +14,10 @@ import {
   Poppins_500Medium,
   useFonts,
 } from "@expo-google-fonts/poppins";
+import { registerGlobals } from '@livekit/react-native';
+
+// Register WebRTC globals for LiveKit
+registerGlobals();
 
 SplashScreen.preventAutoHideAsync();
 
