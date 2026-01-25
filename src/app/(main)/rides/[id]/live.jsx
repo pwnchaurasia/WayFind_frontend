@@ -57,30 +57,45 @@ const generateMapHTML = (centerLat, centerLng, zoom = 13) => {
         * { margin: 0; padding: 0; }
         html, body, #map { height: 100%; width: 100%; }
         .rider-marker {
-            width: 44px; height: 44px; border-radius: 50%;
+            width: 48px; height: 48px; border-radius: 50%;
             border: 3px solid #00C853; overflow: hidden;
             background: #333; display: flex;
             align-items: center; justify-content: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
         }
-        .rider-marker.stale { border-color: #555; filter: grayscale(100%); opacity: 0.6; }
+        .rider-marker.lead { 
+            border-color: #FF5252 !important; 
+            border-width: 4px !important;
+            box-shadow: 0 0 12px rgba(255,82,82,0.6);
+        }
+        .rider-marker.stale { border-color: #555; filter: grayscale(100%); opacity: 0.5; }
+        .rider-marker.no-location { opacity: 0.3; }
         .rider-marker.selected { border-color: #00BFFF; border-width: 4px; }
-        .rider-marker img { width: 100%; height: 100%; border-radius: 50%; }
-        .rider-initials { color: white; font-weight: bold; font-size: 14px; }
+        .rider-marker img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+        .rider-initials { color: white; font-weight: bold; font-size: 16px; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+        .lead-badge {
+            position: absolute; top: -4px; right: -4px;
+            background: #FF5252; color: white;
+            font-size: 10px; font-weight: bold;
+            padding: 2px 4px; border-radius: 4px;
+        }
         .checkpoint-marker {
-            width: 28px; height: 28px; border-radius: 50%;
+            width: 32px; height: 32px; border-radius: 50%;
             background: #00BFFF; display: flex;
             align-items: center; justify-content: center;
-            color: white; font-weight: bold; font-size: 12px;
+            color: white; font-weight: bold; font-size: 14px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
         }
         .checkpoint-marker.start { background: #00C853; }
         .checkpoint-marker.end { background: #FF5252; }
-        .leaflet-popup-content { margin: 8px 12px; }
-        .popup-content { text-align: center; }
-        .popup-name { font-weight: bold; font-size: 14px; margin-bottom: 4px; }
-        .popup-vehicle { color: #666; font-size: 12px; margin-bottom: 8px; }
+        .leaflet-popup-content { margin: 10px 14px; }
+        .popup-content { text-align: center; min-width: 180px; }
+        .popup-name { font-weight: bold; font-size: 16px; margin-bottom: 4px; color: #333; }
+        .popup-role { font-size: 11px; color: #FF5252; font-weight: 600; margin-bottom: 4px; }
+        .popup-vehicle { color: #666; font-size: 13px; margin-bottom: 10px; }
         .popup-actions { display: flex; gap: 8px; justify-content: center; }
-        .popup-btn { padding: 8px 16px; border-radius: 8px; border: none;
-            color: white; font-weight: 600; cursor: pointer; font-size: 12px; }
+        .popup-btn { padding: 10px 16px; border-radius: 8px; border: none;
+            color: white; font-weight: 600; cursor: pointer; font-size: 13px; }
         .popup-btn.directions { background: #00BFFF; }
         .popup-btn.call { background: #00C853; }
     </style>
@@ -109,20 +124,36 @@ const generateMapHTML = (centerLat, centerLng, zoom = 13) => {
             riderMarkers = {};
             
             riders.forEach(function(rider) {
+                // Skip riders without location
+                if (!rider.hasLocation && !rider.lat) return;
+                
                 var isStale = rider.isStale;
+                var isLead = rider.isLead;
+                var hasLocation = rider.hasLocation;
                 var initials = rider.initials || 'U';
                 var avatarColor = rider.avatarColor || '#FF6B6B';
                 
-                var markerHtml = rider.profilePicture 
-                    ? '<div class="rider-marker' + (isStale ? ' stale' : '') + '"><img src="' + rider.profilePicture + '" /></div>'
-                    : '<div class="rider-marker' + (isStale ? ' stale' : '') + '" style="background:' + avatarColor + '"><span class="rider-initials">' + initials + '</span></div>';
+                // Build CSS classes
+                var classes = 'rider-marker';
+                if (isLead) classes += ' lead';
+                if (isStale) classes += ' stale';
+                if (!hasLocation) classes += ' no-location';
                 
-                var icon = L.divIcon({ html: markerHtml, className: '', iconSize: [44, 44], iconAnchor: [22, 22] });
+                var markerHtml = rider.profilePicture 
+                    ? '<div class="' + classes + '"><img src="' + rider.profilePicture + '" /></div>'
+                    : '<div class="' + classes + '" style="background:' + avatarColor + '"><span class="rider-initials">' + initials + '</span></div>';
+                
+                var icon = L.divIcon({ html: markerHtml, className: '', iconSize: [48, 48], iconAnchor: [24, 24] });
                 var marker = L.marker([rider.lat, rider.lng], { icon: icon }).addTo(map);
+                
+                // Build popup with role
+                var roleHtml = isLead ? '<div class="popup-role">🎤 RIDE LEAD</div>' : '';
+                var vehicleText = rider.vehicle || 'No vehicle info';
                 
                 var popupHtml = '<div class="popup-content">' +
                     '<div class="popup-name">' + (rider.name || 'Unknown') + '</div>' +
-                    '<div class="popup-vehicle">' + (rider.vehicle || 'No vehicle info') + '</div>' +
+                    roleHtml +
+                    '<div class="popup-vehicle">' + vehicleText + '</div>' +
                     '<div class="popup-actions">' +
                         '<button class="popup-btn directions" onclick="window.ReactNativeWebView.postMessage(JSON.stringify({action:\\'directions\\',rider:' + JSON.stringify(rider) + '}))">Directions</button>' +
                         '<button class="popup-btn call" onclick="window.ReactNativeWebView.postMessage(JSON.stringify({action:\\'call\\',rider:' + JSON.stringify(rider) + '}))">Call</button>' +
@@ -143,13 +174,13 @@ const generateMapHTML = (centerLat, centerLng, zoom = 13) => {
                 var type = i === 0 ? 'start' : (i === checkpoints.length - 1 ? 'end' : '');
                 var icon = L.divIcon({
                     html: '<div class="checkpoint-marker ' + type + '">' + (i + 1) + '</div>',
-                    className: '', iconSize: [28, 28], iconAnchor: [14, 14]
+                    className: '', iconSize: [32, 32], iconAnchor: [16, 16]
                 });
                 checkpointMarkers[i] = L.marker([cp.lat, cp.lng], { icon: icon }).addTo(map);
             });
             
             if (coords.length > 1) {
-                routeLine = L.polyline(coords, { color: '#00BFFF', weight: 4, opacity: 0.8 }).addTo(map);
+                routeLine = L.polyline(coords, { color: '#00BFFF', weight: 5, opacity: 0.9 }).addTo(map);
             }
         };
 
@@ -311,19 +342,24 @@ const LiveRideScreen = () => {
     const updateMapMarkers = () => {
         if (!webViewRef.current) return;
 
-        // Update riders
-        const ridersData = riderLocations.map(r => ({
-            id: r.user_id,
-            lat: r.latitude,
-            lng: r.longitude,
-            name: r.user?.name || 'Unknown',
-            profilePicture: r.user?.profile_picture,
-            vehicle: r.vehicle ? `${r.vehicle.make} ${r.vehicle.model}` : null,
-            phone: r.user?.phone_number,
-            isStale: isRiderStale(r),
-            initials: generateInitials(r.user?.name),
-            avatarColor: getAvatarColor(r.user?.name),
-        }));
+        // Update riders - using new API response format
+        const ridersData = riderLocations
+            .filter(r => r.has_location && r.latitude && r.longitude) // Only show riders with location
+            .map(r => ({
+                id: r.user_id,
+                lat: r.latitude,
+                lng: r.longitude,
+                name: r.name || 'Unknown',
+                profilePicture: r.profile_picture,
+                vehicle: r.vehicle ? `${r.vehicle.make} ${r.vehicle.model}${r.vehicle.license_plate ? ' • ' + r.vehicle.license_plate : ''}` : null,
+                phone: r.phone_number,
+                role: r.role,
+                isLead: r.is_lead,
+                hasLocation: r.has_location,
+                isStale: isRiderStale(r),
+                initials: generateInitials(r.name),
+                avatarColor: getAvatarColor(r.name),
+            }));
         webViewRef.current.injectJavaScript(`window.updateRiders(${JSON.stringify(ridersData)}); true;`);
 
         // Update checkpoints
@@ -465,8 +501,10 @@ const LiveRideScreen = () => {
     // ============================================
 
     const isRiderStale = (rider) => {
-        if (!rider.updated_at) return false;
-        const lastUpdate = new Date(rider.updated_at).getTime();
+        // No location = not stale (just unknown)
+        if (!rider.has_location) return false;
+        if (!rider.last_updated) return false;
+        const lastUpdate = new Date(rider.last_updated).getTime();
         return Date.now() - lastUpdate > STALE_THRESHOLD;
     };
 
@@ -579,20 +617,25 @@ const LiveRideScreen = () => {
                     {riderLocations.map((rider) => (
                         <TouchableOpacity
                             key={`bar-${rider.user_id}`}
-                            style={[styles.participantAvatar, selectedRider?.user_id === rider.user_id && styles.participantAvatarSelected]}
+                            style={[
+                                styles.participantAvatar,
+                                rider.is_lead && styles.participantAvatarLead,
+                                selectedRider?.user_id === rider.user_id && styles.participantAvatarSelected
+                            ]}
                             onPress={() => handleRiderSelect(rider)}
                         >
-                            {rider.user?.profile_picture ? (
+                            {rider.profile_picture ? (
                                 <Image
-                                    source={{ uri: rider.user.profile_picture }}
+                                    source={{ uri: rider.profile_picture }}
                                     style={[styles.participantAvatarImage, isRiderStale(rider) && styles.grayscaleImage]}
                                 />
                             ) : (
-                                <View style={[styles.participantAvatarPlaceholder, { backgroundColor: isRiderStale(rider) ? '#555' : getAvatarColor(rider.user?.name) }]}>
-                                    <Text style={styles.participantAvatarInitials}>{generateInitials(rider.user?.name)}</Text>
+                                <View style={[styles.participantAvatarPlaceholder, { backgroundColor: isRiderStale(rider) ? '#555' : getAvatarColor(rider.name) }]}>
+                                    <Text style={styles.participantAvatarInitials}>{generateInitials(rider.name)}</Text>
                                 </View>
                             )}
-                            {!isRiderStale(rider) && <View style={styles.participantOnlineDot} />}
+                            {rider.is_lead && <View style={styles.leadBadge}><Feather name="mic" size={10} color="white" /></View>}
+                            {!isRiderStale(rider) && <View style={[styles.participantOnlineDot, rider.is_lead && styles.leadOnlineDot]} />}
                         </TouchableOpacity>
                     ))}
                 </ScrollView>
@@ -600,19 +643,27 @@ const LiveRideScreen = () => {
 
             {/* Selected Rider Info Card */}
             {selectedRider && (
-                <View style={styles.riderInfoCard}>
+                <View style={[styles.riderInfoCard, selectedRider.is_lead && styles.riderInfoCardLead]}>
                     <View style={styles.riderInfoHeader}>
-                        {selectedRider.user?.profile_picture ? (
-                            <Image source={{ uri: selectedRider.user.profile_picture }} style={styles.riderInfoAvatar} />
+                        {selectedRider.profile_picture ? (
+                            <Image source={{ uri: selectedRider.profile_picture }} style={[styles.riderInfoAvatar, selectedRider.is_lead && styles.riderInfoAvatarLead]} />
                         ) : (
-                            <View style={[styles.riderInfoAvatar, { backgroundColor: getAvatarColor(selectedRider.user?.name) }]}>
-                                <Text style={styles.riderInfoInitials}>{generateInitials(selectedRider.user?.name)}</Text>
+                            <View style={[styles.riderInfoAvatar, { backgroundColor: getAvatarColor(selectedRider.name) }, selectedRider.is_lead && styles.riderInfoAvatarLead]}>
+                                <Text style={styles.riderInfoInitials}>{generateInitials(selectedRider.name)}</Text>
                             </View>
                         )}
                         <View style={styles.riderInfoDetails}>
-                            <Text style={styles.riderInfoName}>{selectedRider.user?.name || 'Unknown'}</Text>
+                            <View style={styles.riderInfoNameRow}>
+                                <Text style={styles.riderInfoName}>{selectedRider.name || 'Unknown'}</Text>
+                                {selectedRider.is_lead && (
+                                    <View style={styles.leadTag}>
+                                        <Feather name="mic" size={10} color="white" />
+                                        <Text style={styles.leadTagText}>LEAD</Text>
+                                    </View>
+                                )}
+                            </View>
                             <Text style={styles.riderInfoVehicle}>
-                                {selectedRider.vehicle ? `${selectedRider.vehicle.make} ${selectedRider.vehicle.model}` : 'No vehicle info'}
+                                {selectedRider.vehicle ? `${selectedRider.vehicle.make} ${selectedRider.vehicle.model}${selectedRider.vehicle.license_plate ? ' • ' + selectedRider.vehicle.license_plate : ''}` : 'No vehicle info'}
                             </Text>
                         </View>
                         <TouchableOpacity onPress={() => setSelectedRider(null)} style={styles.riderInfoClose}>
@@ -707,22 +758,30 @@ const styles = StyleSheet.create({
     participantBar: { position: 'absolute', top: 110, left: 0, right: 0 },
     participantBarContent: { paddingHorizontal: 16, gap: 12 },
     participantAvatar: { width: 50, height: 50, borderRadius: 25, borderWidth: 2, borderColor: 'transparent' },
+    participantAvatarLead: { borderColor: '#FF5252', borderWidth: 3 },
     participantAvatarSelected: { borderColor: '#00BFFF' },
     participantAvatarImage: { width: '100%', height: '100%', borderRadius: 25 },
     participantAvatarPlaceholder: { width: '100%', height: '100%', borderRadius: 25, justifyContent: 'center', alignItems: 'center' },
     participantAvatarInitials: { color: 'white', fontWeight: 'bold', fontSize: 14 },
     participantOnlineDot: { position: 'absolute', bottom: 0, right: 0, width: 14, height: 14, borderRadius: 7, backgroundColor: '#00C853', borderWidth: 2, borderColor: '#1E1E1E' },
+    leadOnlineDot: { backgroundColor: '#FF5252' },
+    leadBadge: { position: 'absolute', top: -4, right: -4, width: 20, height: 20, borderRadius: 10, backgroundColor: '#FF5252', justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#1E1E1E' },
     grayscaleImage: { opacity: 0.5 },
 
     // Rider Info Card
-    riderInfoCard: { position: 'absolute', bottom: 180, left: 16, right: 16, backgroundColor: 'rgba(30,30,30,0.95)', borderRadius: 16, padding: 16 },
+    riderInfoCard: { position: 'absolute', bottom: 180, left: 16, right: 16, backgroundColor: 'rgba(30,30,30,0.95)', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: 'transparent' },
+    riderInfoCardLead: { borderColor: '#FF5252', borderWidth: 2 },
     riderInfoHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
     riderInfoAvatar: { width: 50, height: 50, borderRadius: 25, justifyContent: 'center', alignItems: 'center' },
+    riderInfoAvatarLead: { borderWidth: 3, borderColor: '#FF5252' },
     riderInfoInitials: { color: 'white', fontWeight: 'bold', fontSize: 18 },
     riderInfoDetails: { flex: 1 },
+    riderInfoNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     riderInfoName: { color: 'white', fontSize: 16, fontWeight: 'bold' },
     riderInfoVehicle: { color: '#888', fontSize: 13, marginTop: 2 },
     riderInfoClose: { padding: 4 },
+    leadTag: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#FF5252', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+    leadTagText: { color: 'white', fontSize: 10, fontWeight: 'bold' },
     riderInfoActions: { flexDirection: 'row', gap: 12 },
     riderActionBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#00BFFF', paddingVertical: 12, borderRadius: 10 },
     callBtn: { backgroundColor: '#00C853' },
