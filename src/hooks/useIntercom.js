@@ -68,6 +68,7 @@ export function useIntercom(rideId, enabled = false) {
 
         try {
             const response = await IntercomService.getIntercomToken(rideId);
+            console.log(response, "response")
             if (response.status === 'success') {
                 setToken(response.token);
                 setLivekitUrl(response.livekit_url);
