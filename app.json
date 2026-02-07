@@ -7,7 +7,7 @@
     "icon": "./src/assets/images/icon.png",
     "scheme": "squadra",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.luciferthelight.squadra"

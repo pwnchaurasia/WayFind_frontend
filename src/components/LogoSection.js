@@ -1,11 +1,10 @@
 import {
-  StyleSheet, Text, View, Image,
+  StyleSheet, Text, View,
   PixelRatio, Dimensions
 } from 'react-native'
 import React from 'react'
 import { Poppins_600SemiBold } from '@expo-google-fonts/poppins';
 import { theme } from '@/src/styles/theme';
-import imagePath from '@/src/constants/imagePath';
 
 
 
@@ -14,14 +13,12 @@ const scale = PixelRatio.get();
 const { width, height } = Dimensions.get('window');
 
 
+import LogoSvg from '@/src/assets/images/logo-svg.svg';
+
 const LogoSection = () => {
   return (
     <View style={styles.logoContainer}>
-      <Image
-        source={imagePath.icon}
-        style={styles.logo}
-        resizeMode='contain'
-      />
+      <LogoSvg width={27} height={27} style={styles.logo} />
       <Text style={styles.appName}>Squadra</Text>
     </View>
   )

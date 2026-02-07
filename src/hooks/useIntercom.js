@@ -11,13 +11,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Platform } from 'react-native';
 import {
-    Room,
-    RoomEvent,
-    Track,
     AudioSession,
-    DataPacket_Kind,
     registerGlobals
 } from '@livekit/react-native';
+import { Room, RoomEvent } from 'livekit-client';
 import IntercomService from '@/src/apis/intercomService';
 
 // Ensure WebRTC globals are registered
@@ -56,6 +53,12 @@ export function useIntercom(rideId, enabled = false) {
     // Refs for managing connection
     const roomRef = useRef(null);
     const requestRef = useRef(null);
+    const stateRef = useRef(IntercomState.DISCONNECTED);
+
+    // Sync state ref
+    useEffect(() => {
+        stateRef.current = state;
+    }, [state]);
 
     /**
      * Fetch token and connection details from backend
@@ -86,8 +89,9 @@ export function useIntercom(rideId, enabled = false) {
     const connect = useCallback(async () => {
         if (!rideId || !enabled) return;
 
-        // If already connecting, connected, or in permanent error, skip
-        if (state === IntercomState.CONNECTING || state === IntercomState.CONNECTED || state === IntercomState.ERROR) return;
+        // Use ref to check current state without adding dependency
+        const currentState = stateRef.current;
+        if (currentState === IntercomState.CONNECTING || currentState === IntercomState.CONNECTED || currentState === IntercomState.ERROR) return;
 
         setState(IntercomState.CONNECTING);
         setError(null);
@@ -122,7 +126,10 @@ export function useIntercom(rideId, enabled = false) {
                 // @livekit/react-native should polyfill these via registerGlobals()
                 if (!global.WebSocket && !window?.WebSocket) {
                     console.error("UseIntercom: WebRTC globals missing!");
+                    // Attempt to register again if missing
+                    registerGlobals();
                 }
+                // Create room instance using livekit-client Room
                 room = new Room();
             } catch (e) {
                 console.error("UseIntercom: Failed to create Room instance", e);
@@ -157,7 +164,7 @@ export function useIntercom(rideId, enabled = false) {
             setError(err.message || 'Connection failed');
             setState(IntercomState.ERROR);
         }
-    }, [rideId, enabled, fetchToken, state]);
+    }, [rideId, enabled, fetchToken]);
 
     /**
      * Setup Room Event Listeners

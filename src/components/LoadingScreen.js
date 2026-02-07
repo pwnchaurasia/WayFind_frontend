@@ -1,16 +1,18 @@
 import React from 'react';
-import { View, Text, Image, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import { globalStyles } from '@/src/styles/globalStyles';
 import { theme } from '@/src/styles/theme';
+
+import LogoSvg from '@/src/assets/images/logo-svg.svg';
 
 const LoadingScreen = () => {
   return (
     <View style={[globalStyles.container, globalStyles.flexCenter]}>
       <View style={styles.logoContainer}>
-        <Image
-          source={require('../assets/images/icon.png')}
+        <LogoSvg
+          width={120}
+          height={120}
           style={styles.logo}
-          resizeMode="contain"
         />
         <Text style={styles.appName}>Squadra</Text>
       </View>
