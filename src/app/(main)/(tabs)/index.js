@@ -71,6 +71,8 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [isOrgAdmin, setIsOrgAdmin] = useState(false);
+
+  // Modal State
   const [endRideModalVisible, setEndRideModalVisible] = useState(false);
   const [selectedRideId, setSelectedRideId] = useState(null);
 
@@ -341,23 +343,23 @@ export default function HomeScreen() {
                   </View>
                 </View>
 
-                <View style={{ flexDirection: 'row', gap: 12 }}>
+                <View style={{ flexDirection: 'row', gap: 8 }}>
                   {!isSolo && (
                     <TouchableOpacity
                       style={[styles.initiateButton, { flex: 1 }]}
                       onPress={() => router.push(`/(main)/rides/${activeRide.id}`)}
                     >
                       <MaterialCommunityIcons name="map-marker-radius" size={20} color={COLORS.primary} />
-                      <Text style={styles.initiateButtonText}>GO LIVE</Text>
+                      <Text style={styles.initiateButtonText} numberOfLines={1} adjustsFontSizeToFit>JOIN RIDE</Text>
                     </TouchableOpacity>
                   )}
 
                   <TouchableOpacity
-                    style={[styles.initiateButton, { flex: 1, borderColor: COLORS.danger, backgroundColor: 'rgba(255, 59, 59, 0.1)', marginLeft: isSolo ? 0 : 0 }]}
+                    style={[styles.initiateButton, { flex: 1, borderColor: COLORS.danger, backgroundColor: 'rgba(255, 59, 59, 0.1)', marginLeft: isSolo ? 0 : 0, shadowOpacity: 0, elevation: 0 }]}
                     onPress={() => handleEndRide(activeRide.id)}
                   >
                     <MaterialCommunityIcons name="stop-circle-outline" size={20} color={COLORS.danger} />
-                    <Text style={[styles.initiateButtonText, { color: COLORS.danger }]}>END RIDE</Text>
+                    <Text style={[styles.initiateButtonText, { color: COLORS.danger }]} numberOfLines={1} adjustsFontSizeToFit>END RIDE</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -640,11 +642,10 @@ const styles = StyleSheet.create({
   },
   cardImage: {
     ...StyleSheet.absoluteFillObject,
-    opacity: 0.6,
   },
   cardOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    backgroundColor: 'rgba(0,0,0,0.4)',
   },
   cardContent: {
     flex: 1,
@@ -654,186 +655,189 @@ const styles = StyleSheet.create({
   },
   squadTag: {
     alignSelf: 'flex-start',
-    backgroundColor: 'rgba(13, 242, 13, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(13, 242, 13, 0.3)',
+    backgroundColor: COLORS.primary,
     paddingHorizontal: 8,
-    paddingVertical: 2,
+    paddingVertical: 4,
     borderRadius: 4,
+    marginBottom: 8,
   },
   squadTagText: {
-    color: COLORS.primary,
+    color: 'black',
     fontSize: 10,
     fontWeight: '700',
     textTransform: 'uppercase',
   },
   cardMainText: {
-    marginBottom: 4,
+    gap: 4,
   },
   cardTitle: {
     color: 'white',
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: '700',
-    lineHeight: 24,
+    letterSpacing: -0.5,
   },
   cardSubtitle: {
     color: COLORS.slate400,
     fontSize: 12,
+    fontWeight: '500',
+    textTransform: 'uppercase',
   },
   cardButtonActive: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 8,
-    paddingVertical: 12,
     flexDirection: 'row',
-    justifyContent: 'center',
     alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.primary,
+    paddingVertical: 12,
+    borderRadius: 8,
     gap: 8,
   },
   cardButtonInactive: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 8,
-    paddingVertical: 12,
     flexDirection: 'row',
-    justifyContent: 'center',
     alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    paddingVertical: 12,
+    borderRadius: 8,
     gap: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
   },
   cardButtonTextActive: {
     color: 'black',
     fontWeight: '700',
     fontSize: 14,
+    textTransform: 'uppercase',
   },
   cardButtonTextInactive: {
     color: 'white',
     fontWeight: '700',
     fontSize: 14,
+    textTransform: 'uppercase',
   },
   emptyState: {
-    padding: 24,
-    borderWidth: 1,
-    borderColor: '#333',
+    width: CARD_WIDTH,
+    height: CARD_HEIGHT * 0.8,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.05)',
     borderStyle: 'dashed',
     borderRadius: 12,
+    justifyContent: 'center',
     alignItems: 'center',
   },
   emptyStateText: {
-    color: '#666',
-    fontWeight: '700',
+    color: COLORS.slate500,
     fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 2,
   },
 
   // Action Section
   sectionAction: {
     backgroundColor: COLORS.cardDark,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(13, 242, 13, 0.2)',
+    borderRadius: 16,
     padding: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(13, 242, 13, 0.1)',
     marginBottom: 32,
-    shadowColor: '#0df20d',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
   },
   actionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 24,
+    alignItems: 'center',
+    marginBottom: 20,
   },
   actionTitle: {
-    color: 'white',
-    fontSize: 18,
+    color: COLORS.slate500,
+    fontSize: 10,
     fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 2,
     marginBottom: 4,
   },
   actionSubtitle: {
-    color: COLORS.slate400,
-    fontSize: 14,
+    color: 'white',
+    fontSize: 18,
+    fontWeight: '700',
   },
   actionIconBg: {
-    backgroundColor: 'rgba(13, 242, 13, 0.2)',
-    padding: 8,
-    borderRadius: 8,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   inviteRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: 12,
     marginBottom: 24,
   },
   inviteAvatars: {
     flexDirection: 'row',
+    paddingLeft: 8,
   },
   inviteCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: 'rgba(13, 242, 13, 0.3)',
-    borderStyle: 'dashed',
-    backgroundColor: 'rgba(13, 242, 13, 0.05)',
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#000',
+    borderWidth: 1,
+    borderColor: 'rgba(13, 242, 13, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   inviteOverlap: {
-    marginLeft: -12,
+    marginLeft: -8,
   },
   inviteText: {
     color: COLORS.slate400,
     fontSize: 12,
-    fontWeight: '500',
-    fontStyle: 'italic',
   },
   initiateButton: {
-    width: '100%',
-    backgroundColor: 'rgba(13, 242, 13, 0.1)',
-    borderWidth: 1,
-    borderColor: COLORS.primary,
-    borderRadius: 8,
-    paddingVertical: 16,
+    backgroundColor: COLORS.primary,
+    borderRadius: 12,
+    paddingVertical: 12, // Reduced from 16
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
+    gap: 6, // Reduced gap
+    marginBottom: 16,
+    shadowColor: '#0df20d',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
   },
   initiateButtonText: {
-    color: COLORS.primary,
+    color: 'black',
+    fontSize: 12, // Reduced from 14
     fontWeight: '700',
+    letterSpacing: 0.5, // Reduced from 1
   },
   groupButtonLink: {
-    marginTop: 16,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     gap: 8,
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
   },
   groupButtonText: {
-    color: '#aaa',
+    color: COLORS.slate500,
     fontSize: 12,
     fontWeight: '700',
-    letterSpacing: 0.5,
+    letterSpacing: 1,
   },
 
-  // Path Intel
+  // Intel Section
   sectionIntel: {
-    backgroundColor: 'rgba(245, 158, 11, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(245, 158, 11, 0.2)',
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
-    marginBottom: 24,
+    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(245, 158, 11, 0.2)',
+    gap: 12,
   },
   intelIcon: {
     width: 32,
@@ -842,7 +846,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(245, 158, 11, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
-    flexShrink: 0,
   },
   intelContent: {
     flex: 1,
@@ -851,7 +854,8 @@ const styles = StyleSheet.create({
     color: COLORS.amber500,
     fontSize: 10,
     fontWeight: '700',
-    textTransform: 'uppercase',
+    marginBottom: 2,
+    letterSpacing: 1,
   },
   intelDesc: {
     color: 'white',
