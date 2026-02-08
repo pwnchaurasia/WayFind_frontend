@@ -49,6 +49,10 @@ const COLORS = {
 };
 
 const PLACEHOLDER_IMAGES = [
+  'https://images.unsplash.com/photo-1762178103168-58472e27126e?q=80&w=3338&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1767652784202-214920d12a85?q=80&w=1935&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1758550713886-1ba2390293af?q=80&w=3540&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1762178250159-7429ce17185d?q=80&w=3540&auto=format&fit=crop',
   'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop',
   'https://images.unsplash.com/photo-1476994230281-1448088947db?q=80&w=2016&auto=format&fit=crop',
   'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?q=80&w=1983&auto=format&fit=crop',
@@ -169,7 +173,11 @@ export default function HomeScreen() {
 
     return (
       <View style={styles.cardContainer}>
-        <View style={styles.cardInner}>
+        <TouchableOpacity
+          style={styles.cardInner}
+          activeOpacity={0.9}
+          onPress={() => router.push(`/(main)/rides/${item.id}`)}
+        >
           <Image
             source={{ uri: posterUrl }}
             style={styles.cardImage}
@@ -189,10 +197,10 @@ export default function HomeScreen() {
             <TouchableOpacity
               style={[
                 isActive ? styles.cardButtonActive : styles.cardButtonInactive,
-                isActive && isSolo && { backgroundColor: '#FF5252' }
+                isActive && !isSolo && { backgroundColor: '#FF5252' }
               ]}
               onPress={() => {
-                if (isActive && isSolo) {
+                if (isActive && !isSolo) {
                   handleEndRide(item.id);
                 } else {
                   router.push(`/(main)/rides/${item.id}`);
@@ -200,19 +208,19 @@ export default function HomeScreen() {
               }}
             >
               <MaterialCommunityIcons
-                name={isActive ? (isSolo ? "stop-circle-outline" : "broadcast") : "clock-outline"}
+                name={isActive ? (!isSolo ? "stop-circle-outline" : "map-marker-radius") : "clock-outline"}
                 size={18}
-                color={isActive && !isSolo ? "black" : "white"}
+                color={isActive && !isSolo ? "white" : (isActive ? "black" : "white")}
               />
               <Text style={[
                 isActive ? styles.cardButtonTextActive : styles.cardButtonTextInactive,
-                isActive && isSolo && { color: 'white' }
+                isActive && !isSolo && { color: 'white' }
               ]}>
-                {isActive ? (isSolo ? 'END RIDE' : 'GO LIVE') : 'SCHEDULED'}
+                {isActive ? (!isSolo ? 'END RIDE' : 'OPEN') : 'SCHEDULED'}
               </Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </TouchableOpacity>
       </View>
     );
   };
@@ -235,13 +243,15 @@ export default function HomeScreen() {
           <View style={styles.headerLeft}>
             <View style={styles.headerAvatarWrapper}>
               <Image
-                source={{ uri: normalizeUrl(user?.profile_picture_url) || 'https://via.placeholder.com/150' }}
+                source={{ uri: normalizeUrl(user?.profile_picture_url) || `https://ui-avatars.com/api/?name=${user?.name || 'Rider'}&background=0df20d&color=000` }}
                 style={styles.headerAvatar}
               />
             </View>
             <View>
               <Text style={styles.headerName}>{user?.name?.toUpperCase() || 'RIDER'}</Text>
-              <Text style={styles.headerStatus}>PRO DOSSIER ACTIVE</Text>
+              <Text style={styles.headerStatus}>
+                {isSuperAdmin ? 'SUPER ADMIN' : (isOrgAdmin ? 'ORG ADMIN' : 'RIDER')}
+              </Text>
             </View>
           </View>
           <View style={styles.headerRight}>
