@@ -10,6 +10,7 @@ import {
   Share
 } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
+import { useToast } from '@/src/context/ToastContext';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import OrganizationHeader from '@/src/components/organizations/OrganizationHeader';
@@ -19,6 +20,7 @@ import { globalStyles } from '@/src/styles/globalStyles';
 
 export default function SettingsScreen() {
   const { id } = useLocalSearchParams();
+  const { showToast } = useToast();
   const { organization, loading } = useOrganizationData(id);
 
   // Join code state
@@ -70,12 +72,12 @@ export default function SettingsScreen() {
               if (response.status === 'success') {
                 setJoinCode(response.join_code);
                 setJoinUrl(response.join_url);
-                Alert.alert('Success', 'Join link refreshed successfully');
+                showToast('Join link refreshed successfully', 'success');
               } else {
-                Alert.alert('Error', response.message || 'Failed to refresh');
+                showToast(response.message || 'Failed to refresh', 'error');
               }
             } catch (error) {
-              Alert.alert('Error', 'Failed to refresh join link');
+              showToast('Failed to refresh join link', 'error');
             } finally {
               setRefreshLoading(false);
             }
@@ -88,7 +90,7 @@ export default function SettingsScreen() {
   const handleCopyLink = async () => {
     if (joinUrl) {
       await Clipboard.setStringAsync(joinUrl);
-      Alert.alert('Copied!', 'Join link copied to clipboard');
+      showToast('Join link copied to clipboard', 'success');
     }
   };
 

@@ -4,6 +4,7 @@ import { Stack, useSegments, useRootNavigationState } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from '@/src/context/AuthContext';
+import { ToastProvider } from '@/src/context/ToastContext';
 import LoadingScreen from '@/src/components/LoadingScreen';
 
 import {
@@ -30,6 +31,7 @@ SplashScreen.preventAutoHideAsync();
  * 2. Splash screen management
  * 3. Provides authentication context
  * 4. Sets up the Stack navigation structure
+ * 5. Provides global Toast notifications
  * 
  * Note: Deep link routes (join/*) are configured to work independently
  * without waiting for auth state to be resolved.
@@ -62,20 +64,22 @@ const RootLayout = () => {
   return (
     <SafeAreaProvider>
       <AuthProvider>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="index" />
-          <Stack.Screen name="(auth)" />
-          <Stack.Screen name="(main)" />
-          {/* Join routes are independent modals - they handle their own auth checks */}
-          <Stack.Screen
-            name="join"
-            options={{
-              presentation: 'containedModal',
-              headerShown: false,
-              gestureEnabled: true,
-            }}
-          />
-        </Stack>
+        <ToastProvider>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="index" />
+            <Stack.Screen name="(auth)" />
+            <Stack.Screen name="(main)" />
+            {/* Join routes are independent modals - they handle their own auth checks */}
+            <Stack.Screen
+              name="join"
+              options={{
+                presentation: 'containedModal',
+                headerShown: false,
+                gestureEnabled: true,
+              }}
+            />
+          </Stack>
+        </ToastProvider>
       </AuthProvider>
     </SafeAreaProvider>
   )

@@ -13,6 +13,7 @@ import RideService from '@/src/apis/rideService'
 import UserService from '@/src/apis/userService'
 import IntercomService from '@/src/apis/intercomService'
 import { useAuth } from '@/src/context/AuthContext'
+import { useToast } from '@/src/context/ToastContext';
 import { theme } from '@/src/styles/theme'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -20,6 +21,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const RideDetails = () => {
     const { id } = useLocalSearchParams();
     const { user } = useAuth();
+    const { showToast } = useToast();
     const [ride, setRide] = useState(null);
     const [loading, setLoading] = useState(true);
     const [joining, setJoining] = useState(false);
@@ -145,13 +147,13 @@ const RideDetails = () => {
             setJoining(true);
             try {
                 await RideService.joinRide(id, { vehicle_info_id: selectedVehicle.id });
-                Alert.alert('Success', 'You have joined the ride!');
+                showToast('You have joined the ride!', 'success');
                 fetchRideDetails();
             } catch (error) {
                 if (error.detail?.includes('banned')) {
-                    Alert.alert('Access Denied', 'You are banned from this ride.');
+                    showToast('You are banned from this ride.', 'error');
                 } else {
-                    Alert.alert('Error', error.detail || 'Failed to join ride');
+                    showToast(error.detail || 'Failed to join ride', 'error');
                 }
             } finally {
                 setJoining(false);
@@ -160,10 +162,10 @@ const RideDetails = () => {
             setUpdatingVehicle(true);
             try {
                 await RideService.updateMyVehicle(id, selectedVehicle.id);
-                Alert.alert('Success', 'Vehicle updated successfully!');
+                showToast('Vehicle updated successfully!', 'success');
                 fetchRideDetails();
             } catch (error) {
-                Alert.alert('Error', error.detail || 'Failed to update vehicle');
+                showToast(error.detail || 'Failed to update vehicle', 'error');
             } finally {
                 setUpdatingVehicle(false);
             }
@@ -188,9 +190,9 @@ const RideDetails = () => {
                     try {
                         await RideService.startRide(id);
                         fetchRideDetails();
-                        Alert.alert("Success", "Ride has started!");
+                        showToast('Ride has started!', 'success');
                     } catch (error) {
-                        Alert.alert("Error", error.message || "Failed to start ride");
+                        showToast(error.message || 'Failed to start ride', 'error');
                     } finally {
                         setStatusLoading(false);
                     }
@@ -210,9 +212,9 @@ const RideDetails = () => {
                     try {
                         await RideService.endRide(id);
                         fetchRideDetails();
-                        Alert.alert("Success", "Ride completed!");
+                        showToast("Ride completed!", "success");
                     } catch (error) {
-                        Alert.alert("Error", error.message || "Failed to end ride");
+                        showToast(error.message || "Failed to end ride", "error");
                     } finally {
                         setStatusLoading(false);
                     }
@@ -259,11 +261,11 @@ const RideDetails = () => {
         setActionLoading(true);
         try {
             await RideService.markPayment(id, selectedParticipant.id, ride.amount || 0);
-            Alert.alert('Success', 'Payment status updated');
+            showToast('Payment status updated', 'success');
             setShowActionModal(false);
             fetchRideDetails();
         } catch (error) {
-            Alert.alert('Error', error.detail || 'Failed to update payment');
+            showToast(error.detail || 'Failed to update payment', 'error');
         } finally {
             setActionLoading(false);
         }
@@ -274,11 +276,11 @@ const RideDetails = () => {
         setActionLoading(true);
         try {
             await RideService.markAttendance(id, selectedParticipant.id, status);
-            Alert.alert('Success', `Marked as ${status}`);
+            showToast(`Marked as ${status}`, 'success');
             setShowActionModal(false);
             fetchRideDetails();
         } catch (error) {
-            Alert.alert('Error', error.detail || 'Failed to mark attendance');
+            showToast(error.detail || 'Failed to mark attendance', 'error');
         } finally {
             setActionLoading(false);
         }
@@ -294,11 +296,11 @@ const RideDetails = () => {
                     setActionLoading(true);
                     try {
                         await RideService.removeParticipant(id, selectedParticipant.id);
-                        Alert.alert('Success', 'Participant removed');
+                        showToast('Participant removed', 'success');
                         setShowActionModal(false);
                         fetchRideDetails();
                     } catch (error) {
-                        Alert.alert('Error', error.detail || 'Failed to remove');
+                        showToast(error.detail || 'Failed to remove', 'error');
                     } finally {
                         setActionLoading(false);
                     }
@@ -313,11 +315,11 @@ const RideDetails = () => {
         setActionLoading(true);
         try {
             await RideService.toggleBan(id, selectedParticipant.id);
-            Alert.alert('Success', isBanned ? 'Unbanned' : 'Banned');
+            showToast(isBanned ? 'Unbanned' : 'Banned', 'success');
             setShowActionModal(false);
             fetchRideDetails();
         } catch (error) {
-            Alert.alert('Error', error.detail || 'Failed');
+            showToast(error.detail || 'Failed', 'error');
         } finally {
             setActionLoading(false);
         }
@@ -328,11 +330,11 @@ const RideDetails = () => {
         setActionLoading(true);
         try {
             await IntercomService.setLead(id, selectedParticipant.user.id);
-            Alert.alert('Success', `${selectedParticipant.user.name} is now the Lead`);
+            showToast(`${selectedParticipant.user.name} is now the Lead`, 'success');
             setShowActionModal(false);
             fetchRideDetails();
         } catch (error) {
-            Alert.alert('Error', error.detail || 'Failed to set Lead');
+            showToast(error.detail || 'Failed to set Lead', 'error');
         } finally {
             setActionLoading(false);
         }

@@ -12,6 +12,7 @@ import {
   ScrollView
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
+import { useToast } from '@/src/context/ToastContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import OrganizationService from '@/src/apis/organizationService';
@@ -23,6 +24,7 @@ const TABS = {
 
 export default function MembersScreen() {
   const { id } = useLocalSearchParams();
+  const { showToast } = useToast();
 
   const [activeTab, setActiveTab] = useState(TABS.MEMBERS);
   const [members, setMembers] = useState([]);
@@ -52,12 +54,13 @@ export default function MembersScreen() {
         setRideParticipants(response.ride_participants || []);
         setUserRole(response.user_role);
         setOrganization(response.organization);
+        setOrganization(response.organization);
       } else {
-        Alert.alert('Error', response.message || 'Failed to load data');
+        showToast(response.message || 'Failed to load data', 'error');
       }
     } catch (error) {
       console.error('Error fetching people:', error);
-      Alert.alert('Error', 'Failed to load people');
+      showToast('Failed to load people', 'error');
     } finally {
       setLoading(false);
     }
@@ -119,10 +122,11 @@ export default function MembersScreen() {
     setActionLoading(true);
     try {
       await OrganizationService.toggleMemberStatus(id, personId);
+      showToast('Member status updated', 'success');
       fetchAllPeople();
       setSelectedPerson(null);
     } catch (error) {
-      Alert.alert('Error', 'Failed to update status');
+      showToast('Failed to update status', 'error');
     } finally {
       setActionLoading(false);
     }
@@ -142,10 +146,11 @@ export default function MembersScreen() {
             setActionLoading(true);
             try {
               await OrganizationService.removeMember(id, personId);
+              showToast('Person removed successfully', 'success');
               fetchAllPeople();
               setSelectedPerson(null);
             } catch (error) {
-              Alert.alert('Error', 'Failed to remove person');
+              showToast('Failed to remove person', 'error');
             } finally {
               setActionLoading(false);
             }
