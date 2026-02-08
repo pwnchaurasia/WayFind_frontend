@@ -156,7 +156,25 @@ const RideDetails = () => {
             } finally {
                 setJoining(false);
             }
+        } else if (vehicleMode === 'update') {
+            setUpdatingVehicle(true);
+            try {
+                await RideService.updateMyVehicle(id, selectedVehicle.id);
+                Alert.alert('Success', 'Vehicle updated successfully!');
+                fetchRideDetails();
+            } catch (error) {
+                Alert.alert('Error', error.detail || 'Failed to update vehicle');
+            } finally {
+                setUpdatingVehicle(false);
+            }
         }
+    };
+
+    const handleUpdateVehicle = async () => {
+        setShowActionModal(false);
+        setVehicleMode('update');
+        await fetchVehicles();
+        setShowVehicleModal(true);
     };
 
     // Status Management
@@ -222,7 +240,10 @@ const RideDetails = () => {
     // ============================================
 
     const openParticipantActions = (participant) => {
-        if (!ride.is_admin) return;
+        // Allow if admin OR if it's the current user
+        const isSelf = participant.user?.id === user?.id;
+        if (!ride.is_admin && !isSelf) return;
+
         setSelectedParticipant(participant);
         setShowActionModal(true);
     };
@@ -549,13 +570,16 @@ const RideDetails = () => {
                             {filteredParticipants.map((p, index) => {
                                 const isBanned = p.role === 'banned';
                                 const isPending = !p.has_paid && ride.requires_payment;
+                                const isSelf = p.user?.id === user?.id;
+                                const canEdit = isSelf && ride.status !== 'COMPLETED' && ride.status !== 'completed' && ride.status !== 'CANCELLED' && ride.status !== 'cancelled';
+
                                 return (
                                     <TouchableOpacity
                                         key={p.id || index}
                                         style={[styles.participantCard, isBanned && styles.bannedCard]}
                                         onPress={() => openParticipantActions(p)}
-                                        disabled={!ride.is_admin}
-                                        activeOpacity={ride.is_admin ? 0.7 : 1}
+                                        disabled={!ride.is_admin && !isSelf}
+                                        activeOpacity={ride.is_admin || isSelf ? 0.7 : 1}
                                     >
                                         {p.user?.profile_picture ? (
                                             <Image source={{ uri: p.user.profile_picture }} style={styles.participantAvatar} />
@@ -566,7 +590,7 @@ const RideDetails = () => {
                                         )}
                                         <View style={styles.participantInfo}>
                                             <Text style={[styles.participantName, isBanned && styles.bannedText]}>
-                                                {p.user?.name || 'Unknown'}
+                                                {p.user?.name || 'Unknown'} {isSelf && '(You)'}
                                             </Text>
                                             <View style={styles.participantMeta}>
                                                 <MaterialCommunityIcons name="motorbike" size={12} color={isPending ? '#FF9800' : '#888'} />
@@ -576,7 +600,21 @@ const RideDetails = () => {
                                                 </Text>
                                             </View>
                                         </View>
-                                        <Feather name="chevron-right" size={20} color="#555" />
+
+                                        {canEdit ? (
+                                            <TouchableOpacity
+                                                onPress={(e) => {
+                                                    e.stopPropagation();
+                                                    setSelectedParticipant(p);
+                                                    handleUpdateVehicle();
+                                                }}
+                                                style={{ padding: 8 }}
+                                            >
+                                                <Feather name="edit-2" size={20} color={theme.colors.primary} />
+                                            </TouchableOpacity>
+                                        ) : (
+                                            <Feather name="chevron-right" size={20} color="#555" />
+                                        )}
                                     </TouchableOpacity>
                                 );
                             })}
@@ -638,6 +676,18 @@ const RideDetails = () => {
                                 <Feather name="x" size={24} color="#888" />
                             </TouchableOpacity>
                         </View>
+
+                        {/* Self Actions */}
+                        {selectedParticipant?.user?.id === user?.id && (
+                            <View style={styles.modalActions}>
+                                <TouchableOpacity style={styles.modalActionBtn} onPress={handleUpdateVehicle}>
+                                    <View style={[styles.modalActionIcon, { backgroundColor: '#1a2a3a' }]}>
+                                        <MaterialCommunityIcons name="motorbike" size={20} color={theme.colors.primary} />
+                                    </View>
+                                    <Text style={styles.modalActionText}>Change Vehicle</Text>
+                                </TouchableOpacity>
+                            </View>
+                        )}
 
                         {selectedParticipant?.user?.phone_number && (
                             <TouchableOpacity style={styles.callButton} onPress={handleCall}>
@@ -744,9 +794,13 @@ const RideDetails = () => {
                             </ScrollView>
                         )}
 
-                        <TouchableOpacity style={[styles.confirmBtn, !selectedVehicle && styles.confirmBtnDisabled]} onPress={handleVehicleConfirm} disabled={!selectedVehicle || joining}>
-                            {joining ? <ActivityIndicator color="white" /> : (
-                                <Text style={styles.confirmBtnText}>{selectedVehicle ? `Join with ${selectedVehicle.make} ${selectedVehicle.model}` : 'Select a Vehicle'}</Text>
+                        <TouchableOpacity style={[styles.confirmBtn, !selectedVehicle && styles.confirmBtnDisabled]} onPress={handleVehicleConfirm} disabled={!selectedVehicle || joining || updatingVehicle}>
+                            {joining || updatingVehicle ? <ActivityIndicator color="white" /> : (
+                                <Text style={styles.confirmBtnText}>
+                                    {selectedVehicle
+                                        ? (vehicleMode === 'update' ? `Update to ${selectedVehicle.make} ${selectedVehicle.model}` : `Join with ${selectedVehicle.make} ${selectedVehicle.model}`)
+                                        : 'Select a Vehicle'}
+                                </Text>
                             )}
                         </TouchableOpacity>
                     </Pressable>

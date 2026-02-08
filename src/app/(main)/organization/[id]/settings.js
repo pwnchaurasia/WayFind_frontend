@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
   Share
 } from 'react-native';
-import { useGlobalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import OrganizationHeader from '@/src/components/organizations/OrganizationHeader';
@@ -18,7 +18,7 @@ import OrganizationService from '@/src/apis/organizationService';
 import { globalStyles } from '@/src/styles/globalStyles';
 
 export default function SettingsScreen() {
-  const { id } = useGlobalSearchParams();
+  const { id } = useLocalSearchParams();
   const { organization, loading } = useOrganizationData(id);
 
   // Join code state

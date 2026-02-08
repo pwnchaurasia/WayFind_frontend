@@ -96,4 +96,39 @@ The Wayfind Front end app is designed to provide location tracking, SOS, and saf
 
 
 
-## For otp entry use this install react-native-otp-entry
+
+## EAS Build & Secrets
+
+### Managing Environment Variables
+To ensure your build uses the correct API URL (especially Ngrok), you must update the EAS secrets before building.
+
+1.  **List existing secrets**:
+    ```bash
+    eas secret:list
+    ```
+
+2.  **Create/Update a secret** (Delete old one first if it exists):
+    ```bash
+    # Delete old secret
+    eas secret:delete --name EXPO_PUBLIC_API_BASE_URL_DEV
+
+    # Create new secret
+    eas secret:create --scope project --name EXPO_PUBLIC_API_BASE_URL_DEV --value "https://YOUR_NGROK_URL.ngrok-free.app" --type string
+    ```
+
+3.  **FASTEST METHOD (Auto-upload from .env)**:
+    This reads your local `.env` file and updates all secrets in EAS automatically.
+    ```bash
+    eas secret:push --scope project --env-file .env
+    ```
+
+### Building the App
+1.  **Build Android APK (Preview)**:
+    ```bash
+    eas build -p android --profile preview
+    ```
+
+2.  **Build Dev Client**:
+    ```bash
+    eas build -p android --profile development
+    ```

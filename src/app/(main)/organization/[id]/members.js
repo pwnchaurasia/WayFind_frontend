@@ -11,7 +11,7 @@ import {
   Modal,
   ScrollView
 } from 'react-native';
-import { useGlobalSearchParams, router } from 'expo-router';
+import { useLocalSearchParams, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import OrganizationService from '@/src/apis/organizationService';
@@ -22,7 +22,7 @@ const TABS = {
 };
 
 export default function MembersScreen() {
-  const { id } = useGlobalSearchParams();
+  const { id } = useLocalSearchParams();
 
   const [activeTab, setActiveTab] = useState(TABS.MEMBERS);
   const [members, setMembers] = useState([]);

@@ -1,12 +1,12 @@
 import React from 'react';
 import { View, Text } from 'react-native';
-import { useGlobalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import OrganizationHeader from '@/src/components/organizations/OrganizationHeader';
 import { useOrganizationData } from '@/src/hooks/useOrganizationData';
 import { globalStyles } from '@/src/styles/globalStyles';
 
 export default function MapTabScreen() {
-  const { id } = useGlobalSearchParams();
+  const { id } = useLocalSearchParams();
   const { organization, loading } = useOrganizationData(id);
 
   if (loading || !organization) {

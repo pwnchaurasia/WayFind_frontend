@@ -1,12 +1,12 @@
 import React, { useRef } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { useGlobalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import OrganizationHeader from '@/src/components/organizations/OrganizationHeader';
 import VoiceRecorder from '@/src/components/organizations/VoiceRecorder';
 import { useOrganizationData } from '@/src/hooks/useOrganizationData';
 
 export default function VoiceRecorderScreen() {
-  const { id } = useGlobalSearchParams();
+  const { id } = useLocalSearchParams();
   const { organization, loading } = useOrganizationData(id);
   const router = useRouter();
 
