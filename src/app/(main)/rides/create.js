@@ -18,7 +18,8 @@ const RIDE_TYPES = [
 // Time slots removed - now using unified date-time picker
 
 const CreateRide = () => {
-    const { orgId } = useLocalSearchParams();
+    const { orgId, mode } = useLocalSearchParams();
+    const isGroupMode = mode === 'group';
 
     // Ride details
     const [name, setName] = useState('');
@@ -27,7 +28,7 @@ const CreateRide = () => {
     const [showDatePicker, setShowDatePicker] = useState(false);
 
     const [rideType, setRideType] = useState('One Day');
-    const [maxRiders, setMaxRiders] = useState('30');
+    const [maxRiders, setMaxRiders] = useState(mode === 'group' ? '3' : '30');
     const [requiresPayment, setRequiresPayment] = useState(false);
     const [amount, setAmount] = useState('0');
 
@@ -181,15 +182,19 @@ const CreateRide = () => {
 
                 {/* Max Riders */}
                 <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Max Riders</Text>
+                    <Text style={styles.label}>{isGroupMode ? "Max Unpaid Riders" : "Max Riders"}</Text>
                     <TextInput
-                        style={styles.input}
+                        style={[styles.input, isGroupMode && { opacity: 0.6, backgroundColor: '#111' }]}
                         placeholder="30"
                         placeholderTextColor="#666"
                         value={maxRiders}
                         onChangeText={setMaxRiders}
                         keyboardType="number-pad"
+                        editable={!isGroupMode}
                     />
+                    {isGroupMode && (
+                        <Text style={styles.sublabel}>Pro members will not be counted in this limit.</Text>
+                    )}
                 </View>
 
                 {/* Ride Type */}
@@ -212,18 +217,22 @@ const CreateRide = () => {
                 </View>
 
                 {/* Payment Toggle */}
-                <View style={styles.paymentRow}>
-                    <View>
-                        <Text style={styles.label}>Paid Ride</Text>
-                        <Text style={styles.sublabel}>Require payment to join</Text>
+
+
+                {!isGroupMode && (
+                    <View style={styles.paymentRow}>
+                        <View>
+                            <Text style={styles.label}>Paid Ride</Text>
+                            <Text style={styles.sublabel}>Require payment to join</Text>
+                        </View>
+                        <Switch
+                            value={requiresPayment}
+                            onValueChange={setRequiresPayment}
+                            trackColor={{ false: '#333', true: '#00C853' }}
+                            thumbColor="white"
+                        />
                     </View>
-                    <Switch
-                        value={requiresPayment}
-                        onValueChange={setRequiresPayment}
-                        trackColor={{ false: '#333', true: '#00C853' }}
-                        thumbColor="white"
-                    />
-                </View>
+                )}
 
                 {requiresPayment && (
                     <View style={styles.inputGroup}>
@@ -342,7 +351,7 @@ const CreateRide = () => {
                     </View>
                 </View>
             </Modal>
-        </SafeAreaView>
+        </SafeAreaView >
     )
 }
 

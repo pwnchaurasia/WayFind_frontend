@@ -84,6 +84,15 @@ const RideDetails = () => {
         return result;
     }, [ride?.participants, participantFilter]);
 
+    const isLead = useMemo(() => {
+        if (!ride?.participants || !user?.id) return false;
+        const myPart = ride.participants.find(p => p.user?.id === user?.id);
+        return myPart?.role === 'lead' || myPart?.role === 'LEAD';
+    }, [ride, user]);
+
+    const canManageRide = ride?.is_admin || isLead;
+    const isSoloRide = ride?.ride_type === 'Quick Ride' || ride?.max_riders === 1;
+
     // ============================================
     // VEHICLE SELECTION FOR JOINING
     // ============================================
@@ -242,9 +251,9 @@ const RideDetails = () => {
     // ============================================
 
     const openParticipantActions = (participant) => {
-        // Allow if admin OR if it's the current user
+        // Allow if admin OR Lead OR if it's the current user
         const isSelf = participant.user?.id === user?.id;
-        if (!ride.is_admin && !isSelf) return;
+        if (!canManageRide && !isSelf) return;
 
         setSelectedParticipant(participant);
         setShowActionModal(true);
@@ -416,7 +425,7 @@ const RideDetails = () => {
                         <Feather name="arrow-left" size={22} color="white" />
                     </TouchableOpacity>
                     <View style={styles.heroActions}>
-                        {ride.is_admin && ride.status !== 'COMPLETED' && ride.status !== 'completed' && (
+                        {canManageRide && ride.status !== 'COMPLETED' && ride.status !== 'completed' && (
                             <TouchableOpacity onPress={() => router.push(`/(main)/rides/${id}/edit`)} style={styles.heroBtn}>
                                 <Feather name="edit-2" size={20} color="white" />
                             </TouchableOpacity>
@@ -464,8 +473,9 @@ const RideDetails = () => {
                     </View>
 
                     {/* Action Buttons */}
-                    {ride.is_admin && (
+                    {canManageRide && (
                         <View style={styles.actionButtonsRow}>
+                            {/* Start Ride (Planned - Group only usually, but handled here) */}
                             {(ride.status === 'PLANNED' || ride.status === 'planned') && (
                                 <TouchableOpacity
                                     style={[styles.actionButton, styles.actionButtonGreen]}
@@ -474,29 +484,40 @@ const RideDetails = () => {
                                 >
                                     {statusLoading ? <ActivityIndicator size="small" color="white" /> : (
                                         <>
-                                            <Feather name="radio" size={16} color="white" />
-                                            <Text style={styles.actionButtonText}>Go Live</Text>
+                                            <Feather name="play" size={16} color="white" />
+                                            <Text style={styles.actionButtonText}>Start Ride</Text>
                                         </>
                                     )}
                                 </TouchableOpacity>
                             )}
+
+                            {/* Active Ride Actions */}
                             {(ride.status === 'ACTIVE' || ride.status === 'active') && (
-                                <TouchableOpacity
-                                    style={[styles.actionButton, styles.actionButtonGreen]}
-                                    onPress={() => router.push(`/(main)/rides/${id}/live`)}
-                                >
-                                    <Feather name="radio" size={16} color="white" />
-                                    <Text style={styles.actionButtonText}>Go Live</Text>
-                                </TouchableOpacity>
+                                <>
+                                    {/* Go Live (Map) - ONLY for Group Rides */}
+                                    {!isSoloRide && (
+                                        <TouchableOpacity
+                                            style={[styles.actionButton, styles.actionButtonGreen]}
+                                            onPress={() => router.push(`/(main)/rides/${id}/live`)}
+                                        >
+                                            <Feather name="map" size={16} color="white" />
+                                            <Text style={styles.actionButtonText}>Go Live Map</Text>
+                                        </TouchableOpacity>
+                                    )}
+
+                                    {/* End Ride - For Solo (Big) or Group (Secondary) */}
+                                    <TouchableOpacity
+                                        style={[styles.actionButton, styles.actionButtonRed, isSoloRide && { flex: 1, backgroundColor: '#FF5252' }]}
+                                        onPress={handleEndRide}
+                                        disabled={statusLoading}
+                                    >
+                                        <Feather name="stop-circle" size={16} color={isSoloRide ? "white" : "#FF5252"} />
+                                        <Text style={[styles.actionButtonText, { color: isSoloRide ? "white" : "#FF5252" }]}>
+                                            {isSoloRide ? 'End Solo Session' : 'End Ride'}
+                                        </Text>
+                                    </TouchableOpacity>
+                                </>
                             )}
-                            <TouchableOpacity
-                                style={[styles.actionButton, styles.actionButtonRed]}
-                                onPress={handleEndRide}
-                                disabled={statusLoading || ride.status === 'COMPLETED' || ride.status === 'completed'}
-                            >
-                                <Feather name="x-circle" size={16} color="#FF5252" />
-                                <Text style={[styles.actionButtonText, { color: '#FF5252' }]}>End Ride</Text>
-                            </TouchableOpacity>
                         </View>
                     )}
                 </View>
@@ -580,8 +601,8 @@ const RideDetails = () => {
                                         key={p.id || index}
                                         style={[styles.participantCard, isBanned && styles.bannedCard]}
                                         onPress={() => openParticipantActions(p)}
-                                        disabled={!ride.is_admin && !isSelf}
-                                        activeOpacity={ride.is_admin || isSelf ? 0.7 : 1}
+                                        disabled={!canManageRide && !isSelf}
+                                        activeOpacity={canManageRide || isSelf ? 0.7 : 1}
                                     >
                                         {p.user?.profile_picture ? (
                                             <Image source={{ uri: p.user.profile_picture }} style={styles.participantAvatar} />

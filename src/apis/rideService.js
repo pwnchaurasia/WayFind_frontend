@@ -14,6 +14,18 @@ const RideService = {
             throw error.response?.data || error;
         }
     },
+    startSoloRide: async (location) => {
+        try {
+            const response = await API.post("/v1/rides/start-solo", location);
+            if (response.status !== 201) {
+                throw new Error(response.data?.message || 'Failed to start solo ride');
+            }
+            return response.data;
+        } catch (error) {
+            console.error('Failed to start solo ride:', error);
+            throw error.response?.data || error;
+        }
+    },
     getRideById: async (rideId) => {
         try {
             const response = await API.get(`/v1/rides/${rideId}`);
@@ -46,7 +58,19 @@ const RideService = {
         return RideService.updateRide(rideId, { status: 'active' });
     },
     endRide: async (rideId) => {
-        return RideService.updateRide(rideId, { status: 'completed' });
+        try {
+            console.log(`RideService: Ending ride ${rideId}`);
+            const response = await API.post(`/v1/rides/${rideId}/stop`, {});
+            if (response.status !== 200) {
+                console.error(`RideService: End ride failed with status ${response.status}`);
+                throw new Error(response.data?.message || 'Failed to end ride');
+            }
+            console.log('RideService: Ride ended successfully');
+            return response.data;
+        } catch (error) {
+            console.error('RideService: Failed to end ride:', error);
+            throw error.response?.data || error;
+        }
     },
 
     // Get rides the user has joined

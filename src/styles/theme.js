@@ -1,26 +1,26 @@
 export const theme = {
   colors: {
     // Background colors
-    background: '#1C1C23',
-    surface: '#2A2A2A',
+    background: '#050a05',
+    surface: '#0d1a0d', // Card Dark
     inputBg: '#17171C',
     inputBoxBg: '#17171C',
 
     // Text colors
     text: '#ffffff',
     textPrimary: '#FFFFFF',
-    textSecondary: '#9E9E9E',
-    mutedText: '#A1A1A1',
+    textSecondary: '#94a3b8', // Slate 400
+    mutedText: '#64748b', // Slate 500
     placeholderText: '#666666',
     inputText: '#ffffff',
 
 
     // Primary colors
-    primary: '#00C851',
+    primary: '#0df20d', // Exact Neon Green from HTML
     secondary: '#6C757D',
 
     // Status colors
-    success: '#27AE60',
+    success: '#47ED73',
     error: '#EB5757',
     warning: '#FF8800',
 
