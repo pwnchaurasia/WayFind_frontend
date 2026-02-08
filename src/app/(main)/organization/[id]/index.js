@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator, ScrollView, Image } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useOrganizationData } from '@/src/hooks/useOrganizationData';
 import OrganizationService from '@/src/apis/organizationService';
@@ -176,6 +176,24 @@ export default function OrganizationOverview() {
 
       {organization && (
         <View style={styles.header}>
+          <View style={styles.logoRow}>
+            {organization.logo ? (
+              <Image
+                source={{
+                  uri: organization.logo.startsWith('/')
+                    ? `${process.env.EXPO_PUBLIC_API_BASE_URL_DEV}${organization.logo}`
+                    : organization.logo
+                }}
+                style={styles.largeLogo}
+                resizeMode="cover"
+              />
+            ) : (
+              <View style={[styles.largeLogo, styles.largeLogoPlaceholder]}>
+                <Text style={styles.largeLogoText}>{organization.name?.charAt(0)?.toUpperCase()}</Text>
+              </View>
+            )}
+          </View>
+
           <Text style={styles.description} numberOfLines={2}>
             {organization.description || 'No description'}
           </Text>
@@ -307,10 +325,32 @@ const styles = StyleSheet.create({
     paddingVertical: theme.spacing.md,
     backgroundColor: theme.colors.surface,
   },
+  logoRow: {
+    alignItems: 'center',
+    marginBottom: theme.spacing.md
+  },
+  largeLogo: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#333'
+  },
+  largeLogoPlaceholder: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: theme.colors.border
+  },
+  largeLogoText: {
+    color: theme.colors.textSecondary,
+    fontSize: 32,
+    fontWeight: 'bold'
+  },
   description: {
     color: theme.colors.textSecondary,
     fontSize: theme.fontSize.md,
     marginBottom: theme.spacing.md,
+    textAlign: 'center',
     lineHeight: 20
   },
   statsRow: {

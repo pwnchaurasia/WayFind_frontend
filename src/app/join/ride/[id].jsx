@@ -16,7 +16,7 @@ import { useAuth } from '@/src/context/AuthContext';
 export default function JoinRideScreen() {
     const { id } = useLocalSearchParams();
     // Note: We don't wait for isLoading - just check isAuthenticated when needed
-    const { isAuthenticated, isLoading: authLoading } = useAuth();
+    const { isAuthenticated, isLoading: authLoading, isProfileComplete } = useAuth();
 
     const [loading, setLoading] = useState(true);
     const [joining, setJoining] = useState(false);
@@ -47,11 +47,23 @@ export default function JoinRideScreen() {
         // 4. We haven't already tried auto-joining
         // 5. Not currently joining
         if (!authLoading && isAuthenticated && ride && !hasAutoJoined.current && !joining && !loading) {
+
+            // Check Profile Completion first
+            if (!isProfileComplete) {
+                console.log('Profile incomplete, redirecting to update_profile');
+                hasAutoJoined.current = true; // Mark as handled so we don't loop
+                router.replace({
+                    pathname: '/(auth)/update_profile',
+                    params: { returnTo: `/join/ride/${id}` }
+                });
+                return;
+            }
+
             console.log('✅ Auto-joining ride after auth complete');
             hasAutoJoined.current = true;
             performJoin();
         }
-    }, [authLoading, isAuthenticated, ride, loading]);
+    }, [authLoading, isAuthenticated, ride, loading, isProfileComplete]);
 
     const fetchRide = async () => {
         setLoading(true);
@@ -121,6 +133,15 @@ export default function JoinRideScreen() {
             hasAutoJoined.current = false; // Reset so auto-join triggers after login
             router.push({
                 pathname: '/(auth)/login',
+                params: { returnTo: `/join/ride/${id}` }
+            });
+            return;
+        }
+
+        // Check profile completion
+        if (!isProfileComplete) {
+            router.push({
+                pathname: '/(auth)/update_profile',
                 params: { returnTo: `/join/ride/${id}` }
             });
             return;

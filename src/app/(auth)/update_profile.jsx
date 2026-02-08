@@ -137,6 +137,22 @@ const UpdateProfile = () => {
       const result = await UserService.updateCurrentUserProfile(profilePayload);
       console.log('Profile update result:', result);
 
+      // Upload Profile Picture if changed and is local file
+      if (profileImage && (!user || (profileImage !== user.avatar && profileImage !== user.profile_picture_url))) {
+        const isLocal = !profileImage.startsWith('http');
+        if (isLocal) {
+          try {
+            console.log('Uploading new profile image...');
+            await UserService.uploadProfilePicture(profileImage);
+            console.log('Profile image uploaded successfully');
+          } catch (imgError) {
+            console.error('Failed to upload profile image:', imgError);
+            Alert.alert('Warning', 'Profile updated, but failed to upload image: ' + (imgError.message || 'Unknown error'));
+            // Continue execution - don't block flow just for image
+          }
+        }
+      }
+
       // Refresh user data in context
       await refreshUserProfile();
 

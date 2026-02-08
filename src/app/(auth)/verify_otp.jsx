@@ -9,7 +9,9 @@ import {
   Dimensions,
   TextInput,
   Keyboard,
-  Animated,
+  KeyboardAvoidingView,
+  ScrollView,
+  Platform,
   ActivityIndicator
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -30,7 +32,7 @@ const VerifyOtp = () => {
   const [timer, setTimer] = useState(60); // 60 in seconds
   const [code, setCode] = useState(['', '', '', '', '', '']); // Changed to empty initial state
   const inputRefs = useRef([]);
-  const animatedValue = useRef(new Animated.Value(0)).current;
+  // const animatedValue = useRef(new Animated.Value(0)).current; // Removed manual animation
   const [isLoading, setIsLoading] = useState(false);
   const [validationError, setValidationError] = useState('');
 
@@ -49,31 +51,7 @@ const VerifyOtp = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Keyboard handling
-  useEffect(() => {
-    const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', (event) => {
-      const keyboardHeight = event.endCoordinates.height;
-
-      Animated.timing(animatedValue, {
-        toValue: -keyboardHeight * 0.2, // Move up by 20% of keyboard height
-        duration: 250,
-        useNativeDriver: true,
-      }).start();
-    });
-
-    const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
-      Animated.timing(animatedValue, {
-        toValue: 0,
-        duration: 250,
-        useNativeDriver: true,
-      }).start();
-    });
-
-    return () => {
-      keyboardDidShowListener.remove();
-      keyboardDidHideListener.remove();
-    };
-  }, []);
+  // Keyboard handling removed (using KeyboardAvoidingView)
 
   // Format timer as MM:SS
   const formatTime = (seconds) => {
@@ -210,91 +188,91 @@ const VerifyOtp = () => {
     <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
 
-      <Animated.View
-        style={[
-          styles.animatedContainer,
-          {
-            transform: [{ translateY: animatedValue }]
-          }
-        ]}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
       >
-        {/* Logo Section */}
-        <LogoSection />
+        <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
+          <View style={styles.containerInner}>
+            {/* Logo Section */}
+            <LogoSection />
 
-        {/* Middle Content */}
-        <View style={styles.contentContainer}>
-          <Image
-            source={imagePath.mailbox}
-            style={styles.illustration}
-            resizeMode="contain"
-          />
+            {/* Middle Content */}
+            <View style={styles.contentContainer}>
+              <Image
+                source={imagePath.mailbox}
+                style={styles.illustration}
+                resizeMode="contain"
+              />
 
-          <Text style={styles.title}>Verification Code</Text>
-          <Text style={styles.subtitle}>
-            Please Enter Code that we Send you{'\n'}to your Phone.
-          </Text>
+              <Text style={styles.title}>Verification Code</Text>
+              <Text style={styles.subtitle}>
+                Please Enter Code that we Send you{'\n'}to your Phone.
+              </Text>
 
-          {/* Code Input */}
-          <View style={styles.codeInputContainer}>
-            <View style={styles.codeContainer}>
-              {[0, 1, 2, 3, 4, 5].map((index) => (
-                <TextInput
-                  key={index}
-                  ref={(ref) => (inputRefs.current[index] = ref)}
-                  style={[
-                    styles.codeInput,
-                    code[index] ? styles.filledInput : {},
-                    validationError ? styles.errorInput : {},
-                  ]}
-                  value={code[index]}
-                  onChangeText={(text) => handleCodeChange(text, index)}
-                  onKeyPress={(e) => handleKeyPress(e, index)}
-                  keyboardType="number-pad"
-                  maxLength={1}
-                  selectionColor="#00C853"
-                />
-              ))}
+              {/* Code Input */}
+              <View style={styles.codeInputContainer}>
+                <View style={styles.codeContainer}>
+                  {[0, 1, 2, 3, 4, 5].map((index) => (
+                    <TextInput
+                      key={index}
+                      ref={(ref) => (inputRefs.current[index] = ref)}
+                      style={[
+                        styles.codeInput,
+                        code[index] ? styles.filledInput : {},
+                        validationError ? styles.errorInput : {},
+                      ]}
+                      value={code[index]}
+                      onChangeText={(text) => handleCodeChange(text, index)}
+                      onKeyPress={(e) => handleKeyPress(e, index)}
+                      keyboardType="number-pad"
+                      maxLength={1}
+                      selectionColor="#00C853"
+                    />
+                  ))}
+                </View>
+
+                {/* Validation Error */}
+                {validationError ? (
+                  <Text style={styles.errorText}>{validationError}</Text>
+                ) : null}
+              </View>
+
+              {/* Resend Timer */}
+              <View style={styles.resendContainer}>
+                <Text style={styles.resendText}>
+                  Resend in <Text style={styles.timerText}>{formatTime(timer)}</Text>
+                </Text>
+              </View>
+
             </View>
 
-            {/* Validation Error */}
-            {validationError ? (
-              <Text style={styles.errorText}>{validationError}</Text>
-            ) : null}
+            {/* Button */}
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity
+                style={[styles.button, styles.otpButton, isLoading && styles.buttonDisabled]}
+                onPress={handleverifyOTP}
+                disabled={isLoading}
+              >
+                {/* <Link href="/update_profile" style={styles.buttonText}> Verify Code</Link> */}
+
+                {isLoading ? (
+                  <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="small" color="#00C853" />
+                    <Text style={[styles.buttonText, styles.loadingText]}>Verifying OTP...</Text>
+                  </View>
+                ) : (
+                  <Text style={styles.buttonText}>Verify OTP</Text>
+                )}
+
+              </TouchableOpacity>
+            </View>
+
+            {/* Footer */}
+            <Text style={styles.footer}>Made with love in India by rjsnh1522</Text>
           </View>
-
-          {/* Resend Timer */}
-          <View style={styles.resendContainer}>
-            <Text style={styles.resendText}>
-              Resend in <Text style={styles.timerText}>{formatTime(timer)}</Text>
-            </Text>
-          </View>
-
-        </View>
-
-        {/* Button */}
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={[styles.button, styles.otpButton, isLoading && styles.buttonDisabled]}
-            onPress={handleverifyOTP}
-            disabled={isLoading}
-          >
-            {/* <Link href="/update_profile" style={styles.buttonText}> Verify Code</Link> */}
-
-            {isLoading ? (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="small" color="#00C853" />
-                <Text style={[styles.buttonText, styles.loadingText]}>Verifying OTP...</Text>
-              </View>
-            ) : (
-              <Text style={styles.buttonText}>Verify OTP</Text>
-            )}
-
-          </TouchableOpacity>
-        </View>
-
-        {/* Footer */}
-        <Text style={styles.footer}>Made with love in India by rjsnh1522</Text>
-      </Animated.View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -302,10 +280,10 @@ const VerifyOtp = () => {
 export default VerifyOtp
 
 const styles = StyleSheet.create({
-  // Animated container for smooth keyboard handling
-  animatedContainer: {
+  containerInner: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    paddingHorizontal: width * 0.05,
+    paddingBottom: 20
   },
 
   container: {

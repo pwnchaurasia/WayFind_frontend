@@ -10,19 +10,32 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isProfileComplete, setIsProfileComplete] = useState(false);
 
+  // Helper to ensure profile picture has full URL
+  const normalizeUser = (userData) => {
+    if (!userData) return null;
+    let avatar = userData.profile_picture_url || userData.avatar;
+    if (avatar && avatar.startsWith('/')) {
+      const baseUrl = process.env.EXPO_PUBLIC_API_BASE_URL_DEV;
+      // Remove trailing slash from base if present
+      const cleanBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+      avatar = `${cleanBase}${avatar}`;
+    }
+    return { ...userData, avatar, profile_picture_url: avatar };
+  };
+
   /**
    * Login user and set authentication state
    * @param {Object} userData - User data from authentication
    */
   const login = async (userData) => {
     try {
-      setUser(userData);
+      setUser(normalizeUser(userData));
       setIsAuthenticated(true);
 
       // Optionally fetch fresh user data
       if (!userData) {
         const currentUser = await AuthService.getCurrentUser();
-        setUser(currentUser);
+        setUser(normalizeUser(currentUser));
       }
     } catch (error) {
       console.error('Login state update failed:', error);
@@ -95,7 +108,8 @@ export const AuthProvider = ({ children }) => {
               }
               const currentUser = response.data?.user
               console.log('new Current User:', currentUser);
-              setUser(currentUser);
+              const normalizedUser = normalizeUser(currentUser);
+              setUser(normalizedUser);
 
               // Check if profile is complete by looking at actual fields
               // User has filled profile if they have a name
@@ -194,7 +208,8 @@ export const AuthProvider = ({ children }) => {
       if (response.status === 200 && response.data?.user) {
         const currentUser = response.data.user;
         console.log('Refreshed User Profile:', currentUser);
-        setUser(currentUser);
+        const normalizedUser = normalizeUser(currentUser);
+        setUser(normalizedUser);
 
         // Check if profile is complete - user must have a name at minimum
         const hasName = currentUser?.name && currentUser.name.trim().length > 0;

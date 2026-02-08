@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl } from 'react-native'
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Image } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { theme } from '@/src/styles/theme'
@@ -49,16 +49,35 @@ const OrganizationsScreen = () => {
     const renderItem = ({ item }) => {
         const roleInfo = getRoleBadge(item.user_role);
 
+        // Normalize logo
+        let logoUrl = item.logo;
+        if (logoUrl && logoUrl.startsWith('/')) {
+            logoUrl = `${process.env.EXPO_PUBLIC_API_BASE_URL_DEV}${logoUrl}`;
+        }
+
         return (
             <TouchableOpacity
                 style={styles.card}
                 onPress={() => router.push(`/(main)/organization/${item.id}`)}
             >
                 <View style={styles.cardHeader}>
-                    <View style={styles.nameSection}>
-                        <Text style={styles.orgName}>{item.name}</Text>
-                        <View style={[styles.roleBadge, { backgroundColor: roleInfo.bg }]}>
-                            <Text style={styles.roleText}>{roleInfo.text}</Text>
+                    <View style={styles.headerLeft}>
+                        {/* Logo */}
+                        <View style={styles.logoContainer}>
+                            {logoUrl ? (
+                                <Image source={{ uri: logoUrl }} style={styles.logo} resizeMode="cover" />
+                            ) : (
+                                <View style={[styles.logo, styles.logoPlaceholder]}>
+                                    <Text style={styles.logoPlaceholderText}>{item.name.charAt(0).toUpperCase()}</Text>
+                                </View>
+                            )}
+                        </View>
+
+                        <View style={styles.nameSection}>
+                            <Text style={styles.orgName}>{item.name}</Text>
+                            <View style={[styles.roleBadge, { backgroundColor: roleInfo.bg }]}>
+                                <Text style={styles.roleText}>{roleInfo.text}</Text>
+                            </View>
                         </View>
                     </View>
                     <Feather name="chevron-right" size={24} color="#00C853" />
@@ -146,9 +165,34 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
         marginBottom: 8
     },
+    headerLeft: {
+        flexDirection: 'row',
+        flex: 1,
+        marginRight: 10,
+    },
+    logoContainer: {
+        marginRight: 12,
+    },
+    logo: {
+        width: 50,
+        height: 50,
+        borderRadius: 10,
+        backgroundColor: '#333'
+    },
+    logoPlaceholder: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#333',
+        borderWidth: 1,
+        borderColor: '#444'
+    },
+    logoPlaceholderText: {
+        color: '#888',
+        fontSize: 20,
+        fontWeight: 'bold'
+    },
     nameSection: {
         flex: 1,
-        marginRight: 12
     },
     orgName: {
         fontSize: 18,

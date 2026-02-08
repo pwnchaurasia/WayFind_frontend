@@ -3,7 +3,6 @@ import API from "@/src/apis/axios";
 
 const UserService = {
     updateCurrentUserProfile: async (payload) => {
-
         try {
             const response = await API.put("/v1/users/me", payload)
             console.log('Updating user profile with payload:', response);
@@ -17,6 +16,33 @@ const UserService = {
         } catch (error) {
             debugger
             console.error('Failed to update user profile:', error);
+            throw error.response?.data || error;
+        }
+    },
+    uploadProfilePicture: async (imageUri) => {
+        try {
+            const formData = new FormData();
+            const filename = imageUri.split('/').pop();
+            const match = /\.(\w+)$/.exec(filename);
+            const type = match ? `image/${match[1]}` : 'image/jpeg';
+
+            formData.append('file', { uri: imageUri, name: filename, type });
+
+            // Post to avatar endpoint (adjust if backend uses different path)
+            // Assuming /v1/users/me/avatar or similar handles multipart
+            // If backend uses generic upload, standard might be /v1/users/me/profile-picture
+            const response = await API.post("/v1/users/me/avatar", formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+
+            if (response.status !== 200 && response.status !== 201) {
+                throw new Error('Failed to upload profile picture');
+            }
+            return response.data;
+        } catch (error) {
+            console.error('Failed to upload profile picture:', error);
             throw error.response?.data || error;
         }
     },
