@@ -9,7 +9,8 @@ import {
     Image,
     StatusBar,
     Modal,
-    Dimensions
+    Dimensions,
+    TextInput
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -59,6 +60,8 @@ export default function RidesScreen() {
     const [isLoading, setIsLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [filter, setFilter] = useState('Upcoming');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [isSearching, setIsSearching] = useState(false);
 
     // Modal State
     const [endRideModalVisible, setEndRideModalVisible] = useState(false);
@@ -266,29 +269,46 @@ export default function RidesScreen() {
     const renderPastCard = (item) => {
         const posterUrl = normalizeUrl(item.ride_poster_url) || getRandomImage(item.id);
         const distance = (Math.random() * 50 + 10).toFixed(1);
+        const timeString = dayjs(item.scheduled_date).format('ddd, MMM D • HH:mm');
 
         return (
             <TouchableOpacity
                 key={item.id}
-                style={styles.pastCard}
+                style={styles.upcomingCard} // Reusing List Card Style
                 onPress={() => router.push(`/(main)/rides/${item.id}`)}
             >
-                <Image source={{ uri: posterUrl }} style={styles.pastImage} />
-                <View style={styles.pastContent}>
-                    <Text style={styles.pastTitle} numberOfLines={1}>{item.name}</Text>
-                    <View style={styles.pastStatsRow}>
-                        <View style={styles.pastStat}>
-                            <MaterialCommunityIcons name="map-marker-distance" size={12} color={COLORS.textDim} />
-                            <Text style={styles.pastStatText}>{distance} km</Text>
+                <View style={styles.upcomingCardInner}>
+                    <Image source={{ uri: posterUrl }} style={styles.upcomingImage} />
+                    <View style={styles.upcomingInfo}>
+                        <Text style={styles.upcomingDate}>{timeString}</Text>
+                        <Text style={styles.upcomingTitle} numberOfLines={1}>{item.name}</Text>
+                        <View style={styles.pastStatsRow}>
+                            <View style={styles.pastStat}>
+                                <MaterialCommunityIcons name="map-marker-distance" size={14} color={COLORS.textDim} />
+                                <Text style={styles.pastStatText}>{distance} km</Text>
+                            </View>
+                            <View style={styles.pastStat}>
+                                <MaterialCommunityIcons name="clock-time-four-outline" size={14} color={COLORS.textDim} />
+                                <Text style={styles.pastStatText}>45m</Text>
+                            </View>
                         </View>
-                        <View style={styles.pastStat}>
-                            <MaterialCommunityIcons name="clock-outline" size={12} color={COLORS.textDim} />
-                            <Text style={styles.pastStatText}>45m</Text>
+                    </View>
+                    <View style={styles.upcomingActions}>
+                        <View style={[styles.pendingChip, { backgroundColor: 'rgba(255, 255, 255, 0.05)' }]}>
+                            <Text style={styles.pendingChipText}>COMPLETED</Text>
                         </View>
+                        <MaterialCommunityIcons name="chevron-right" size={20} color={COLORS.textDim} />
                     </View>
                 </View>
             </TouchableOpacity>
         );
+    };
+
+    // Filtered Data for Search
+    const getFilteredRides = () => {
+        const all = [...activeRides, ...upcomingRides, ...pastRides];
+        if (!searchQuery.trim()) return all;
+        return all.filter(r => r.name?.toLowerCase().includes(searchQuery.toLowerCase()));
     };
 
     return (
@@ -296,40 +316,64 @@ export default function RidesScreen() {
             <StatusBar barStyle="light-content" backgroundColor={COLORS.backgroundDark} />
 
             <SafeAreaView style={styles.header} edges={['top']}>
-                <View style={styles.headerContent}>
-                    <View style={styles.headerLeft}>
-                        <MaterialCommunityIcons name="bike" size={28} color={COLORS.primary} />
-                        <Text style={styles.headerTitle}>Rides Library</Text>
+                {isSearching ? (
+                    <View style={[styles.headerContent, { paddingVertical: 8 }]}>
+                        <View style={styles.searchBar}>
+                            <MaterialCommunityIcons name="magnify" size={22} color={COLORS.textDim} />
+                            <TextInput
+                                style={styles.searchInput}
+                                placeholder="Search all rides..."
+                                placeholderTextColor={COLORS.textDim}
+                                value={searchQuery}
+                                onChangeText={setSearchQuery}
+                                autoFocus
+                            />
+                            <TouchableOpacity onPress={() => { setIsSearching(false); setSearchQuery(''); }}>
+                                <MaterialCommunityIcons name="close" size={22} color={COLORS.textDim} />
+                            </TouchableOpacity>
+                        </View>
                     </View>
-                    <View style={styles.headerRight}>
-                        <TouchableOpacity style={styles.iconButton}>
-                            <MaterialCommunityIcons name="magnify" size={24} color={COLORS.text} />
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.iconButton} onPress={() => router.push('/(main)/(tabs)/settings')}>
-                            <View>
-                                <MaterialCommunityIcons name="bell-outline" size={24} color={COLORS.text} />
-                                <View style={styles.notificationDot} />
-                            </View>
-                        </TouchableOpacity>
+                ) : (
+                    <View style={styles.headerContent}>
+                        <View style={styles.headerLeft}>
+                            <MaterialCommunityIcons name="bike" size={28} color={COLORS.primary} />
+                            <Text style={styles.headerTitle}>Rides Library</Text>
+                        </View>
+                        <View style={styles.headerRight}>
+                            <TouchableOpacity style={styles.iconButton} onPress={() => setIsSearching(true)}>
+                                <MaterialCommunityIcons name="magnify" size={24} color={COLORS.text} />
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.iconButton} onPress={() => router.push('/(main)/(tabs)/settings')}>
+                                <View>
+                                    <MaterialCommunityIcons name="bell-outline" size={24} color={COLORS.text} />
+                                    <View style={styles.notificationDot} />
+                                </View>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.iconButton} onPress={() => router.push('/(main)/(tabs)/settings')}>
+                                <MaterialCommunityIcons name="cog-outline" size={24} color={COLORS.text} />
+                            </TouchableOpacity>
+                        </View>
                     </View>
-                </View>
+                )}
 
-                <View style={styles.filterContainer}>
-                    <View style={styles.filterWrapper}>
-                        {['Live', 'Upcoming', 'Past'].map((tab) => {
-                            const isActive = filter === tab;
-                            return (
-                                <TouchableOpacity
-                                    key={tab}
-                                    style={[styles.filterTab, isActive && styles.filterTabActive]}
-                                    onPress={() => setFilter(tab)}
-                                >
-                                    <Text style={[styles.filterText, isActive && styles.filterTextActive]}>{tab}</Text>
-                                </TouchableOpacity>
-                            );
-                        })}
+                {!isSearching && (
+                    <View style={styles.filterContainer}>
+                        <View style={styles.filterWrapper}>
+                            {['Live', 'Upcoming', 'Past'].map((tab) => {
+                                const isActive = filter === tab;
+                                return (
+                                    <TouchableOpacity
+                                        key={tab}
+                                        style={[styles.filterTab, isActive && styles.filterTabActive]}
+                                        onPress={() => setFilter(tab)}
+                                    >
+                                        <Text style={[styles.filterText, isActive && styles.filterTextActive]}>{tab}</Text>
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </View>
                     </View>
-                </View>
+                )}
             </SafeAreaView>
 
             <ScrollView
@@ -338,53 +382,72 @@ export default function RidesScreen() {
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
                 showsVerticalScrollIndicator={false}
             >
-                {filter === 'Live' && (
-                    activeRides.length > 0 ? (
-                        <View style={styles.section}>
-                            <View style={styles.sectionHeader}>
-                                <View style={styles.liveIndicator}>
-                                    <View style={styles.liveDotRing} />
-                                    <View style={styles.liveDot} />
-                                </View>
-                                <Text style={styles.sectionTitlePrimary}>Live Now</Text>
-                            </View>
-                            <View style={{ gap: 16 }}>
-                                {activeRides.map(ride => (
-                                    <View key={ride.id}>
-                                        {renderLiveSection(ride)}
-                                    </View>
-                                ))}
-                            </View>
-                        </View>
-                    ) : (
-                        <Text style={styles.emptyText}>No active rides currently live.</Text>
-                    )
-                )}
-
-                {filter === 'Upcoming' && (
+                {isSearching ? (
                     <View style={styles.section}>
-                        <View style={styles.sectionHeaderRow}>
-                            <Text style={styles.sectionTitle}>SCHEDULED</Text>
-                        </View>
+                        <Text style={styles.sectionTitle}>SEARCH RESULTS</Text>
                         <View style={styles.cardList}>
-                            {upcomingRides.length > 0 ? upcomingRides.map(renderUpcomingCard) : (
-                                <Text style={styles.emptyText}>No upcoming rides scheduled.</Text>
+                            {getFilteredRides().length > 0 ? getFilteredRides().map(r =>
+                                (r.status === 'active' || r.status === 'ACTIVE')
+                                    ? <View key={r.id}>{renderLiveSection(r)}</View> // Show big card for active matches
+                                    : (r.status === 'completed' || r.status === 'COMPLETED')
+                                        ? renderPastCard(r)
+                                        : renderUpcomingCard(r)
+                            ) : (
+                                <Text style={styles.emptyText}>No matches found.</Text>
                             )}
                         </View>
                     </View>
-                )}
+                ) : (
+                    <>
+                        {filter === 'Live' && (
+                            activeRides.length > 0 ? (
+                                <View style={styles.section}>
+                                    <View style={styles.sectionHeader}>
+                                        <View style={styles.liveIndicator}>
+                                            <View style={styles.liveDotRing} />
+                                            <View style={styles.liveDot} />
+                                        </View>
+                                        <Text style={styles.sectionTitlePrimary}>Live Now</Text>
+                                    </View>
+                                    <View style={{ gap: 16 }}>
+                                        {activeRides.map(ride => (
+                                            <View key={ride.id}>
+                                                {renderLiveSection(ride)}
+                                            </View>
+                                        ))}
+                                    </View>
+                                </View>
+                            ) : (
+                                <Text style={styles.emptyText}>No active rides currently live.</Text>
+                            )
+                        )}
 
-                {filter === 'Past' && (
-                    <View style={styles.section}>
-                        <View style={styles.sectionHeaderRow}>
-                            <Text style={styles.sectionTitle}>RECENT RIDES</Text>
-                        </View>
-                        <View style={styles.gridList}>
-                            {pastRides.length > 0 ? pastRides.map(renderPastCard) : (
-                                <Text style={styles.emptyText}>No ride history available.</Text>
-                            )}
-                        </View>
-                    </View>
+                        {filter === 'Upcoming' && (
+                            <View style={styles.section}>
+                                <View style={styles.sectionHeaderRow}>
+                                    <Text style={styles.sectionTitle}>SCHEDULED</Text>
+                                </View>
+                                <View style={styles.cardList}>
+                                    {upcomingRides.length > 0 ? upcomingRides.map(renderUpcomingCard) : (
+                                        <Text style={styles.emptyText}>No upcoming rides scheduled.</Text>
+                                    )}
+                                </View>
+                            </View>
+                        )}
+
+                        {filter === 'Past' && (
+                            <View style={styles.section}>
+                                <View style={styles.sectionHeaderRow}>
+                                    <Text style={styles.sectionTitle}>RECENT RIDES</Text>
+                                </View>
+                                <View style={styles.cardList}>
+                                    {pastRides.length > 0 ? pastRides.map(renderPastCard) : (
+                                        <Text style={styles.emptyText}>No ride history available.</Text>
+                                    )}
+                                </View>
+                            </View>
+                        )}
+                    </>
                 )}
 
                 <View style={{ height: 100 }} />
@@ -856,8 +919,36 @@ const styles = StyleSheet.create({
         shadowRadius: 8,
         elevation: 8,
     },
+    fab: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        backgroundColor: COLORS.primary,
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOpacity: 0.3,
+        shadowOffset: { width: 0, height: 4 },
+        shadowRadius: 8,
+        elevation: 8,
+    },
     cardList: {
         gap: 12,
+    },
+    searchBar: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(255,255,255,0.1)',
+        borderRadius: 12,
+        paddingHorizontal: 12,
+        height: 40,
+        gap: 8,
+    },
+    searchInput: {
+        flex: 1,
+        color: 'white',
+        fontSize: 14,
     },
 });
 
