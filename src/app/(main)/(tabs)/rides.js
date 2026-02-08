@@ -239,7 +239,12 @@ export default function RidesScreen() {
         const squadName = item.organization?.name || 'SQUAD';
 
         return (
-            <View key={item.id} style={styles.upcomingCard}>
+            <TouchableOpacity
+                key={item.id}
+                style={styles.upcomingCard}
+                onPress={() => router.push(`/(main)/rides/${item.id}`)}
+                activeOpacity={0.7}
+            >
                 <View style={styles.upcomingCardInner}>
                     <Image source={{ uri: posterUrl }} style={styles.upcomingImage} />
                     <View style={styles.upcomingInfo}>
@@ -254,15 +259,12 @@ export default function RidesScreen() {
                         <View style={styles.pendingChip}>
                             <Text style={styles.pendingChipText}>Pending</Text>
                         </View>
-                        <TouchableOpacity
-                            style={styles.checkInButton}
-                            onPress={() => router.push(`/(main)/rides/${item.id}`)}
-                        >
+                        <View style={styles.checkInButton}>
                             <Text style={styles.checkInText}>Details</Text>
-                        </TouchableOpacity>
+                        </View>
                     </View>
                 </View>
-            </View>
+            </TouchableOpacity>
         );
     };
 
@@ -343,7 +345,7 @@ export default function RidesScreen() {
                             <TouchableOpacity style={styles.iconButton} onPress={() => setIsSearching(true)}>
                                 <MaterialCommunityIcons name="magnify" size={24} color={COLORS.text} />
                             </TouchableOpacity>
-                            <TouchableOpacity style={styles.iconButton} onPress={() => router.push('/(main)/(tabs)/settings')}>
+                            <TouchableOpacity style={styles.iconButton} onPress={() => router.push('/(main)/notifications')}>
                                 <View>
                                     <MaterialCommunityIcons name="bell-outline" size={24} color={COLORS.text} />
                                     <View style={styles.notificationDot} />

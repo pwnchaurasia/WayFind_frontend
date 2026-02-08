@@ -257,7 +257,7 @@ export default function HomeScreen() {
             </View>
           </View>
           <View style={styles.headerRight}>
-            <TouchableOpacity><MaterialCommunityIcons name="bell-outline" size={24} color={COLORS.primary} /></TouchableOpacity>
+            <TouchableOpacity onPress={() => router.push('/(main)/notifications')}><MaterialCommunityIcons name="bell-outline" size={24} color={COLORS.primary} /></TouchableOpacity>
             <TouchableOpacity onPress={() => router.push('/(main)/(tabs)/settings')}><MaterialCommunityIcons name="cog-outline" size={24} color={COLORS.primary} /></TouchableOpacity>
           </View>
         </View>
